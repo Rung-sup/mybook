@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - Reader App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .login-container { background-color: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.3s; }
+        .input-group input:focus { border-color: #764ba2; }
+        .btn-login { width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; transition: background 0.3s; margin-bottom: 20px; }
+        .btn-login:hover { background: #667eea; }
+        .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #999; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
+        .divider:not(:empty)::before { margin-right: .25em; }
+        .divider:not(:empty)::after { margin-left: .25em; }
+        .google-btn-container { display: flex; justify-content: center; margin-bottom: 20px; }
+        .register-link { color: #666; font-size: 14px; }
+        .register-link a { color: #764ba2; text-decoration: none; font-weight: 500; }
+        .register-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="logo">📚 My Reader</div>
+        <div class="subtitle">เข้าสู่ระบบเพื่อเริ่มอ่านนิยายเรื่องโปรดของคุณ</div>
+
+        <div class="input-group">
+            <input type="email" placeholder="อีเมลของคุณ" id="loginEmail">
+        </div>
+        <div class="input-group">
+            <input type="password" placeholder="รหัสผ่าน" id="loginPassword">
+        </div>
+        
+        <button class="btn-login" id="btnLogin">เข้าสู่ระบบ</button>
+
+        <div class="divider">หรือ</div>
+
+        <div id="g_id_onload"
+             data-client_id="287245430422-rdoqam818up4okrdo8qnak2p8ug716ir.apps.googleusercontent.com"
+             data-context="signin"
+             data-ux_mode="popup"
+             data-callback="handleCredentialResponse"
+             data-auto_prompt="false">
+        </div>
+        <div class="google-btn-container">
+            <div class="g_id_signin" data-type="standard" data-shape="rectangular" data-theme="outline" data-text="signin_with" data-size="large" data-logo_alignment="left"></div>
+        </div>
+
+        <div class="register-link">
+            ยังไม่มีบัญชีใช่ไหม? <a href="register.html">สมัครสมาชิกใหม่</a>
+        </div>
+    </div>
+
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithCredential } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+        authDomain: "myreaderapp-89e75.firebaseapp.com",
+        projectId: "myreaderapp-89e75",
+        storageBucket: "myreaderapp-89e75.firebasestorage.app",
+        messagingSenderId: "1016151043482",
+        appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // --- 1. ล็อกอินด้วย อีเมล/รหัสผ่าน ---
+    document.getElementById('btnLogin').addEventListener('click', () => {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        if(!email || !password) {
+            alert("กรุณากรอกข้อมูลให้ครบถ้วนครับ");
+            return;
+        }
+
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                if (user.emailVerified) {
+                    window.location.href = 'terms.html'; 
+                } else {
+                    signOut(auth).then(() => {
+                        alert("⚠️ กรุณายืนยันอีเมลก่อนเข้าใช้งานครับ");
+                    });
+                }
+            })
+            .catch((error) => {
+                alert("อีเมลหรือรหัสผ่านไม่ถูกต้องครับ");
+            });
+    });
+
+    // --- 2. ฟังก์ชันรองรับ Google Sign-In (เชื่อมกับ Firebase) ---
+    window.handleCredentialResponse = (response) => {
+        const credential = GoogleAuthProvider.credential(response.credential);
+        signInWithCredential(auth, credential)
+            .then((result) => {
+                console.log("Google Login Success!");
+                window.location.href = 'terms.html'; // ล็อกอินผ่าน Google มักจะถือว่ายืนยันตัวตนแล้ว
+            })
+            .catch((error) => {
+                alert("เกิดข้อผิดพลาดในการล็อกอินด้วย Google: " + error.message);
+            });
+    };
+</script>
+    
+    <script>
+        // ฟังก์ชันของปุ่ม Google (เก็บไว้เหมือนเดิมครับ)
+        function handleCredentialResponse(response) {
+            console.log("ล็อกอินด้วย Google สำเร็จ!");
+            alert("ฟังก์ชัน Google Sign-In ทำงานแล้ว! (การเชื่อมต่อกับ Firebase จะอยู่ในสเตปถัดไปครับ)");
+        }
+    </script>
+</body>
+</html>

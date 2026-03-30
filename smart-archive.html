@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังหนังสือคุณรันนรา - My Library</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; background-color: #f4f1ea; min-height: 100vh; }
+        
+        /* Header */
+        .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; background: inherit; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .btn-back-home { background: rgba(0,0,0,0.5); border: 1px solid #d4af37; color: #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; }
+
+        /* ส่วนของ "อ่านค้างไว้" (My Shelf) */
+        .my-shelf-section { background: rgba(212, 175, 55, 0.1); padding: 20px; border-bottom: 2px solid #d4af37; margin-bottom: 10px; display: none; }
+        .shelf-title { font-size: 16px; font-weight: 600; color: #3d2b1f; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
+
+        /* รายการหนังสือหลัก */
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
+        
+        /* Card Style */
+        .book-card { background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; position: relative; }
+        .book-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .book-cover { width: 100%; height: 180px; object-fit: cover; background: #eee; }
+        .book-info { padding: 8px; text-align: center; flex-grow: 1; border-top: 1px solid #eee; }
+        .book-name { font-size: 11px; height: 32px; overflow: hidden; font-weight: 500; line-height: 1.4; color: #333; }
+        
+        .bookmark-badge { position: absolute; top: 5px; right: 5px; background: #d4af37; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 5px; }
+
+        /* Reader Interface (เหมือนเดิมที่คุณรันนรามี) */
+        #reader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; flex-direction: column; }
+        .reader-header { background: #222; color: #fff; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        #pdf-viewer, #epub-viewer { width: 100%; height: 100%; border: none; background: #fff; }
+        .nav-controls { position: fixed; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; z-index: 9999; }
+        .nav-btn { width: 50px; height: 50px; border-radius: 50%; background: rgba(0,0,0,0.6); color: #d4af37; border: 1px solid #d4af37; pointer-events: auto; cursor: pointer; }
+    </style>
+</head>
+<body id="main-body">
+
+    <div class="header">
+        <div class="header-top">
+            <button class="btn-back-home" onclick="location.href='categories.html'">⬅ กลับ</button>
+            <span id="header-title" style="font-weight:600;">คลังของคุณรันนรา</span>
+            <div style="width:40px;"></div>
+        </div>
+    </div>
+
+    <div id="my-shelf" class="my-shelf-section">
+        <div class="shelf-title">⭐ หนังสือที่อ่านล่าสุด</div>
+        <div id="shelf-list" class="shelf-grid"></div>
+    </div>
+
+    <div class="container" id="book-list">
+        <p style="text-align:center; grid-column: 1/-1;">กำลังเปิดห้องสมุด...</p>
+    </div>
+
+    <div id="reader-overlay">
+        <div class="reader-header">
+            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:5px 10px; border-radius:5px;">ปิด</button>
+            <span id="book-title-display" style="font-size:11px; color:#d4af37;"></span>
+            <span id="page-info" style="font-size:11px; color:#ccc;">0%</span>
+        </div>
+        <iframe id="pdf-viewer" style="display:none;"></iframe>
+        <div id="epub-viewer" style="display:none;"><div id="epub-render" style="width:100%; height:100%;"></div></div>
+        <div class="nav-controls" id="reader-nav-ui" style="display:none;">
+            <button class="nav-btn" onclick="prevPage()">❮</button>
+            <button class="nav-btn" onclick="nextPage()">❯</button>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const categoryKey = params.get('cat') || '2_Thai_Novel';
+        const categoryName = params.get('name') || 'นิยายไทย';
+        
+        let allBooks = [], currentBook, rendition, currentFileId = null;
+
+        async function loadBooks() {
+            try {
+                const response = await fetch("https://rung-sup.github.io/mybook/database.json");
+                const data = await response.json();
+                const bookNames = data[categoryKey] || [];
+                
+                allBooks = bookNames.map(name => ({
+                    id: name.replace(/\s+/g, '-'),
+                    name: name,
+                    mimeType: name.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf'
+                }));
+                
+                displayBooks(allBooks);
+                displayMyShelf(); // แสดงหนังสือที่อ่านค้างไว้
+            } catch (e) { 
+                document.getElementById('book-list').innerHTML = 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+            }
+        }
+
+        // --- ระบบจัดการ "อ่านล่าสุด" ---
+        function addToRecent(file) {
+            let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
+            // ลบของเก่าออกถ้าซ้ำ เพื่อเอามาไว้ลำดับแรก
+            recent = recent.filter(b => b.name !== file.name);
+            recent.unshift({ ...file, cat: categoryKey }); // เพิ่มเข้าลำดับแรก
+            if(recent.length > 5) recent.pop(); // เก็บแค่ 5 เล่มล่าสุด
+            localStorage.setItem('recent_books', JSON.stringify(recent));
+        }
+
+        function displayMyShelf() {
+            const shelfDiv = document.getElementById('shelf-list');
+            const shelfSection = document.getElementById('my-shelf');
+            let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
+
+            if (recent.length === 0) {
+                shelfSection.style.display = 'none';
+                return;
+            }
+
+            shelfSection.style.display = 'block';
+            shelfDiv.innerHTML = '';
+            recent.forEach(file => {
+                const card = createBookCard(file, true);
+                shelfDiv.appendChild(card);
+            });
+        }
+
+        function createBookCard(file, isShelf = false) {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            // ถ้าเป็นใน Shelf ต้องใช้หมวดหมู่ที่เซฟไว้ตอนเปิด
+            const cat = isShelf ? file.cat : categoryKey;
+            card.onclick = () => openBook(file, cat);
+            
+            const hasBookmark = localStorage.getItem('bookmark-' + file.id);
+            card.innerHTML = `
+                ${hasBookmark ? '<div class="bookmark-badge">อ่านค้างไว้</div>' : ''}
+                <img src="https://via.placeholder.com/500x750/3d2b1f/d4af37?text=${encodeURIComponent(file.name.substring(0,20))}" class="book-cover">
+                <div class="book-info"><div class="book-name">${file.name}</div></div>
+            `;
+            return card;
+        }
+
+        function displayBooks(books) {
+            const listDiv = document.getElementById('book-list');
+            listDiv.innerHTML = '';
+            books.forEach(file => listDiv.appendChild(createBookCard(file)));
+        }
+
+        async function openBook(file, cat) {
+            addToRecent(file); // บันทึกลงรายการล่าสุด
+            currentFileId = file.id;
+            const isEpub = file.mimeType === 'application/epub+zip';
+            const bookUrl = `https://rung-sup.github.io/mybook/${cat}/${encodeURIComponent(file.name)}`;
+            
+            document.getElementById('reader-overlay').style.display = 'flex';
+            document.getElementById('book-title-display').innerText = file.name;
+
+            if (isEpub) {
+                document.getElementById('pdf-viewer').style.display = 'none';
+                document.getElementById('epub-viewer').style.display = 'block';
+                document.getElementById('reader-nav-ui').style.display = 'flex';
+                if(currentBook) currentBook.destroy();
+                currentBook = ePub(bookUrl);
+                rendition = currentBook.renderTo("epub-render", { width: "100%", height: "100%", flow: "paginated" });
+                const savedPos = localStorage.getItem('bookmark-' + currentFileId);
+                rendition.display(savedPos || undefined);
+                rendition.on("relocated", loc => {
+                    localStorage.setItem('bookmark-' + currentFileId, loc.start.cfi);
+                    document.getElementById('page-info').innerText = Math.floor(loc.start.percentage * 100) + "%";
+                });
+            } else {
+                document.getElementById('epub-viewer').style.display = 'none';
+                document.getElementById('pdf-viewer').style.display = 'block';
+                document.getElementById('reader-nav-ui').style.display = 'none';
+                document.getElementById('pdf-viewer').src = bookUrl + "#view=FitH";
+            }
+        }
+
+        function closeBook() {
+            document.getElementById('reader-overlay').style.display = 'none';
+            document.getElementById('pdf-viewer').src = "";
+            displayMyShelf(); // อัปเดตหน้าแรกเมื่อปิดหนังสือ
+        }
+
+        function prevPage() { if(rendition) rendition.prev(); }
+        function nextPage() { if(rendition) rendition.next(); }
+
+        loadBooks();
+    </script>
+</body>
+</html>

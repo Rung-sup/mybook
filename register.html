@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัครสมาชิก - Reader App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        /* สไตล์ความสวยงามเหมือนเดิมทุกประการครับ */
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .register-container { background-color: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.3s; }
+        .input-group input:focus { border-color: #764ba2; }
+        .btn-register { width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; transition: background 0.3s; margin-bottom: 20px; }
+        .btn-register:hover { background: #667eea; }
+        .login-link { color: #666; font-size: 14px; }
+        .login-link a { color: #764ba2; text-decoration: none; font-weight: 500; }
+        .login-link a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="register-container">
+        <div class="logo">📚 My Reader</div>
+        <div class="subtitle">สร้างบัญชีใหม่เพื่อเข้าสู่โลกแห่งการอ่าน</div>
+
+        <div class="input-group">
+            <input type="email" placeholder="อีเมลของคุณ" id="regEmail">
+        </div>
+        <div class="input-group">
+            <input type="password" placeholder="ตั้งรหัสผ่าน (ขั้นต่ำ 6 ตัว)" id="regPassword">
+        </div>
+        <div class="input-group">
+            <input type="password" placeholder="ยืนยันรหัสผ่านอีกครั้ง" id="regConfirmPassword">
+        </div>
+        
+        <button class="btn-register" id="btnRegister">สมัครสมาชิก</button>
+
+        <div class="login-link">
+            มีบัญชีอยู่แล้วใช่ไหม? <a href="index.html">กลับไปหน้าเข้าสู่ระบบ</a>
+        </div>
+    </div>
+
+    <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    // 🌟 เพิ่ม Firestore เพื่อสร้างโปรไฟล์ผู้ใช้
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+        authDomain: "myreaderapp-89e75.firebaseapp.com",
+        projectId: "myreaderapp-89e75",
+        storageBucket: "myreaderapp-89e75.firebasestorage.app",
+        messagingSenderId: "1016151043482",
+        appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app); // สร้างตัวเชื่อมต่อฐานข้อมูล
+
+    document.getElementById('btnRegister').addEventListener('click', async () => {
+        const email = document.getElementById('regEmail').value;
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if(!email || !password || !confirmPassword) {
+            alert("กรุณากรอกข้อมูลให้ครบถ้วนครับ"); return;
+        }
+        if(password !== confirmPassword) {
+            alert("รหัสผ่านไม่ตรงกันครับ"); return;
+        }
+
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // 🌟 สร้างโปรไฟล์เริ่มต้นในฐานข้อมูล (Firestore)
+            await setDoc(doc(db, "users", user.uid), {
+                email: email,
+                role: "member", // กำหนดสถานะเริ่มต้น
+                createdAt: new Date(),
+                lastRead: "" // เว้นว่างไว้รอเก็บประวัติการอ่าน
+            });
+
+            await sendEmailVerification(user);
+            await signOut(auth);
+            
+            alert("🎉 สมัครสำเร็จ! กรุณายืนยันอีเมลก่อนเข้าใช้งานนะครับ");
+            window.location.href = 'index.html';
+
+        } catch (error) {
+            alert("เกิดข้อผิดพลาด: " + error.message);
+        }
+    });
+</script>
+</body>
+</html>

@@ -112,7 +112,17 @@
                 filteredBooks.forEach(book => {
                     // กำหนดรูปปก: ถ้ามีไฟล์ .jpg ชื่อเดียวกับหนังสือในโฟลเดอร์เดียวกันให้เอามาโชว์ (ต้องทำเพิ่มในอนาคต)
                     // ตอนนี้ให้ใช้ default_cover.jpg ไปก่อนครับ
-                    const coverImageUrl = 'default_cover.jpg'; 
+                    // ดึงลิงก์รูปปกออนไลน์มาใช้เลย (ไม่ต้องเซฟลงเครื่อง)
+const defaultCovers = [
+    'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=400&q=80', // สไตล์คลาสสิก อบอุ่น
+    'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80', // สไตล์มินิมอล ทันสมัย
+    'https://images.unsplash.com/photo-1589829085413-56de8ae18c73?auto=format&fit=crop&w=400&q=80', // สไตล์เรียบหรู สว่างสบายตา
+    'https://images.unsplash.com/photo-1629196914266-9dc730d19284?auto=format&fit=crop&w=400&q=80'  // สไตล์ลึกลับ แฟนตาซี
+];
+
+// สุ่มเลือกรูปปก 1 รูปมาแสดงผล
+const randomIndex = Math.floor(Math.random() * defaultCovers.length);
+const coverImageUrl = defaultCovers[randomIndex];
 
                     const card = document.createElement('div');
                     card.className = 'book-card';

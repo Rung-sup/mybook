@@ -287,10 +287,13 @@
                 if(img) img.src = thumbCanvas.toDataURL();
                 pdf.destroy();
             } catch (e) { 
-                console.warn("Thumb error for: " + file.name);
-                const img = document.getElementById(imgId);
-                if(img) img.src = `https://via.placeholder.com/200x300/2c3e50/ffffff?text=${encodeURIComponent(file.name.substring(0,20))}`;
-            }
+    console.warn("Thumb error for: " + file.name);
+    const img = document.getElementById(imgId);
+    if(img) {
+        // แก้ไข URL ให้สมบูรณ์
+        img.src = `https://via.placeholder.com/200x300/2c3e50/ffffff?text=${encodeURIComponent(file.name.substring(0,20))}`;
+    }
+}
         }
 
         // 5. PDF Rendering

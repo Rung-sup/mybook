@@ -9,31 +9,34 @@
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         body { margin: 0; background-color: #f4f1ea; min-height: 100vh; }
+        
         .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; background: #fff; }
         .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .btn-back-home { background: #333; border: 1px solid #d4af37; color: #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; }
-        
-        /* ช่องค้นหา */
         .search-box { width: 100%; padding: 10px 15px; border: 1px solid #ddd; border-radius: 25px; outline: none; font-size: 14px; }
 
-        .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
+        .section-title { padding: 20px 20px 0 20px; font-weight: 600; color: #5d4037; display: flex; align-items: center; gap: 10px; }
+        .section-title span { background: #d4af37; color: #fff; padding: 2px 10px; border-radius: 10px; font-size: 12px; }
+
+        .container { padding: 15px 20px 30px 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
         
-        /* การ์ดหนังสือ */
-        .book-card { background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; position: relative; }
+        .book-card { background: #fff; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; position: relative; transition: 0.2s; }
+        .book-card:hover { transform: scale(1.02); }
+        
         .cover-wrapper { width: 100%; height: 180px; position: relative; background: #eee; display: flex; align-items: center; justify-content: center; }
         .book-cover { width: 100%; height: 100%; object-fit: cover; display: none; }
-        .fallback-cover { width: 100%; height: 100%; background: linear-gradient(45deg, #2c3e50, #4ca1af); color: white; padding: 10px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; }
+        .fallback-cover { width: 100%; height: 100%; background: linear-gradient(45deg, #5d4037, #8d6e63); color: white; padding: 10px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; }
 
-        /* ป้ายบอกสถานะอ่านค้าง */
-        .resume-badge { position: absolute; top: 5px; right: 5px; background: rgba(212, 175, 55, 0.9); color: #000; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
+        .resume-badge { position: absolute; top: 5px; right: 5px; background: #e67e22; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
         .book-info { padding: 8px; text-align: center; }
         .book-name { font-size: 11px; height: 32px; overflow: hidden; font-weight: 500; line-height: 1.4; color: #333; }
 
-        /* Reader Overlay */
         #reader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; flex-direction: column; }
         .nav-controls { position: fixed; bottom: 30px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; }
         .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.7); color: #d4af37; border: 2px solid #d4af37; cursor: pointer; font-size: 20px; }
+        
+        hr { border: 0; border-top: 1px solid #ddd; margin: 10px 20px; }
     </style>
 </head>
 <body>
@@ -43,9 +46,16 @@
             <span id="header-title" style="font-weight:600;">คลังหนังสือ</span>
             <div style="width:40px;"></div>
         </div>
-        <input type="text" id="searchInput" class="search-box" placeholder="ค้นหาชื่อหนังสือ / ผู้แต่ง / สำนักพิมพ์..." oninput="filterBooks()">
+        <input type="text" id="searchInput" class="search-box" placeholder="ค้นหาชื่อหนังสือ / ผู้แต่ง..." oninput="filterBooks()">
     </div>
 
+    <div id="shelf-section" style="display:none;">
+        <div class="section-title">📚 กำลังอ่านค้างไว้ <span>My Shelf</span></div>
+        <div class="container" id="shelf-list"></div>
+        <hr>
+    </div>
+
+    <div class="section-title">📂 รายการหนังสือทั้งหมด</div>
     <div class="container" id="book-list"></div>
 
     <div id="reader-overlay">
@@ -72,46 +82,71 @@
             const catData = data[categoryKey] || [];
             
             allBooks = [];
-            // แก้ไข Logic ดึงไฟล์: รองรับทั้ง Array และ Object โฟลเดอร์ซ้อน
             if (Array.isArray(catData)) {
                 catData.forEach(name => allBooks.push({ name, folder: "" }));
             } else {
                 Object.keys(catData).forEach(folder => {
-                    catData[folder].forEach(name => {
-                        allBooks.push({ name, folder: folder });
-                    });
+                    catData[folder].forEach(name => allBooks.push({ name, folder: folder }));
                 });
             }
             displayedBooks = allBooks;
+            updateUI();
+        }
+
+        function updateUI() {
+            renderShelf();
             renderBooks();
+        }
+
+        // ฟังก์ชันแสดง "ชั้นหนังสืออ่านค้าง"
+        function renderShelf() {
+            const shelfDiv = document.getElementById('shelf-list');
+            const shelfSection = document.getElementById('shelf-section');
+            shelfDiv.innerHTML = '';
+            
+            // กรองหาเฉพาะเล่มที่มีประวัติใน LocalStorage ของหมวดนี้
+            const readingNow = allBooks.filter(book => {
+                return localStorage.getItem(`${categoryKey}_${book.name}`) !== null;
+            });
+
+            if (readingNow.length > 0) {
+                shelfSection.style.display = 'block';
+                readingNow.forEach((book, index) => {
+                    shelfDiv.appendChild(createBookCard(book, `shelf-${index}`));
+                });
+            } else {
+                shelfSection.style.display = 'none';
+            }
         }
 
         function renderBooks() {
             const listDiv = document.getElementById('book-list');
             listDiv.innerHTML = '';
-            
             displayedBooks.forEach((book, index) => {
-                const bookKey = `${categoryKey}_${book.name}`;
-                const savedPage = localStorage.getItem(bookKey); // ดึงข้อมูลการอ่านค้าง
-
-                const card = document.createElement('div');
-                card.className = 'book-card';
-                card.onclick = () => openBook(book);
-                
-                const imgId = `img-${index}`;
-                const fallbackId = `fallback-${index}`;
-                
-                card.innerHTML = `
-                    ${savedPage ? `<div class="resume-badge">ค้างหน้า ${savedPage}</div>` : ''}
-                    <div class="cover-wrapper">
-                        <img id="${imgId}" class="book-cover">
-                        <div id="${fallbackId}" class="fallback-cover"><span>${book.name.replace('.pdf','')}</span></div>
-                    </div>
-                    <div class="book-info"><div class="book-name">${book.name}</div></div>
-                `;
-                listDiv.appendChild(card);
-                generateThumb(book, imgId, fallbackId);
+                listDiv.appendChild(createBookCard(book, `all-${index}`));
             });
+        }
+
+        function createBookCard(book, idPrefix) {
+            const bookKey = `${categoryKey}_${book.name}`;
+            const savedPage = localStorage.getItem(bookKey);
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.onclick = () => openBook(book);
+            
+            const imgId = `img-${idPrefix}`;
+            const fallbackId = `fallback-${idPrefix}`;
+            
+            card.innerHTML = `
+                ${savedPage ? `<div class="resume-badge">ค้างหน้า ${savedPage}</div>` : ''}
+                <div class="cover-wrapper">
+                    <img id="${imgId}" class="book-cover">
+                    <div id="${fallbackId}" class="fallback-cover"><span>${book.name.replace('.pdf','')}</span></div>
+                </div>
+                <div class="book-info"><div class="book-name">${book.name}</div></div>
+            `;
+            generateThumb(book, imgId, fallbackId);
+            return card;
         }
 
         function filterBooks() {
@@ -130,7 +165,6 @@
                 const tCanvas = document.createElement('canvas'), tCtx = tCanvas.getContext('2d');
                 tCanvas.height = vp.height; tCanvas.width = vp.width;
                 await page.render({ canvasContext: tCtx, viewport: vp }).promise;
-                
                 const img = document.getElementById(imgId);
                 if(img) {
                     img.src = tCanvas.toDataURL();
@@ -138,21 +172,17 @@
                     document.getElementById(fallbackId).style.display = 'none';
                 }
                 pdf.destroy();
-            } catch(e) { /* ปล่อยให้แสดง Fallback Cover */ }
+            } catch(e) {}
         }
 
         async function openBook(book) {
             currentBookKey = `${categoryKey}_${book.name}`;
             const path = book.folder ? encodeURIComponent(book.folder) + '/' : '';
             const url = `https://rung-sup.github.io/mybook/${categoryKey}/${path}${encodeURIComponent(book.name)}`;
-            
             document.getElementById('reader-overlay').style.display = 'flex';
             pdfDoc = await pdfjsLib.getDocument(url).promise;
-            
-            // Resume Reading: ถ้าเคยอ่านค้างไว้ ให้ไปหน้านั้น
             const savedPage = localStorage.getItem(currentBookKey);
             pageNum = savedPage ? parseInt(savedPage) : 1;
-            
             renderPage(pageNum);
         }
 
@@ -162,14 +192,16 @@
             canvas.height = vp.height; canvas.width = vp.width;
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
             document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
-            
-            // บันทึกตำแหน่งล่าสุด
             localStorage.setItem(currentBookKey, num);
         }
 
         function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
         function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
-        function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; pdfDoc = null; renderBooks(); }
+        function closeBook() { 
+            document.getElementById('reader-overlay').style.display = 'none'; 
+            pdfDoc = null; 
+            updateUI(); // อัปเดตชั้นหนังสือทันทีที่ปิดหน้าอ่าน
+        }
 
         loadData();
     </script>

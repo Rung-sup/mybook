@@ -3,26 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Book Store - Login</title>
+    <title>Puk Library - Login</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
-        .login-container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
+        h2 { color: #333; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s; }
+        button:hover { background-color: #0056b3; }
+        #message { color: #d9534f; margin-top: 15px; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="login-container">
-    <h2>เข้าสู่ระบบ My Book</h2>
-    <input type="email" id="email" placeholder="อีเมล"><br><br>
-    <input type="password" id="password" placeholder="รหัสผ่าน"><br><br>
+<div class="login-card">
+    <h2>เข้าสู่ระบบห้องสมุด Puk</h2>
+    <input type="email" id="email" placeholder="อีเมลของคุณ">
+    <input type="password" id="password" placeholder="รหัสผ่าน">
     <button id="loginBtn">เข้าสู่ระบบ</button>
+    <div id="message"></div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-    // --- วาง Firebase Config ของคุณรันนราตรงนี้ ---
+    // *** สำคัญ: คุณรันนราต้องเอา Firebase Config ของคุณมาวางแทนที่ตรงนี้ครับ ***
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_AUTH_DOMAIN",
@@ -35,28 +41,38 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // --- ส่วนเช็คการล็อกอินค้างไว้ ---
+    // 1. ตรวจสอบการล็อกอินค้างไว้ (ถ้าล็อกอินแล้วให้ไปหน้าหมวดหมู่ทันที)
     onAuthStateChanged(auth, (user) => {
         if (user && user.emailVerified) {
-            console.log("เข้าสู่ระบบอยู่แล้ว:", user.email);
             window.location.href = 'categories.html';
         }
     });
 
-    // โค้ดปุ่ม Login
+    // 2. ฟังก์ชันการ Login
     document.getElementById('loginBtn').addEventListener('click', () => {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const messageDiv = document.getElementById('message');
+
+        if (!email || !password) {
+            messageDiv.innerText = "กรุณากรอกอีเมลและรหัสผ่านครับ";
+            return;
+        }
+
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
-                if(userCredential.user.emailVerified) {
+                if (userCredential.user.emailVerified) {
                     window.location.href = 'categories.html';
                 } else {
-                    alert("กรุณายืนยันอีเมลก่อนครับ");
+                    messageDiv.innerText = "กรุณายืนยันอีเมลก่อนเข้าใช้งานครับ";
                 }
             })
-            .catch((error) => alert(error.message));
+            .catch((error) => {
+                console.error(error);
+                messageDiv.innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้องครับ";
+            });
     });
 </script>
+
 </body>
 </html>

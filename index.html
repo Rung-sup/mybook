@@ -1,18 +1,27 @@
-// --- เพิ่มโค้ดส่วนนี้เพื่อตรวจสอบการล็อกอินค้างไว้ ---
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>My Book Store</title>
+    </head>
+<body>
+    <script type="module">
+        // --- ส่วนที่ Import Firebase ต่างๆ (ห้ามหาย) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // ถ้าผู้ใช้เคยล็อกอินอยู่แล้ว และยืนยันอีเมลแล้ว
-        if (user.emailVerified) {
-            console.log("พบผู้ใช้เดิม: ", user.email);
-            // ส่งไปหน้า categories.html ทันที (ไม่ต้องผ่านหน้า Login)
-            window.location.href = 'categories.html'; 
-        }
-    } else {
-        // ถ้าไม่มีผู้ใช้ล็อกอินอยู่ ก็ปล่อยให้แสดงหน้า Login ตามปกติ
-        console.log("ยังไม่ได้ล็อกอิน");
-    }
-});
-// ------------------------------------------
+        // ... ค่า config ของคุณ ...
+        const auth = getAuth(app);
 
+        // --- วางโค้ดที่ผมให้ไว้ ตรงนี้ครับ! ---
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.emailVerified) {
+                window.location.href = 'categories.html';
+            }
+        });
+        // ----------------------------------
+
+        // ... โค้ดปุ่ม Login เดิมของคุณ ...
+    </script>
+</body>
+</html>

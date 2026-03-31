@@ -3,240 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>คลังหนังสือ - My Reader</title>
+    <title>คลังหนังสือ Puk - My Reader</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
-        body { margin: 0; background: #f4f7f9; color: #333; padding: 20px; }
+        body { margin: 0; background: #f8fafc; color: #1e293b; padding: 20px; }
         
-        /* ส่วนหัว */
-        .header-area { text-align: center; margin-bottom: 30px; }
-        h1 { color: #2c3e50; font-size: 26px; margin: 10px 0; }
-        .back-btn { display: inline-block; color: #fff; text-decoration: none; font-size: 14px; background: #34495e; padding: 8px 20px; border-radius: 8px; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .back-btn:hover { background: #2c3e50; }
+        .header-area { text-align: center; margin-bottom: 40px; }
+        h1 { color: #0f172a; font-size: 28px; margin: 15px 0; font-weight: 600; }
+        .back-btn { display: inline-block; color: #64748b; text-decoration: none; font-size: 14px; padding: 10px 20px; border-radius: 10px; background: #fff; border: 1px solid #e2e8f0; transition: 0.2s; }
+        .back-btn:hover { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
 
-        /* การจัดหน้าจอ */
         .grid-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 20px;
-            max-width: 1000px;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 25px;
+            max-width: 1100px;
             margin: 0 auto;
         }
 
-        /* ดีไซน์การ์ดหนังสือ/โฟลเดอร์ */
+        /* ดีไซน์การ์ด */
         .card {
             background: #fff;
-            border-radius: 12px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer;
+            border: 1px solid #f1f5f9;
             display: flex;
             flex-direction: column;
-            border: 1px solid #eaeaea;
         }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-color: #d4af37; }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); border-color: #d4af37; }
 
-        /* ปกหนังสือสีขาว + ตัวหนังสือ */
-        .cover-fallback {
+        /* ส่วนของปก */
+        .cover-box {
             width: 100%;
-            height: 220px;
-            background-color: #ffffff;
-            border-bottom: 1px solid #eee;
+            height: 240px;
+            position: relative;
+            background: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 15px;
-            text-align: center;
-            background-image: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
+            overflow: hidden;
         }
-        .cover-text {
-            color: #333;
+
+        /* กรณีมีรูปปก */
+        .cover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* กรณีไม่มีรูปปก: พื้นขาวตัวหนังสือดำ */
+        .no-cover {
+            padding: 20px;
+            text-align: center;
+            color: #334155;
             font-weight: 600;
-            font-size: 15px;
-            line-height: 1.4;
+            font-size: 16px;
+            line-height: 1.5;
+            background: #fff;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        /* ปกที่เป็นโฟลเดอร์ */
+        .folder-box {
+            background: #1e293b;
+            color: #fff;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .folder-icon { font-size: 56px; margin-bottom: 10px; opacity: 0.9; }
+
+        /* ข้อมูลใต้ปก */
+        .info-box { padding: 16px; text-align: left; background: #fff; flex-grow: 1; }
+        .title-text { 
+            font-size: 15px; 
+            font-weight: 500; 
+            color: #0f172a; 
+            margin-bottom: 12px;
             display: -webkit-box;
-            -webkit-line-clamp: 5;
+            -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            line-height: 1.4;
+            min-height: 2.8em;
         }
-
-        /* ปกที่เป็นโฟลเดอร์ (จัดกลุ่ม) */
-        .folder-cover {
-            background-color: #2c3e50;
-            color: #f1c40f;
-            height: 220px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 15px;
-        }
-        .folder-icon { font-size: 50px; margin-bottom: 10px; }
-        .folder-text { font-size: 16px; font-weight: 500; color: #fff;}
-
-        /* ส่วนข้อมูลด้านล่างปก */
-        .card-info { padding: 15px; text-align: center; flex-grow: 1; }
-        .card-title { font-size: 14px; font-weight: 500; color: #444; margin-bottom: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .action-btn {
+        .btn-view {
             display: block;
-            background: #d4af37;
-            color: #fff;
+            background: #f8fafc;
+            color: #475569;
             text-decoration: none;
             padding: 8px;
-            border-radius: 6px;
-            font-weight: 500;
+            border-radius: 8px;
+            font-weight: 600;
             font-size: 13px;
-            transition: 0.3s;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: 0.2s;
         }
-        .action-btn:hover { background: #b5952f; }
-        
-        #loader { text-align: center; margin-top: 50px; color: #666; }
-        
-        /* แถบนำทางเวลากดเข้าไปในเรื่อง */
-        #breadcrumb { text-align: center; margin-bottom: 20px; font-size: 16px; color: #555; display: none; }
-        .folder-link { color: #d4af37; cursor: pointer; text-decoration: underline; font-weight: bold; }
+        .card:hover .btn-view { background: #d4af37; color: #fff; border-color: #d4af37; }
+
+        #breadcrumb { margin-bottom: 30px; font-size: 15px; color: #64748b; display: none; }
+        .crumb-link { color: #d4af37; cursor: pointer; font-weight: 600; text-decoration: none; }
     </style>
 </head>
 <body>
 
     <div class="header-area">
-        <a href="categories.html" class="back-btn" id="main-back">⬅ กลับหน้าหมวดหมู่หลัก</a>
-        <h1 id="category-name">กำลังโหลด...</h1>
+        <a href="categories.html" class="back-btn" id="btn-back">⬅ กลับหน้าหมวดหมู่หลัก</a>
+        <h1 id="cat-title">กำลังค้นหา...</h1>
         <div id="breadcrumb">
-            <span class="folder-link" onclick="renderFolders()">หมวดหมู่หลัก</span> > <span id="current-folder-name"></span>
+            <span class="crumb-link" onclick="location.reload()">หมวดหมู่หลัก</span> / <span id="folder-name"></span>
         </div>
     </div>
 
-    <div id="loader">กำลังจัดเรียงหนังสือ...</div>
-    <div class="grid-container" id="display-area"></div>
+    <div class="grid-container" id="main-grid"></div>
 
     <script>
         const params = new URLSearchParams(window.location.search);
         const catKey = params.get('cat');
         const catName = params.get('name') || 'คลังหนังสือ';
         
-        document.getElementById('category-name').innerText = catName;
+        document.getElementById('cat-title').innerText = catName;
         
-        let allBooksInCat = [];
-        let groupedByFolder = {};
+        let groupedData = { folders: {}, singles: [] };
 
-        // 1. ดึงข้อมูล
         fetch('database.json')
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
-                document.getElementById('loader').style.display = 'none';
-                
-                // กรองเฉพาะหมวดนี้
-                allBooksInCat = data.filter(book => book.url.includes(catKey));
+                const books = data.filter(b => b.url.includes(catKey));
 
-                if (allBooksInCat.length === 0) {
-                    document.getElementById('display-area').innerHTML = '<p style="grid-column: 1/-1; text-align: center;">ไม่มีหนังสือในหมวดหมู่นี้</p>';
-                    return;
-                }
-
-                // 2. จัดกลุ่มตามโฟลเดอร์ (ดึงชื่อแฟ้มจาก URL)
-                groupedByFolder = {};
-                allBooksInCat.forEach(book => {
-                    // หาว่าหนังสือนี้อยู่ใน sub-folder อะไร
-                    // สมมติ URL: .../2_Thai_Novel/เพชรพระอุมา/เล่ม1.pdf
+                // จัดกลุ่มข้อมูล
+                books.forEach(book => {
                     const parts = book.url.split(catKey + '/');
                     if (parts.length > 1) {
-                        const subPath = parts[1].split('/');
-                        if (subPath.length > 1) {
-                            // มีโฟลเดอร์ย่อย (เช่น "เพชรพระอุมา")
-                            const folderName = decodeURIComponent(subPath[0]);
-                            if (!groupedByFolder[folderName]) {
-                                groupedByFolder[folderName] = [];
-                            }
-                            groupedByFolder[folderName].push(book);
+                        const pathNodes = parts[1].split('/');
+                        if (pathNodes.length > 1) {
+                            // เป็นโฟลเดอร์
+                            const fName = decodeURIComponent(pathNodes[0]);
+                            if (!groupedData.folders[fName]) groupedData.folders[fName] = [];
+                            groupedData.folders[fName].push(book);
                         } else {
-                            // ไม่มีโฟลเดอร์ย่อย (อยู่หน้าตาเปล่าๆ)
-                            if (!groupedByFolder["เล่มเดี่ยว"]) {
-                                groupedByFolder["เล่มเดี่ยว"] = [];
-                            }
-                            groupedByFolder["เล่มเดี่ยว"].push(book);
+                            // เป็นเล่มเดี่ยว
+                            groupedData.singles.push(book);
                         }
                     }
                 });
 
-                // 3. แสดงผลหน้าแรก (โชว์เป็นโฟลเดอร์เรื่องต่างๆ)
-                renderFolders();
-            })
-            .catch(err => {
-                document.getElementById('loader').innerText = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
-                console.error(err);
+                renderMainView();
             });
 
-        // ฟังก์ชันโชว์หน้ารวมแฟ้ม (เรื่องต่างๆ)
-        function renderFolders() {
-            const display = document.getElementById('display-area');
-            display.innerHTML = '';
+        function renderMainView() {
+            const grid = document.getElementById('main-grid');
+            grid.innerHTML = '';
             document.getElementById('breadcrumb').style.display = 'none';
-            document.getElementById('main-back').style.display = 'inline-block';
+            document.getElementById('btn-back').style.display = 'inline-block';
 
-            const folderNames = Object.keys(groupedByFolder);
-
-            // ถ้ามีแต่เล่มเดี่ยวๆ ไม่มีแฟ้มเลย ให้โชว์หนังสือไปเลย
-            if (folderNames.length === 1 && folderNames[0] === "เล่มเดี่ยว") {
-                renderBooks(groupedByFolder["เล่มเดี่ยว"]);
-                return;
-            }
-
-            folderNames.forEach(folder => {
-                const count = groupedByFolder[folder].length;
+            // 1. แสดงโฟลเดอร์ก่อน
+            Object.keys(groupedData.folders).forEach(fName => {
+                const count = groupedData.folders[fName].length;
                 const card = document.createElement('div');
                 card.className = 'card';
-                card.onclick = () => showBooksInFolder(folder);
-                
+                card.onclick = () => renderFolderContent(fName);
                 card.innerHTML = `
-                    <div class="folder-cover">
-                        <div class="folder-icon">📁</div>
-                        <div class="folder-text">${folder}</div>
-                        <div style="font-size: 12px; margin-top: 5px; color:#bdc3c7;">มี ${count} เล่ม</div>
-                    </div>
-                    <div class="card-info">
-                        <div class="card-title">${folder}</div>
-                        <span class="action-btn" style="background: #34495e;">เปิดดูแฟ้ม</span>
+                    <div class="cover-box"><div class="folder-box"><div class="folder-icon">📁</div><div style="font-size:14px">${count} เล่ม</div></div></div>
+                    <div class="info-box">
+                        <div class="title-text">${fName}</div>
+                        <div class="btn-view">เปิดชุดหนังสือ</div>
                     </div>
                 `;
-                display.appendChild(card);
+                grid.appendChild(card);
             });
+
+            // 2. แสดงเล่มเดี่ยวต่อท้าย
+            groupedData.singles.forEach(book => renderBookCard(book, grid));
         }
 
-        // ฟังก์ชันโชว์หนังสือข้างในแฟ้ม
-        function showBooksInFolder(folderName) {
-            document.getElementById('main-back').style.display = 'none';
+        function renderFolderContent(fName) {
+            const grid = document.getElementById('main-grid');
+            grid.innerHTML = '';
+            document.getElementById('btn-back').style.display = 'none';
             document.getElementById('breadcrumb').style.display = 'block';
-            document.getElementById('current-folder-name').innerText = folderName;
-            
-            renderBooks(groupedByFolder[folderName]);
+            document.getElementById('folder-name').innerText = fName;
+
+            groupedData.folders[fName].forEach(book => renderBookCard(book, grid));
         }
 
-        // ฟังก์ชันวาดการ์ดหนังสือ (ปกขาวตัวหนังสือดำ)
-        function renderBooks(booksArray) {
-            const display = document.getElementById('display-area');
-            display.innerHTML = '';
+        function renderBookCard(book, container) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            
+            // ตรวจสอบรูปปก (สมมติว่าถ้ามีรูปปกจะเป็นไฟล์ชื่อเดียวกับ pdf แต่นามสกุล .jpg)
+            // ถ้าคุณยังไม่มีระบบเจนรูปปก โค้ดจะแสดง No-Cover (พื้นขาวชื่อดำ) อัตโนมัติ
+            const coverUrl = book.url.replace('.pdf', '.jpg'); 
 
-            booksArray.forEach(book => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                // ใช้ชื่อเรื่องมาใส่เป็นหน้าปกสีขาว
-                card.innerHTML = `
-                    <div class="cover-fallback">
-                        <div class="cover-text">${book.title}</div>
+            card.innerHTML = `
+                <div class="cover-box">
+                    <img src="${coverUrl}" class="cover-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="no-cover" style="display:none;">
+                        <div>${book.title}</div>
                     </div>
-                    <div class="card-info">
-                        <div class="card-title" title="${book.title}">${book.title}</div>
-                        <a href="${book.url}" class="action-btn" target="_blank">📖 เปิดอ่าน</a>
-                    </div>
-                `;
-                display.appendChild(card);
-            });
+                </div>
+                <div class="info-box">
+                    <div class="title-text" title="${book.title}">${book.title}</div>
+                    <a href="${book.url}" class="btn-btn-view" target="_blank" style="text-decoration:none">
+                        <div class="btn-view">📖 อ่านเล่มนี้</div>
+                    </a>
+                </div>
+            `;
+            card.onclick = (e) => {
+                if(e.target.tagName !== 'A') window.open(book.url, '_blank');
+            };
+            container.appendChild(card);
         }
     </script>
 </body>

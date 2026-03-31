@@ -1,52 +1,75 @@
 import os
 import json
 
-# 1. รายชื่อหมวดหมู่ (ต้องสะกดให้ตรงกับชื่อโฟลเดอร์จริง)
-categories = [
+# สคริปต์เวอร์ชัน "ค้นหาอัตโนมัติ" - ไม่ต้องระบุชื่อโฟลเดอร์เป๊ะๆ
+db_data = {}
+
+# รายชื่อหมวดหมู่หลักที่คุณต้องการให้โชว์บนหน้าเว็บ (เอาแค่หัวข้อหลัก)
+main_categories = [
     "1_PetchPraUma",
     "2_Thai_Novel",
     "3_English_Translated",
     "4_Chinese_Novel",
-    "5_HowTo_Religion_Science",
-    "6_Pending_Sort"
+    "5_HowTo_Religion",
+    "5_HowTo_Religion_Science"
 ]
 
-db_data = {}
+def scan_files(target_path):
+    """กวาดไฟล์ PDF/EPUB ทั้งหมดในโฟลเดอร์ที่กำหนด (รวมโฟลเดอร์ย่อย)"""
+    found_files = []
+    for root, dirs, files in os.walk(target_path):
+        for file in files:
+            if file.lower().endswith(('.pdf', '.epub')):
+                found_files.append(file.strip())
+    return sorted(list(set(found_files)))
 
-for cat in categories:
-    cat_path = cat
-    if not os.path.exists(cat_path):
-        db_data[cat] = []
+# เริ่มต้นการกวาดข้อมูล
+print("🚀 เริ่มต้นการกวาดข้อมูลหนังสือทั้งหมด...")
+
+# หาตำแหน่งโฟลเดอร์หลัก (เช็คทั้งข้างนอก และใน mybook/)
+base_paths = [".", "mybook"]
+
+for cat_name in main_categories:
+    found_path = None
+    for bp in base_paths:
+        test_path = os.path.join(bp, cat_name)
+        if os.path.exists(test_path):
+            found_path = test_path
+            break
+    
+    if not found_path:
+        print(f"⚠️ ไม่พบหมวด: {cat_name} (ข้าม)")
+        db_data[cat_name] = []
         continue
 
-    items = os.listdir(cat_path)
-    # คัดกรองเฉพาะโฟลเดอร์ย่อยจริงๆ
-    subfolders = [f for f in items if os.path.isdir(os.path.join(cat_path, f))]
-
+    print(f"📂 กำลังนับสต็อกใน: {found_path}...")
+    
+    # ดูว่าข้างในมีโฟลเดอร์ย่อย (เช่น ttt ล่องไพร) ไหม
+    subfolders = [d for d in os.listdir(found_path) if os.path.isdir(os.path.join(found_path, d))]
+    
     if not subfolders:
-        # กรณีไม่มีโฟลเดอร์ย่อย: ลบช่องว่างหน้าหลัง และเรียงลำดับตามตัวอักษร
-        files = sorted([f.strip() for f in items if f.lower().endswith(('.pdf', '.epub'))])
-        db_data[cat] = files
+        # ถ้าไม่มีโฟลเดอร์ย่อย (เหมือนเพชรพระอุมา)
+        db_data[cat_name] = scan_files(found_path)
     else:
-        # กรณีมีโฟลเดอร์ย่อย: สร้างพจนานุกรมเก็บไฟล์แยกตามโฟลเดอร์
+        # ถ้ามีโฟลเดอร์ย่อย (เช่น นิยายไทยที่มี ttt นำหน้า)
         cat_dict = {}
-        for folder in sorted(subfolders):
-            folder_path = os.path.join(cat_path, folder)
-            files = sorted([f.strip() for f in os.listdir(folder_path) if f.lower().endswith(('.pdf', '.epub'))])
+        for sub in subfolders:
+            sub_path = os.path.join(found_path, sub)
+            files = scan_files(sub_path)
             if files:
-                cat_dict[folder.strip()] = files
+                cat_dict[sub.strip()] = files
         
-        # เก็บไฟล์ที่อยู่นอกโฟลเดอร์ย่อย (ถ้ามี)
-        root_files = sorted([f.strip() for f in items if os.path.isfile(os.path.join(cat_path, f)) and f.lower().endswith(('.pdf', '.epub'))])
+        # เก็บไฟล์ที่หลุดอยู่นอกโฟลเดอร์ย่อย
+        root_files = [f for f in os.listdir(found_path) if os.path.isfile(os.path.join(found_path, f)) and f.lower().endswith(('.pdf', '.epub'))]
         if root_files:
-            cat_dict["Other_Files"] = root_files
+            cat_dict["Other_Files"] = sorted(list(set(root_files)))
             
-        db_data[cat] = cat_dict
+        db_data[cat_name] = cat_dict
 
 # บันทึกไฟล์
 try:
     with open('database.json', 'w', encoding='utf-8') as f:
         json.dump(db_data, f, ensure_ascii=False, indent=4)
-    print("✅ database.json อัปเดตรายชื่อหนังสือเรียบร้อย!")
+    print("\n✅ สำเร็จ! ตอนนี้เปิด database.json แล้วหาคำว่า 'ล่องไพร' ได้เลยครับ!")
 except Exception as e:
-    print(f"❌ Error: {e}")
+    print(f"\n❌ ข้อผิดพลาด: {e}")

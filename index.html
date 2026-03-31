@@ -2,26 +2,61 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>My Book Store</title>
-    </head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Book Store - Login</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; }
+        .login-container { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    </style>
+</head>
 <body>
-    <script type="module">
-        // --- ส่วนที่ Import Firebase ต่างๆ (ห้ามหาย) ---
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-        // ... ค่า config ของคุณ ...
-        const auth = getAuth(app);
+<div class="login-container">
+    <h2>เข้าสู่ระบบ My Book</h2>
+    <input type="email" id="email" placeholder="อีเมล"><br><br>
+    <input type="password" id="password" placeholder="รหัสผ่าน"><br><br>
+    <button id="loginBtn">เข้าสู่ระบบ</button>
+</div>
 
-        // --- วางโค้ดที่ผมให้ไว้ ตรงนี้ครับ! ---
-        onAuthStateChanged(auth, (user) => {
-            if (user && user.emailVerified) {
-                window.location.href = 'categories.html';
-            }
-        });
-        // ----------------------------------
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-        // ... โค้ดปุ่ม Login เดิมของคุณ ...
-    </script>
+    // --- วาง Firebase Config ของคุณรันนราตรงนี้ ---
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_AUTH_DOMAIN",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // --- ส่วนเช็คการล็อกอินค้างไว้ ---
+    onAuthStateChanged(auth, (user) => {
+        if (user && user.emailVerified) {
+            console.log("เข้าสู่ระบบอยู่แล้ว:", user.email);
+            window.location.href = 'categories.html';
+        }
+    });
+
+    // โค้ดปุ่ม Login
+    document.getElementById('loginBtn').addEventListener('click', () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                if(userCredential.user.emailVerified) {
+                    window.location.href = 'categories.html';
+                } else {
+                    alert("กรุณายืนยันอีเมลก่อนครับ");
+                }
+            })
+            .catch((error) => alert(error.message));
+    });
+</script>
 </body>
 </html>

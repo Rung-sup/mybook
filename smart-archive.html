@@ -215,43 +215,45 @@
 
 
         async function loadBooks() {
-            try {
-                const response = await fetch("https://rung-sup.github.io/mybook/database.json");
-                const data = await response.json();
-                const catData = data[categoryKey] || [];
-                
-                allBooks = [];
-                
-                if (Array.isArray(catData)) {
-                    // กรณีเป็น Array (เช่น เพชรพระอุมา)
-                    catData.forEach(name => {
-                        allBooks.push({
-                            id: name.replace(/\s+/g, '-'),
-                            name: name,
-                            folder: "",
-                            mimeType: name.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf'
-                        });
+    try {
+        const response = await fetch("https://rung-sup.github.io/mybook/database.json");
+        const data = await response.json();
+        const catData = data[categoryKey] || [];
+        
+        allBooks = [];
+        
+        // ตรวจสอบว่าข้อมูลเป็นแบบรายการยาว (Array) หรือแบบโฟลเดอร์ซ้อน (Object)
+        if (Array.isArray(catData)) {
+            // กรณีเป็น Array (เช่น เพชรพระอุมา)
+            catData.forEach(name => {
+                allBooks.push({
+                    id: name.replace(/\s+/g, '-'),
+                    name: name,
+                    folder: "",
+                    mimeType: name.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf'
+                });
+            });
+        } else {
+            // กรณีเป็น Object/Folder (เช่น นิยายไทย)
+            Object.keys(catData).forEach(subFolder => {
+                catData[subFolder].forEach(fileName => {
+                    allBooks.push({
+                        id: (subFolder + '-' + fileName).replace(/\s+/g, '-'),
+                        name: fileName,
+                        folder: subFolder,
+                        mimeType: fileName.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf'
                     });
-                } else {
-                    // กรณีเป็น Object/Folder (เช่น นิยายไทย)
-                    Object.keys(catData).forEach(subFolder => {
-                        catData[subFolder].forEach(fileName => {
-                            allBooks.push({
-                                id: (subFolder + '-' + fileName).replace(/\s+/g, '-'),
-                                name: fileName,
-                                folder: subFolder,
-                                mimeType: fileName.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf'
-                            });
-                        });
-                    });
-                }
-                
-                displayBooks(allBooks);
-                displayMyShelf();
-            } catch (e) {
-                document.getElementById('book-list').innerHTML = 'ไม่พบข้อมูลหนังสือในหมวดนี้';
-            }
+                });
+            });
         }
+        
+        displayBooks(allBooks);
+        displayMyShelf();
+    } catch (e) {
+        console.error("Load Error:", e);
+        document.getElementById('book-list').innerHTML = 'ไม่พบข้อมูลหนังสือในหมวดนี้';
+    }
+}
 
 
 

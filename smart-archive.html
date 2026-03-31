@@ -314,33 +314,27 @@
 
 
         async function generateThumbnail(file, cat, imgId) {
-
-            const pdfUrl = `https://rung-sup.github.io/mybook/${cat}/${encodeURIComponent(file.name)}`;
-
+            // ปรับ URL ให้รองรับ Folder ย่อย
+            const path = file.folder ? encodeURIComponent(file.folder) + '/' : '';
+            const pdfUrl = `https://rung-sup.github.io/mybook/${cat}/${path}${encodeURIComponent(file.name)}`;
+            
             try {
-
                 const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
-
                 const page = await pdf.getPage(1);
-
                 const viewport = page.getViewport({ scale: 0.2 });
-
                 const thumbCanvas = document.createElement('canvas');
-
                 const thumbCtx = thumbCanvas.getContext('2d');
-
                 thumbCanvas.height = viewport.height;
-
                 thumbCanvas.width = viewport.width;
-
                 await page.render({ canvasContext: thumbCtx, viewport: viewport }).promise;
-
+                
                 const img = document.getElementById(imgId);
-
                 if(img) img.src = thumbCanvas.toDataURL();
-
-            } catch (e) { console.error("Thumb error", e); }
-
+            } catch (e) { 
+                // ส่วนเสริม: ถ้าไม่มีหน้าปก ให้เปลี่ยนเป็นสีพื้นพร้อมชื่อเรื่อง (Optional)
+                const img = document.getElementById(imgId);
+                if(img) img.src = `https://via.placeholder.com/200x300/2c3e50/ffffff?text=${encodeURIComponent(file.name.substring(0,20))}`;
+            }
         }
 
 
@@ -405,7 +399,7 @@
 
             const isEpub = file.mimeType === 'application/epub+zip';
 
-            const bookUrl = `https://rung-sup.github.io/mybook/${cat}/${encodeURIComponent(file.name)}`;
+            const bookUrl = `https://rung-sup.github.io/mybook/${cat}/${path}${encodeURIComponent(file.name)}`;
 
            
 

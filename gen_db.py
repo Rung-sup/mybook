@@ -1,7 +1,6 @@
 import os
 import json
 
-# ตั้งชื่อหมวดหมู่ให้ตรงกับใน GitHub และ categories.html
 categories = [
     "1_PetchPraUma",
     "2_Thai_Novel",
@@ -19,33 +18,30 @@ for cat in categories:
         db_data[cat] = []
         continue
 
-    # 1. กวาดรายชื่อโฟลเดอร์ย่อย และใช้ .strip() เพื่อลบช่องว่างที่ชื่อโฟลเดอร์
+    # กวาดชื่อโฟลเดอร์ย่อยและลบช่องว่างทิ้ง
     subfolders = [f for f in os.listdir(cat_path) if os.path.isdir(os.path.join(cat_path, f))]
 
     if not subfolders:
-        # กรณีไม่มีโฟลเดอร์ย่อย (แบบ Array) - ลบช่องว่างที่ชื่อไฟล์ด้วย .strip()
+        # ลบช่องว่างที่ชื่อไฟล์ในระดับหมวด
         files = [f.strip() for f in os.listdir(cat_path) if f.lower().endswith(('.pdf', '.epub'))]
-        db_data[cat] = sorted(files)
+        db_data[cat] = sorted(list(set(files))) # set ช่วยกำจัดชื่อซ้ำที่เกิดจากช่องว่าง
     else:
-        # กรณีมีโฟลเดอร์ย่อย (แบบ Object)
         cat_dict = {}
         for folder in subfolders:
             folder_path = os.path.join(cat_path, folder)
             # ลบช่องว่างที่ชื่อไฟล์ในโฟลเดอร์ย่อย
             files = [f.strip() for f in os.listdir(folder_path) if f.lower().endswith(('.pdf', '.epub'))]
             if files:
-                # ใช้ชื่อโฟลเดอร์ที่ลบช่องว่างแล้วเป็น Key
-                cat_dict[folder.strip()] = sorted(files)
+                cat_dict[folder.strip()] = sorted(list(set(files)))
         
-        # กวาดไฟล์ที่อยู่นอกโฟลเดอร์ย่อย (ถ้ามี)
+        # กวาดไฟล์ที่อยู่นอกโฟลเดอร์ย่อย
         root_files = [f.strip() for f in os.listdir(cat_path) if os.path.isfile(os.path.join(cat_path, f)) and f.lower().endswith(('.pdf', '.epub'))]
         if root_files:
-            cat_dict["Other_Files"] = sorted(root_files)
+            cat_dict["Other_Files"] = sorted(list(set(root_files)))
             
         db_data[cat] = cat_dict
 
-# บันทึกเป็นไฟล์ database.json โดยใช้ UTF-8 เพื่อรองรับภาษาไทย
 with open('database.json', 'w', encoding='utf-8') as f:
     json.dump(db_data, f, ensure_ascii=False, indent=4)
 
-print("สร้างไฟล์ database.json ฉบับคลีนช่องว่างเรียบร้อยแล้วครับ!")
+print("ล้างช่องว่างและสร้าง database.json ใหม่เรียบร้อยแล้วครับ!")

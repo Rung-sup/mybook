@@ -202,26 +202,31 @@
         // 2. ฟังก์ชันโหลดข้อมูล (รองรับทั้ง Array และ Folder ย่อย)
         async function loadBooks() {
             try {
-                const response = await fetch("https://rung-sup.github.io/mybook/database.json");
+                // เพิ่ม Timestamp เล็กน้อยเพื่อให้ Browser โหลดไฟล์ใหม่เสมอ ไม่จำของเก่า
+                const response = await fetch("https://rung-sup.github.io/mybook/database.json?v=" + new Date().getTime());
                 const data = await response.json();
                 const catData = data[categoryKey] || [];
                 
                 allBooks = [];
                 
                 if (Array.isArray(catData)) {
+                    // กรณี 1: รายการไฟล์ยาว (เช่น เพชรพระอุมา)
                     catData.forEach(name => {
                         allBooks.push({
-                            id: name.replace(/\s+/g, '-'),
+                            // สร้าง ID จากชื่อไฟล์โดยตรง (ป้องกันปัญหาชื่อภาษาไทยและช่องว่าง)
+                            id: btoa(unescape(encodeURIComponent(name))), 
                             name: name,
                             folder: "",
                             mimeType: name.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf'
                         });
                     });
                 } else {
+                    // กรณี 2: โครงสร้างที่มีโฟลเดอร์ย่อย (เช่น นิยายไทย)
                     Object.keys(catData).forEach(subFolder => {
                         catData[subFolder].forEach(fileName => {
                             allBooks.push({
-                                id: (subFolder + '-' + fileName).replace(/\s+/g, '-'),
+                                // สร้าง ID จากชื่อโฟลเดอร์บวกกับชื่อไฟล์
+                                id: btoa(unescape(encodeURIComponent(subFolder + fileName))),
                                 name: fileName,
                                 folder: subFolder,
                                 mimeType: fileName.toLowerCase().endsWith('.epub') ? 'application/epub+zip' : 'application/pdf'
@@ -234,7 +239,7 @@
                 displayMyShelf();
             } catch (e) {
                 console.error("Load Error:", e);
-                document.getElementById('book-list').innerHTML = 'ไม่พบข้อมูลหนังสือในหมวดนี้';
+                document.getElementById('book-list').innerHTML = 'ไม่พบข้อมูลหนังสือในหมวดนี้ หรือโหลดข้อมูลไม่สำเร็จ';
             }
         }
 

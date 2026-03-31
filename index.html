@@ -1,7 +1,3 @@
-Update index.html
-1d4f756
-index.html
-@@ -1,128 +1,17 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -9,34 +5,119 @@ index.html
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ - Reader App</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .login-container { background-color: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
         .logo { font-size: 32px; font-weight: 600; color: #333; margin-bottom: 10px; }
         .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
-        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group { margin-bottom: 15px; text-align: left; }
         .input-group input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.3s; }
         .input-group input:focus { border-color: #764ba2; }
-        .btn-login { width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; transition: background 0.3s; margin-bottom: 20px; }
+        .btn-login { width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
         .btn-login:hover { background: #667eea; }
-        .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #999; }
-        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
-        .divider:not(:empty)::before { margin-right: .25em; }
-        .divider:not(:empty)::after { margin-left: .25em; }
-        .google-btn-container { display: flex; justify-content: center; margin-bottom: 20px; }
-        .register-link { color: #666; font-size: 14px; }
-        .register-link a { color: #764ba2; text-decoration: none; font-weight: 500; }
-        .register-link a:hover { text-decoration: underline; }
+        .register-link { color: #666; font-size: 14px; margin-top: 20px; }
+        .register-link a { color: #764ba2; text-decoration: none; font-weight: 500; cursor: pointer; }
+        #error-msg { color: #ff4d4d; font-size: 13px; margin-top: 10px; min-height: 1.2em; }
     </style>
 </head>
 <body>
 
     <div class="login-container">
         <div class="logo">📚 My Reader</div>
-        <div class="subtitle">เข้าสู่ระบบเพื่อเริ่มอ่านนิยายเรื่องโปรดของคุณ</div>
+        <div id="form-title" class="subtitle">เข้าสู่ระบบเพื่อเริ่มอ่านนิยายเรื่องโปรดของคุณ</div>
 
         <div class="input-group">
-            <input type="email" placeholder="อีเมลของคุณ" id="loginEmail">
+            <input type="email" placeholder="อีเมลของคุณ" id="userEmail">
+        </div>
+        <div class="input-group">
+            <input type="password" placeholder="รหัสผ่าน" id="userPassword">
+        </div>
+
+        <button class="btn-login" id="mainBtn">เข้าสู่ระบบ</button>
+
+        <div class="register-link">
+            <span id="switchText">ยังไม่มีบัญชี?</span> 
+            <a id="switchBtn">ลงทะเบียนใหม่</a>
+        </div>
+        <p id="error-msg"></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        // --- Firebase Config ของคุณรันนรา ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+          authDomain: "myreaderapp-89e75.firebaseapp.com",
+          projectId: "myreaderapp-89e75",
+          storageBucket: "myreaderapp-89e75.firebasestorage.app",
+          messagingSenderId: "1016151043482",
+          appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        let isLoginMode = true;
+        const mainBtn = document.getElementById('mainBtn');
+        const switchBtn = document.getElementById('switchBtn');
+        const errorMsg = document.getElementById('error-msg');
+
+        // 1. ตรวจสอบการล็อกอินค้างไว้ (จดจำผู้ใช้)
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.emailVerified) {
+                window.location.href = 'categories.html';
+            }
+        });
+
+        // 2. สลับโหมด Login / Register
+        switchBtn.addEventListener('click', () => {
+            isLoginMode = !isLoginMode;
+            document.getElementById('form-title').innerText = isLoginMode ? "เข้าสู่ระบบเพื่อเริ่มอ่านนิยายเรื่องโปรดของคุณ" : "สร้างบัญชีใหม่เพื่อเข้าใช้งานระบบ";
+            mainBtn.innerText = isLoginMode ? "เข้าสู่ระบบ" : "ลงทะเบียน";
+            document.getElementById('switchText').innerText = isLoginMode ? "ยังไม่มีบัญชี?" : "มีบัญชีอยู่แล้ว?";
+            switchBtn.innerText = isLoginMode ? "ลงทะเบียนใหม่" : "เข้าสู่ระบบ";
+            errorMsg.innerText = "";
+        });
+
+        // 3. จัดการปุ่มกด
+        mainBtn.addEventListener('click', () => {
+            const email = document.getElementById('userEmail').value;
+            const password = document.getElementById('userPassword').value;
+
+            if (!email || !password) {
+                errorMsg.innerText = "กรุณากรอกข้อมูลให้ครบถ้วนครับ";
+                return;
+            }
+
+            if (isLoginMode) {
+                signInWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        if (userCredential.user.emailVerified) {
+                            window.location.href = 'categories.html';
+                        } else {
+                            errorMsg.innerText = "กรุณายืนยันอีเมลในกล่องจดหมายก่อนครับ";
+                        }
+                    })
+                    .catch(err => {
+                        errorMsg.innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+                    });
+            } else {
+                createUserWithEmailAndPassword(auth, email, password)
+                    .then((userCredential) => {
+                        sendEmailVerification(userCredential.user);
+                        alert("ลงทะเบียนสำเร็จ! กรุณาเช็คอีเมลเพื่อยืนยันตัวตนก่อนเข้าสู่ระบบครับ");
+                        isLoginMode = true;
+                        // คลิกปุ่มสลับกลับไปหน้า login
+                        switchBtn.click();
+                    })
+                    .catch(err => {
+                        errorMsg.innerText = "ข้อผิดพลาด: " + err.message;
+                    });
+            }
+        });
+    </script>
+</body>
+</html>

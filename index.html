@@ -1,78 +1,42 @@
+Update index.html
+1d4f756
+index.html
+@@ -1,128 +1,17 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Puk Library - Login</title>
+    <title>เข้าสู่ระบบ - Reader App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
-        h2 { color: #333; margin-bottom: 25px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; transition: background 0.3s; }
-        button:hover { background-color: #0056b3; }
-        #message { color: #d9534f; margin-top: 15px; font-size: 14px; }
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .login-container { background-color: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
+        .logo { font-size: 32px; font-weight: 600; color: #333; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        .input-group input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.3s; }
+        .input-group input:focus { border-color: #764ba2; }
+        .btn-login { width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; transition: background 0.3s; margin-bottom: 20px; }
+        .btn-login:hover { background: #667eea; }
+        .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #999; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
+        .divider:not(:empty)::before { margin-right: .25em; }
+        .divider:not(:empty)::after { margin-left: .25em; }
+        .google-btn-container { display: flex; justify-content: center; margin-bottom: 20px; }
+        .register-link { color: #666; font-size: 14px; }
+        .register-link a { color: #764ba2; text-decoration: none; font-weight: 500; }
+        .register-link a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <h2>เข้าสู่ระบบห้องสมุด Puk</h2>
-    <input type="email" id="email" placeholder="อีเมลของคุณ">
-    <input type="password" id="password" placeholder="รหัสผ่าน">
-    <button id="loginBtn">เข้าสู่ระบบ</button>
-    <div id="message"></div>
-</div>
+    <div class="login-container">
+        <div class="logo">📚 My Reader</div>
+        <div class="subtitle">เข้าสู่ระบบเพื่อเริ่มอ่านนิยายเรื่องโปรดของคุณ</div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-
-    // *** สำคัญ: คุณรันนราต้องเอา Firebase Config ของคุณมาวางแทนที่ตรงนี้ครับ ***
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_SENDER_ID",
-        appId: "YOUR_APP_ID"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    // 1. ตรวจสอบการล็อกอินค้างไว้ (ถ้าล็อกอินแล้วให้ไปหน้าหมวดหมู่ทันที)
-    onAuthStateChanged(auth, (user) => {
-        if (user && user.emailVerified) {
-            window.location.href = 'categories.html';
-        }
-    });
-
-    // 2. ฟังก์ชันการ Login
-    document.getElementById('loginBtn').addEventListener('click', () => {
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const messageDiv = document.getElementById('message');
-
-        if (!email || !password) {
-            messageDiv.innerText = "กรุณากรอกอีเมลและรหัสผ่านครับ";
-            return;
-        }
-
-        signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                if (userCredential.user.emailVerified) {
-                    window.location.href = 'categories.html';
-                } else {
-                    messageDiv.innerText = "กรุณายืนยันอีเมลก่อนเข้าใช้งานครับ";
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-                messageDiv.innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้องครับ";
-            });
-    });
-</script>
-
-</body>
-</html>
+        <div class="input-group">
+            <input type="email" placeholder="อีเมลของคุณ" id="loginEmail">

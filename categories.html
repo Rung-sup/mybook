@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
-
     body {
       margin: 0;
       background: #1a1a1a;
@@ -18,7 +17,6 @@
       min-height: 100vh;
       padding: 40px 20px;
     }
-
     h1 {
       color: #d4af37;
       margin-bottom: 30px;
@@ -26,7 +24,6 @@
       text-align: center;
       line-height: 1.4;
     }
-
     .category-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -34,7 +31,6 @@
       width: 100%;
       max-width: 420px;
     }
-
     .cat-card {
       padding: 22px;
       border-radius: 15px;
@@ -48,39 +44,32 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       user-select: none;
     }
-
     .cat-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 8px 20px rgba(212, 175, 87, 0.2);
     }
-
     .cat-petch {
       background: #2d472d;
       color: #d4af37;
       border-color: #d4af37;
     }
-
     .cat-thai {
       background: #3d2b1f;
       color: #e6ccb2;
     }
-
     .cat-translate {
       background: #2c3e50;
       color: #ecf0f1;
     }
-
     .cat-china {
       background: #800000;
       color: #ffd700;
       border-color: #ffd700;
     }
-
     .cat-howto {
       background: #ffffff;
       color: #333;
     }
-
     .cat-pending {
       background: #444;
       color: #bbb;
@@ -97,7 +86,7 @@
       💎 เพชรพระอุมา
     </div>
 
-    <div class="cat-card cat-thai" onclick="goToArchive('2_ThaiNovel', 'นิยายไทย', 'classic')">
+    <div class="cat-card cat-thai" onclick="goToArchive('2_Thai_Novel', 'นิยายไทย', 'classic')">
       📖 นิยายไทย
     </div>
 
@@ -109,12 +98,12 @@
       🐉 นิยายจีน
     </div>
 
-    <div class="cat-card cat-howto" onclick="goToArchive('5HowToReligionScience', 'วิชาการ & How-to', 'classic')">
-      💡 วิชาการ & How-to
+    <div class="cat-card cat-howto" onclick="goToArchive('5_HowTo_Religion', 'How-to / ศาสนา', 'classic')">
+      💡 How-to / ศาสนา
     </div>
 
-    <div class="cat-card cat-pending" onclick="goToArchive('6PendingSort', 'รอคัดแยก', 'classic')">
-      📂 รอคัดแยก (ไฟล์อื่นๆ)
+    <div class="cat-card cat-pending" onclick="goToArchive('6_HowTo_Religion_Science', 'วิชาการ / วิทยาศาสตร์', 'classic')">
+      📂 วิชาการ / วิทยาศาสตร์
     </div>
   </div>
 

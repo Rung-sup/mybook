@@ -7,7 +7,6 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
 
   <style>
@@ -113,7 +112,7 @@
 
     .book-name {
       font-size: 11px;
-      height: 32px;
+      height: 36px;
       overflow: hidden;
       font-weight: 500;
       line-height: 1.4;
@@ -135,10 +134,7 @@
     .reader-overlay {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       background: #222;
       z-index: 2000;
       flex-direction: column;
@@ -203,9 +199,7 @@
       transition: 0.2s;
     }
 
-    .nav-btn:active {
-      transform: scale(0.9);
-    }
+    .nav-btn:active { transform: scale(0.9); }
 
     .status-text {
       text-align: center;
@@ -282,7 +276,6 @@
     let currentBook = null;
     let rendition = null;
     let currentFileId = null;
-
     let pdfDoc = null;
     let pageNum = 1;
     let pageRendering = false;
@@ -291,54 +284,74 @@
     const canvas = document.getElementById("pdf-canvas");
     const ctx = canvas.getContext("2d");
 
-    const BASE_REPO_URL = "https://rung-sup.github.io/mybook";
+    const DB_URL = "./database.json";
+
+    function getMimeTypeFromUrl(url) {
+      const lower = url.toLowerCase();
+      if (lower.endsWith(".epub")) return "application/epub+zip";
+      return "application/pdf";
+    }
+
+    function getFileNameFromUrl(url) {
+      const cleanUrl = url.split("?")[0];
+      const parts = cleanUrl.split("/");
+      return decodeURIComponent(parts[parts.length - 1] || "");
+    }
+
+    function getFolderPathFromUrl(url, categoryKey) {
+      try {
+        const u = new URL(url);
+        const marker = `/${categoryKey}/`;
+        const idx = u.pathname.indexOf(marker);
+
+        if (idx === -1) return "";
+
+        const afterCategory = u.pathname.slice(idx + marker.length);
+        const parts = afterCategory.split("/").map(p => decodeURIComponent(p));
+        if (parts.length <= 1) return "";
+
+        parts.pop();
+        return parts.join("/");
+      } catch (e) {
+        return "";
+      }
+    }
 
     async function loadBooks() {
       try {
-        const response = await fetch(`${BASE_REPO_URL}/database.json?v=${Date.now()}`);
+        const response = await fetch(`${DB_URL}?v=${Date.now()}`);
         const data = await response.json();
-        const catData = data[categoryKey];
 
-        allBooks = [];
-
-        if (!catData) {
+        if (!Array.isArray(data)) {
           document.getElementById("book-list").innerHTML =
-            `<p class="status-text">ไม่พบข้อมูลหมวด <b>${categoryKey}</b> ใน database.json</p>`;
+            `<p class="status-text">database.json ต้องเป็นรายการแบบ array</p>`;
           return;
         }
 
-        if (Array.isArray(catData)) {
-          catData.forEach(name => {
-            allBooks.push({
-              id: btoa(unescape(encodeURIComponent(name))),
-              name: name,
-              folder: "",
-              mimeType: name.toLowerCase().endsWith(".epub")
-                ? "application/epub+zip"
-                : "application/pdf"
-            });
-          });
-        } else if (typeof catData === "object") {
-          Object.keys(catData).forEach(subFolder => {
-            catData[subFolder].forEach(fileName => {
-              allBooks.push({
-                id: btoa(unescape(encodeURIComponent(subFolder + "/" + fileName))),
-                name: fileName,
-                folder: subFolder,
-                mimeType: fileName.toLowerCase().endsWith(".epub")
-                  ? "application/epub+zip"
-                  : "application/pdf"
-              });
-            });
-          });
-        }
+        const marker = `/${categoryKey}/`;
+
+        allBooks = data
+          .filter(item => item && item.url && item.url.includes(marker))
+          .map(item => ({
+            id: btoa(unescape(encodeURIComponent(item.url))),
+            name: item.title || getFileNameFromUrl(item.url),
+            fileName: getFileNameFromUrl(item.url),
+            folder: getFolderPathFromUrl(item.url, categoryKey),
+            url: item.url,
+            mimeType: getMimeTypeFromUrl(item.url)
+          }));
 
         displayBooks(allBooks);
         displayMyShelf();
+
+        if (allBooks.length === 0) {
+          document.getElementById("book-list").innerHTML =
+            `<p class="status-text">ไม่พบหนังสือในหมวด ${categoryKey}<br>ตรวจว่าชื่อหมวดในปุ่มตรงกับ URL ใน database.json หรือไม่</p>`;
+        }
       } catch (e) {
         console.error("Load Error:", e);
         document.getElementById("book-list").innerHTML =
-          `<p class="status-text">โหลดข้อมูลไม่สำเร็จ กรุณาตรวจสอบ database.json หรือ path บน GitHub Pages</p>`;
+          `<p class="status-text">โหลดข้อมูลไม่สำเร็จ กรุณาตรวจสอบ database.json</p>`;
       }
     }
 
@@ -356,7 +369,7 @@
         listDiv.appendChild(card);
 
         if (file.mimeType === "application/pdf") {
-          generateThumbnail(file, categoryKey, `cover-${index}`);
+          generateThumbnail(file, `cover-${index}`);
         }
       });
     }
@@ -364,9 +377,7 @@
     function createBookCard(file, isShelf = false, index = 0) {
       const card = document.createElement("div");
       card.className = "book-card";
-
-      const cat = isShelf ? file.cat : categoryKey;
-      card.onclick = () => openBook(file, cat);
+      card.onclick = () => openBook(file);
 
       const hasBookmark = localStorage.getItem("bookmark-" + file.id);
       const imgId = isShelf ? `shelf-cover-${index}` : `cover-${index}`;
@@ -382,13 +393,8 @@
       return card;
     }
 
-    function buildBookUrl(file, cat) {
-      const path = file.folder ? `${encodeURIComponent(file.folder)}/` : "";
-      return `${BASE_REPO_URL}/${encodeURIComponent(cat)}/${path}${encodeURIComponent(file.name)}`;
-    }
-
-    async function generateThumbnail(file, cat, imgId) {
-      const pdfUrl = buildBookUrl(file, cat);
+    async function generateThumbnail(file, imgId) {
+      const pdfUrl = file.url;
 
       try {
         const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
@@ -428,12 +434,11 @@
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
-      const renderCtx = {
+      await page.render({
         canvasContext: ctx,
         viewport: viewport
-      };
+      }).promise;
 
-      await page.render(renderCtx).promise;
       pageRendering = false;
 
       if (pageNumPending !== null) {
@@ -446,19 +451,16 @@
     }
 
     function queueRenderPage(num) {
-      if (pageRendering) {
-        pageNumPending = num;
-      } else {
-        renderPDFPage(num);
-      }
+      if (pageRendering) pageNumPending = num;
+      else renderPDFPage(num);
     }
 
-    async function openBook(file, cat) {
-      addToRecent(file, cat);
+    async function openBook(file) {
+      addToRecent(file);
       currentFileId = file.id;
 
       const isEpub = file.mimeType === "application/epub+zip";
-      const bookUrl = buildBookUrl(file, cat);
+      const bookUrl = file.url;
 
       document.getElementById("reader-overlay").style.display = "flex";
       document.getElementById("book-title-display").innerText = file.name;
@@ -500,18 +502,16 @@
     }
 
     function prevPage() {
-      if (rendition) {
-        rendition.prev();
-      } else if (pdfDoc && pageNum > 1) {
+      if (rendition) rendition.prev();
+      else if (pdfDoc && pageNum > 1) {
         pageNum--;
         queueRenderPage(pageNum);
       }
     }
 
     function nextPage() {
-      if (rendition) {
-        rendition.next();
-      } else if (pdfDoc && pageNum < pdfDoc.numPages) {
+      if (rendition) rendition.next();
+      else if (pdfDoc && pageNum < pdfDoc.numPages) {
         pageNum++;
         queueRenderPage(pageNum);
       }
@@ -530,10 +530,10 @@
       displayBooks(allBooks);
     }
 
-    function addToRecent(file, cat) {
+    function addToRecent(file) {
       let recent = JSON.parse(localStorage.getItem("recentbooks") || "[]");
-      recent = recent.filter(b => b.name !== file.name);
-      recent.unshift({ ...file, cat: cat });
+      recent = recent.filter(b => b.url !== file.url);
+      recent.unshift(file);
 
       if (recent.length > 6) recent.pop();
       localStorage.setItem("recentbooks", JSON.stringify(recent));
@@ -542,7 +542,6 @@
     function displayMyShelf() {
       const shelfDiv = document.getElementById("shelf-list");
       const shelfSection = document.getElementById("my-shelf");
-
       let recent = JSON.parse(localStorage.getItem("recentbooks") || "[]");
 
       if (recent.length === 0) {
@@ -558,7 +557,7 @@
         shelfDiv.appendChild(card);
 
         if (file.mimeType === "application/pdf") {
-          generateThumbnail(file, file.cat, `shelf-cover-${index}`);
+          generateThumbnail(file, `shelf-cover-${index}`);
         }
       });
     }

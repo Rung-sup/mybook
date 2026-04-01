@@ -98,7 +98,8 @@
 
         async function loadBooks() {
             try {
-                const response = await fetch("database.json");
+               // เติม ?v= + เลขสุ่ม เพื่อบอกเบราว์เซอร์ว่า "นี่คือไฟล์ใหม่นะ ห้ามใช้ของเก่าในเครื่อง"
+const response = await fetch("database.json?v=" + new Date().getTime());
                 const data = await response.json();
                 
                 groupedData = { folders: {}, singles: [] };

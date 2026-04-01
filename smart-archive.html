@@ -33,7 +33,14 @@
         .book-info { padding: 8px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
         .book-name { font-size: 11px; height: 32px; overflow: hidden; font-weight: 500; line-height: 1.4; color: #333; }
         
-        .bookmark-badge { position: absolute; top: 5px; right: 5px; background: #d4af37; color: #fff; font-size: 9px; padding: 2px 6px; border-radius: 5px; z-index: 5; }
+        /* ป้ายสถานะการอ่าน */
+        .bookmark-badge { position: absolute; top: 5px; right: 5px; color: #fff; font-size: 9px; padding: 3px 6px; border-radius: 5px; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .badge-reading { background: #d4af37; } /* สีทอง: อ่านค้างไว้ */
+        .badge-finished { background: #27ae60; } /* สีเขียว: อ่านจบแล้ว */
+
+        /* ปุ่มลบหนังสือออกจากชั้น (รูปกากบาท) */
+        .delete-btn { position: absolute; top: 5px; left: 5px; background: rgba(231, 76, 60, 0.9); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; cursor: pointer; z-index: 10; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .delete-btn:hover { background: #c0392b; transform: scale(1.1); }
 
         /* ระบบเปิดอ่าน (Reader) */
         #reader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #222; z-index: 2000; flex-direction: column; }
@@ -59,7 +66,7 @@
     </div>
 
     <div id="my-shelf" class="my-shelf-section">
-        <div class="shelf-title">⭐ อ่านล่าสุด</div>
+        <div class="shelf-title">⭐ ชั้นหนังสือของฉัน (อ่านค้างไว้/อ่านจบแล้ว)</div>
         <div id="shelf-list" class="shelf-grid"></div>
     </div>
 
@@ -92,19 +99,24 @@
         let pdfDoc = null, pageNum = 1, currentFileId = null;
         const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-        // โหลดข้อมูลจาก database.json ตัวใหม่
+        // โหลดข้อมูลจาก database.json (พร้อมระบบกันหนังสือซ้ำ)
         async function loadBooks() {
             try {
                 const response = await fetch("database.json");
                 const data = await response.json();
                 
-                // กรองข้อมูลเฉพาะหมวดหมู่ที่เลือก
+                // ล้างค่าก่อนเสมอ
+                groupedData = { folders: {}, singles: [] };
+                
                 const catBooks = data.filter(book => book.url.includes(categoryKey));
+                const seenTitles = new Set(); // ตัวกันชื่อซ้ำ
 
-                // จัดกลุ่มเป็นโฟลเดอร์และเล่มเดี่ยว
                 catBooks.forEach(book => {
+                    if (seenTitles.has(book.title)) return;
+                    seenTitles.add(book.title);
+
                     const fileObj = {
-                        id: encodeURIComponent(book.title).replace(/%/g, ''), // สร้าง ID ภาษาไทย
+                        id: encodeURIComponent(book.title).replace(/%/g, ''),
                         name: book.title,
                         url: book.url,
                         mimeType: 'application/pdf'
@@ -133,14 +145,12 @@
             }
         }
 
-        // แสดงหน้าแรก (โฟลเดอร์ + เล่มเดี่ยว)
         function renderMainView() {
             const listDiv = document.getElementById('book-list');
             listDiv.innerHTML = '';
             document.getElementById('breadcrumb').style.display = 'none';
             document.getElementById('btn-back').style.display = 'inline-block';
 
-            // โชว์โฟลเดอร์
             Object.keys(groupedData.folders).forEach(folderName => {
                 const count = groupedData.folders[folderName].length;
                 const card = document.createElement('div');
@@ -156,14 +166,12 @@
                 listDiv.appendChild(card);
             });
 
-            // โชว์เล่มเดี่ยว
             groupedData.singles.forEach((file, index) => {
                 listDiv.appendChild(createBookCard(file, false, index));
                 generateThumbnail(file, index, false);
             });
         }
 
-        // แสดงหนังสือที่อยู่ในโฟลเดอร์
         function showBooksInFolder(folderName) {
             const listDiv = document.getElementById('book-list');
             listDiv.innerHTML = '';
@@ -173,27 +181,57 @@
 
             groupedData.folders[folderName].forEach((file, index) => {
                 listDiv.appendChild(createBookCard(file, false, index));
-                // เจนรูปปกจาก PDF เฉพาะเล่มที่เปิดโฟลเดอร์ดู (ป้องกันเว็บค้าง)
                 generateThumbnail(file, index, false);
             });
         }
 
-        // สร้างการ์ดหนังสือ
+        // สร้างการ์ดหนังสือ (เพิ่มระบบลบ และ ป้ายอ่านจบแล้ว)
         function createBookCard(file, isShelf = false, index = 0) {
             const card = document.createElement('div');
             card.className = 'book-card';
             card.onclick = () => openBook(file);
+            
             const hasBookmark = localStorage.getItem('bookmark-' + file.id);
+            const isFinished = localStorage.getItem('finished-' + file.id);
+            
+            // เช็คสถานะเพื่อติดป้าย
+            let badgeHtml = '';
+            if (isFinished === 'true') {
+                badgeHtml = '<div class="bookmark-badge badge-finished">อ่านจบแล้ว</div>';
+            } else if (hasBookmark) {
+                badgeHtml = '<div class="bookmark-badge badge-reading">อ่านค้างไว้</div>';
+            }
+
+            // ปุ่มลบหนังสือ (โชว์เฉพาะตอนอยู่บนชั้น My Shelf)
+            const deleteBtnHtml = isShelf ? `<div class="delete-btn" onclick="removeFromShelf(event, '${file.id}')" title="ลบออกจากชั้น">✖</div>` : '';
+
             const imgId = isShelf ? `shelf-cover-${file.id}` : `cover-${index}`;
             
             card.innerHTML = `
-                ${hasBookmark ? '<div class="bookmark-badge">อ่านค้างไว้</div>' : ''}
+                ${deleteBtnHtml}
+                ${badgeHtml}
                 <img id="${imgId}" src="https://via.placeholder.com/200x300?text=Loading..." class="book-cover">
                 <div class="book-info"><div class="book-name">${file.name}</div></div>`;
             return card;
         }
 
-        // ฟังก์ชันดึงรูปปกจาก PDF
+        // ฟังก์ชันลบหนังสือออกจากชั้นล่าสุด
+        function removeFromShelf(event, fileId) {
+            event.stopPropagation(); // หยุดไม่ให้เปิดหน้าอ่านหนังสือ
+            if(confirm('ต้องการนำหนังสือเล่มนี้ออกจากชั้นอ่านล่าสุดหรือไม่?')) {
+                // ลบออกจากรายการอ่านล่าสุด
+                let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
+                recent = recent.filter(b => b.id !== fileId);
+                localStorage.setItem('recent_books', JSON.stringify(recent));
+                
+                // ลบประวัติหน้าและสถานะจบ
+                localStorage.removeItem('bookmark-' + fileId);
+                localStorage.removeItem('finished-' + fileId);
+                
+                displayMyShelf(); // รีเฟรชชั้นหนังสือ
+            }
+        }
+
         async function generateThumbnail(file, index, isShelf) {
             const imgId = isShelf ? `shelf-cover-${file.id}` : `cover-${index}`;
             try {
@@ -211,7 +249,6 @@
             }
         }
 
-        // ฟังก์ชันเปิดหนังสืออ่าน
         async function openBook(file) {
             addToRecent(file);
             currentFileId = file.id;
@@ -230,7 +267,6 @@
             }
         }
 
-        // ฟังก์ชันแสดงผลหน้า PDF
         async function renderPDFPage(num) {
             const page = await pdfDoc.getPage(num);
             const vp = page.getViewport({ scale: 1.5 });
@@ -238,8 +274,15 @@
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
             document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
             
-            // บันทึกหน้าล่าสุด
+            // บันทึกหน้าที่กำลังอ่าน
             localStorage.setItem('bookmark-' + currentFileId, num);
+
+            // เช็คว่าอ่านถึงหน้าสุดท้ายหรือยัง
+            if (num >= pdfDoc.numPages) {
+                localStorage.setItem('finished-' + currentFileId, 'true');
+            } else {
+                localStorage.removeItem('finished-' + currentFileId); // เผื่อย้อนกลับมาอ่านใหม่
+            }
         }
 
         function prevPage() { if (pdfDoc && pageNum > 1) { pageNum--; renderPDFPage(pageNum); } }
@@ -248,8 +291,8 @@
         function closeBook() { 
             document.getElementById('reader-overlay').style.display = 'none'; 
             pdfDoc = null; 
-            displayMyShelf(); // อัปเดตชั้นหนังสือก่อน
-            // หาว่าตอนนี้อยู่ในโฟลเดอร์หรือหน้าหลัก เพื่อรีเฟรชหน้าถูก
+            displayMyShelf(); 
+            
             if(document.getElementById('breadcrumb').style.display === 'block') {
                 showBooksInFolder(document.getElementById('current-folder-name').innerText);
             } else {
@@ -257,17 +300,15 @@
             }
         }
 
-        // ระบบจัดเก็บอ่านล่าสุด
         function addToRecent(file) {
             let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
-            recent = [ { ...file, cat: categoryKey }, ...recent.filter(b => b.id !== file.id) ].slice(0, 6);
+            recent = [ { ...file, cat: categoryKey }, ...recent.filter(b => b.id !== file.id) ].slice(0, 10); // เก็บได้ 10 เล่ม
             localStorage.setItem('recent_books', JSON.stringify(recent));
         }
 
         function displayMyShelf() {
             const shelfDiv = document.getElementById('shelf-list'), shelfSection = document.getElementById('my-shelf');
             let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
-            // โชว์เฉพาะเล่มที่อยู่ในหมวดปัจจุบัน
             recent = recent.filter(b => b.cat === categoryKey);
             
             if (recent.length === 0) { shelfSection.style.display = 'none'; return; }
@@ -279,7 +320,6 @@
             });
         }
 
-        // เริ่มโหลดข้อมูล
         loadBooks();
     </script>
 </body>

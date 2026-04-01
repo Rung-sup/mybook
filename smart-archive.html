@@ -99,17 +99,20 @@
         let pdfDoc = null, pageNum = 1, currentFileId = null;
         const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-        // โหลดข้อมูลจาก database.json (พร้อมระบบกันหนังสือซ้ำ)
+        // โหลดข้อมูลจาก database.json
         async function loadBooks() {
             try {
                 const response = await fetch("database.json");
                 const data = await response.json();
                 
-                // ล้างค่าก่อนเสมอ
                 groupedData = { folders: {}, singles: [] };
                 
                 const catBooks = data.filter(book => book.url.includes(categoryKey));
-                const seenTitles = new Set(); // ตัวกันชื่อซ้ำ
+                const seenTitles = new Set();
+
+                // 🌟 หัวใจสำคัญ: สั่งจัดเรียงแบบ Natural Sort ก่อนนำไปโชว์
+                // (เลข 1, 2, 3... 10, 11 จะเรียงถูกต้อง ไม่เป็น 1, 10, 11, 2)
+                catBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true, sensitivity: 'base' }));
 
                 catBooks.forEach(book => {
                     if (seenTitles.has(book.title)) return;
@@ -151,7 +154,10 @@
             document.getElementById('breadcrumb').style.display = 'none';
             document.getElementById('btn-back').style.display = 'inline-block';
 
-            Object.keys(groupedData.folders).forEach(folderName => {
+            // 🌟 จัดเรียงชื่อโฟลเดอร์ด้วย เผื่อกรณีชื่อโฟลเดอร์มีตัวเลขกำกับ
+            const sortedFolders = Object.keys(groupedData.folders).sort((a, b) => a.localeCompare(b, 'th', { numeric: true, sensitivity: 'base' }));
+
+            sortedFolders.forEach(folderName => {
                 const count = groupedData.folders[folderName].length;
                 const card = document.createElement('div');
                 card.className = 'book-card';
@@ -179,13 +185,13 @@
             document.getElementById('breadcrumb').style.display = 'block';
             document.getElementById('current-folder-name').innerText = folderName;
 
+            // หนังสือในโฟลเดอร์จะถูกเรียงถูกต้องแล้วเพราะเราเรียงไว้ตั้งแต่ตอนโหลด (loadBooks)
             groupedData.folders[folderName].forEach((file, index) => {
                 listDiv.appendChild(createBookCard(file, false, index));
                 generateThumbnail(file, index, false);
             });
         }
 
-        // สร้างการ์ดหนังสือ (เพิ่มระบบลบ และ ป้ายอ่านจบแล้ว)
         function createBookCard(file, isShelf = false, index = 0) {
             const card = document.createElement('div');
             card.className = 'book-card';
@@ -194,7 +200,6 @@
             const hasBookmark = localStorage.getItem('bookmark-' + file.id);
             const isFinished = localStorage.getItem('finished-' + file.id);
             
-            // เช็คสถานะเพื่อติดป้าย
             let badgeHtml = '';
             if (isFinished === 'true') {
                 badgeHtml = '<div class="bookmark-badge badge-finished">อ่านจบแล้ว</div>';
@@ -202,9 +207,7 @@
                 badgeHtml = '<div class="bookmark-badge badge-reading">อ่านค้างไว้</div>';
             }
 
-            // ปุ่มลบหนังสือ (โชว์เฉพาะตอนอยู่บนชั้น My Shelf)
             const deleteBtnHtml = isShelf ? `<div class="delete-btn" onclick="removeFromShelf(event, '${file.id}')" title="ลบออกจากชั้น">✖</div>` : '';
-
             const imgId = isShelf ? `shelf-cover-${file.id}` : `cover-${index}`;
             
             card.innerHTML = `
@@ -215,20 +218,17 @@
             return card;
         }
 
-        // ฟังก์ชันลบหนังสือออกจากชั้นล่าสุด
         function removeFromShelf(event, fileId) {
-            event.stopPropagation(); // หยุดไม่ให้เปิดหน้าอ่านหนังสือ
+            event.stopPropagation();
             if(confirm('ต้องการนำหนังสือเล่มนี้ออกจากชั้นอ่านล่าสุดหรือไม่?')) {
-                // ลบออกจากรายการอ่านล่าสุด
                 let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
                 recent = recent.filter(b => b.id !== fileId);
                 localStorage.setItem('recent_books', JSON.stringify(recent));
                 
-                // ลบประวัติหน้าและสถานะจบ
                 localStorage.removeItem('bookmark-' + fileId);
                 localStorage.removeItem('finished-' + fileId);
                 
-                displayMyShelf(); // รีเฟรชชั้นหนังสือ
+                displayMyShelf();
             }
         }
 
@@ -274,14 +274,12 @@
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
             document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
             
-            // บันทึกหน้าที่กำลังอ่าน
             localStorage.setItem('bookmark-' + currentFileId, num);
 
-            // เช็คว่าอ่านถึงหน้าสุดท้ายหรือยัง
             if (num >= pdfDoc.numPages) {
                 localStorage.setItem('finished-' + currentFileId, 'true');
             } else {
-                localStorage.removeItem('finished-' + currentFileId); // เผื่อย้อนกลับมาอ่านใหม่
+                localStorage.removeItem('finished-' + currentFileId);
             }
         }
 
@@ -302,7 +300,7 @@
 
         function addToRecent(file) {
             let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
-            recent = [ { ...file, cat: categoryKey }, ...recent.filter(b => b.id !== file.id) ].slice(0, 10); // เก็บได้ 10 เล่ม
+            recent = [ { ...file, cat: categoryKey }, ...recent.filter(b => b.id !== file.id) ].slice(0, 10);
             localStorage.setItem('recent_books', JSON.stringify(recent));
         }
 

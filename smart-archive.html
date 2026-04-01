@@ -33,16 +33,13 @@
         .book-info { padding: 8px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
         .book-name { font-size: 11px; height: 32px; overflow: hidden; font-weight: 500; line-height: 1.4; color: #333; }
         
-        /* ป้ายสถานะการอ่าน */
         .bookmark-badge { position: absolute; top: 5px; right: 5px; color: #fff; font-size: 9px; padding: 3px 6px; border-radius: 5px; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .badge-reading { background: #d4af37; } /* สีทอง: อ่านค้างไว้ */
-        .badge-finished { background: #27ae60; } /* สีเขียว: อ่านจบแล้ว */
+        .badge-reading { background: #d4af37; }
+        .badge-finished { background: #27ae60; }
 
-        /* ปุ่มลบหนังสือออกจากชั้น (รูปกากบาท) */
         .delete-btn { position: absolute; top: 5px; left: 5px; background: rgba(231, 76, 60, 0.9); color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; cursor: pointer; z-index: 10; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .delete-btn:hover { background: #c0392b; transform: scale(1.1); }
 
-        /* ระบบเปิดอ่าน (Reader) */
         #reader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #222; z-index: 2000; flex-direction: column; }
         .reader-header { background: #111; color: #fff; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
         #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; justify-content: center; background: #333; padding: 10px; }
@@ -99,7 +96,6 @@
         let pdfDoc = null, pageNum = 1, currentFileId = null;
         const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-        // โหลดข้อมูลจาก database.json
         async function loadBooks() {
             try {
                 const response = await fetch("database.json");
@@ -108,18 +104,19 @@
                 groupedData = { folders: {}, singles: [] };
                 
                 const catBooks = data.filter(book => book.url.includes(categoryKey));
-                const seenTitles = new Set();
-
-                // 🌟 หัวใจสำคัญ: สั่งจัดเรียงแบบ Natural Sort ก่อนนำไปโชว์
-                // (เลข 1, 2, 3... 10, 11 จะเรียงถูกต้อง ไม่เป็น 1, 10, 11, 2)
+                
+                // 🌟 เรียงลำดับตัวเลขให้ถูกต้อง (1, 2, 3... 10)
                 catBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true, sensitivity: 'base' }));
 
+                const seenUrls = new Set(); // 🌟 เปลี่ยนมาเช็คซ้ำจาก URL แทนชื่อเรื่อง เพื่อให้หนังสือซีรีส์มาครบ
+
                 catBooks.forEach(book => {
-                    if (seenTitles.has(book.title)) return;
-                    seenTitles.add(book.title);
+                    if (seenUrls.has(book.url)) return;
+                    seenUrls.add(book.url);
 
                     const fileObj = {
-                        id: encodeURIComponent(book.title).replace(/%/g, ''),
+                        // ใช้ URL เป็น ID เพื่อความแม่นยำในการเก็บประวัติ
+                        id: btoa(encodeURIComponent(book.url)).substring(0, 20), 
                         name: book.title,
                         url: book.url,
                         mimeType: 'application/pdf'
@@ -144,7 +141,7 @@
                 displayMyShelf();
             } catch (e) { 
                 console.error(e);
-                document.getElementById('book-list').innerHTML = '<p style="grid-column: 1/-1; text-align: center;">ไม่พบข้อมูลหนังสือ หรือเกิดข้อผิดพลาด</p>'; 
+                document.getElementById('book-list').innerHTML = '<p style="grid-column: 1/-1; text-align: center;">ไม่พบข้อมูลหนังสือ</p>'; 
             }
         }
 
@@ -154,8 +151,7 @@
             document.getElementById('breadcrumb').style.display = 'none';
             document.getElementById('btn-back').style.display = 'inline-block';
 
-            // 🌟 จัดเรียงชื่อโฟลเดอร์ด้วย เผื่อกรณีชื่อโฟลเดอร์มีตัวเลขกำกับ
-            const sortedFolders = Object.keys(groupedData.folders).sort((a, b) => a.localeCompare(b, 'th', { numeric: true, sensitivity: 'base' }));
+            const sortedFolders = Object.keys(groupedData.folders).sort((a, b) => a.localeCompare(b, 'th', { numeric: true }));
 
             sortedFolders.forEach(folderName => {
                 const count = groupedData.folders[folderName].length;
@@ -185,7 +181,6 @@
             document.getElementById('breadcrumb').style.display = 'block';
             document.getElementById('current-folder-name').innerText = folderName;
 
-            // หนังสือในโฟลเดอร์จะถูกเรียงถูกต้องแล้วเพราะเราเรียงไว้ตั้งแต่ตอนโหลด (loadBooks)
             groupedData.folders[folderName].forEach((file, index) => {
                 listDiv.appendChild(createBookCard(file, false, index));
                 generateThumbnail(file, index, false);
@@ -207,7 +202,7 @@
                 badgeHtml = '<div class="bookmark-badge badge-reading">อ่านค้างไว้</div>';
             }
 
-            const deleteBtnHtml = isShelf ? `<div class="delete-btn" onclick="removeFromShelf(event, '${file.id}')" title="ลบออกจากชั้น">✖</div>` : '';
+            const deleteBtnHtml = isShelf ? `<div class="delete-btn" onclick="removeFromShelf(event, '${file.id}')">✖</div>` : '';
             const imgId = isShelf ? `shelf-cover-${file.id}` : `cover-${index}`;
             
             card.innerHTML = `
@@ -220,14 +215,12 @@
 
         function removeFromShelf(event, fileId) {
             event.stopPropagation();
-            if(confirm('ต้องการนำหนังสือเล่มนี้ออกจากชั้นอ่านล่าสุดหรือไม่?')) {
+            if(confirm('นำออกจากชั้นอ่านล่าสุด?')) {
                 let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
                 recent = recent.filter(b => b.id !== fileId);
                 localStorage.setItem('recent_books', JSON.stringify(recent));
-                
                 localStorage.removeItem('bookmark-' + fileId);
                 localStorage.removeItem('finished-' + fileId);
-                
                 displayMyShelf();
             }
         }
@@ -245,26 +238,21 @@
                 if(img) img.src = tCanvas.toDataURL();
             } catch (e) {
                 const img = document.getElementById(imgId);
-                if(img) img.src = "https://via.placeholder.com/200x300?text=No+Cover";
+                if(img) img.src = "https://via.placeholder.com/200x300?text=PDF";
             }
         }
 
         async function openBook(file) {
             addToRecent(file);
             currentFileId = file.id;
-            
             document.getElementById('reader-overlay').style.display = 'flex';
             document.getElementById('book-title-display').innerText = file.name;
-            document.getElementById('page-info').innerText = `กำลังโหลด...`;
-            
             try {
                 const loadingTask = pdfjsLib.getDocument(file.url);
                 pdfDoc = await loadingTask.promise;
                 pageNum = parseInt(localStorage.getItem('bookmark-' + currentFileId)) || 1;
                 renderPDFPage(pageNum);
-            } catch (e) {
-                document.getElementById('page-info').innerText = `เกิดข้อผิดพลาดในการเปิดไฟล์`;
-            }
+            } catch (e) { alert('ไม่สามารถเปิดไฟล์ได้'); }
         }
 
         async function renderPDFPage(num) {
@@ -273,9 +261,7 @@
             canvas.height = vp.height; canvas.width = vp.width;
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
             document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
-            
             localStorage.setItem('bookmark-' + currentFileId, num);
-
             if (num >= pdfDoc.numPages) {
                 localStorage.setItem('finished-' + currentFileId, 'true');
             } else {
@@ -290,7 +276,6 @@
             document.getElementById('reader-overlay').style.display = 'none'; 
             pdfDoc = null; 
             displayMyShelf(); 
-            
             if(document.getElementById('breadcrumb').style.display === 'block') {
                 showBooksInFolder(document.getElementById('current-folder-name').innerText);
             } else {
@@ -300,7 +285,7 @@
 
         function addToRecent(file) {
             let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
-            recent = [ { ...file, cat: categoryKey }, ...recent.filter(b => b.id !== file.id) ].slice(0, 10);
+            recent = [ { ...file, cat: categoryKey }, ...recent.filter(b => b.id !== file.id) ].slice(0, 12);
             localStorage.setItem('recent_books', JSON.stringify(recent));
         }
 
@@ -308,10 +293,8 @@
             const shelfDiv = document.getElementById('shelf-list'), shelfSection = document.getElementById('my-shelf');
             let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
             recent = recent.filter(b => b.cat === categoryKey);
-            
             if (recent.length === 0) { shelfSection.style.display = 'none'; return; }
             shelfSection.style.display = 'block'; shelfDiv.innerHTML = '';
-            
             recent.forEach((file, index) => {
                 shelfDiv.appendChild(createBookCard(file, true, index));
                 generateThumbnail(file, index, true);

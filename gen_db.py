@@ -1,34 +1,72 @@
 import os
 import json
+import urllib.parse
 
-# 1. ที่อยู่โฟลเดอร์หลักในเครื่อง (ที่มีโฟลเดอร์ย่อยข้างใน)
-book_folder = r'C:\MyLibrary\2_Thai_Novel'
+# 1. แผนที่ไปโกดังหนังสือ (ตำแหน่งในคอมพิวเตอร์)
+base_dir = r"C:\MyLibrary"
 
-# 2. URL หน้าบ้านบน GitHub
-base_url = 'https://rung-sup.github.io/2_Thai_Novel/' 
+# 2. ชื่อบัญชี GitHub ของคุณปุ๊ก (สำหรับสร้างลิงก์)
+github_username = "rung-sup"
 
-books = []
+# 3. รายชื่อโกดังทั้ง 6 ห้อง (ต้องสะกดให้ตรงกับชื่อโฟลเดอร์เป๊ะๆ)
+folders = [
+    "1_PetchPraUma",
+    "2_Thai_Novel",
+    "3_English_Translated",
+    "4_Chinese_Novel",
+    "5_HowTo_Religion",
+    "6_HowTo_Religion_Science"
+]
 
-# 3. ใช้ os.walk เพื่อมุดเข้าไปหาไฟล์ในทุกโฟลเดอร์ย่อย
-for root, dirs, files in os.walk(book_folder):
-    for filename in files:
-        # เช็คว่าเป็นไฟล์ PDF (รองรับทั้งตัวเล็ก .pdf และตัวใหญ่ .PDF)
-        if filename.lower().endswith('.pdf'):
-            
-            # หาที่อยู่สัมพัทธ์ (Relative Path) เพื่อทำลิงก์ให้ถูกต้องตามโครงสร้างโฟลเดอร์
-            relative_path = os.path.relpath(os.path.join(root, filename), book_folder)
-            # เปลี่ยนเครื่องหมาย \ เป็น / เพื่อให้ลิงก์เว็บใช้งานได้
-            web_path = relative_path.replace('\\', '/')
-            
-            book_data = {
-                "title": filename.replace('.pdf', '').replace('.PDF', ''),
-                "url": base_url + web_path,
-                "category": "นิยายไทย"
-            }
-            books.append(book_data)
+all_books = []
+total_count = 0
 
-# 4. บันทึกลงใน database.json
-with open('database.json', 'w', encoding='utf-8') as f:
-    json.dump(books, f, ensure_ascii=False, indent=4)
+print(f"🔍 กำลังเริ่มสำรวจหนังสือใน {base_dir} ...\n")
 
-print(f"สำเร็จ! กวาดรายชื่อหนังสือจากทุกโฟลเดอร์ย่อยได้ทั้งหมด {len(books)} เล่มเรียบร้อยครับ")
+for folder in folders:
+    folder_path = os.path.join(base_dir, folder)
+    folder_count = 0
+    
+    # เช็คว่ามีโฟลเดอร์นี้อยู่ใน C:\MyLibrary จริงๆ ไหม
+    if not os.path.exists(folder_path):
+        print(f"⚠️ ข้าม: หาโฟลเดอร์ไม่พบ -> {folder_path}")
+        continue
+        
+    # เดินสำรวจทีละโฟลเดอร์
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.lower().endswith('.pdf'):
+                # 1. ได้ชื่อหนังสือ
+                title = os.path.splitext(file)[0]
+                
+                # 2. จำลองเส้นทางไฟล์สำหรับเว็บ (เปลี่ยน \ เป็น /)
+                rel_path = os.path.relpath(os.path.join(root, file), folder_path)
+                rel_path_web = rel_path.replace("\\", "/")
+                
+                # 3. เข้ารหัสภาษาไทยให้ URL ไม่พัง
+                parts = rel_path_web.split('/')
+                encoded_parts = [urllib.parse.quote(p) for p in parts]
+                final_path = "/".join(encoded_parts)
+                
+                # 4. สร้างลิงก์ดึงข้อมูลจาก GitHub Pages โดยตรง
+                full_url = f"https://{github_username}.github.io/{folder}/{final_path}"
+                
+                # 5. จดลงสมุด
+                book_data = {
+                    "title": title,
+                    "url": full_url
+                }
+                all_books.append(book_data)
+                folder_count += 1
+                total_count += 1
+                
+    print(f"✅ โกดัง [{folder}]: กวาดมาได้ {folder_count} เล่ม")
+
+# บันทึกเป็นไฟล์ database.json ลงในโฟลเดอร์ปัจจุบัน
+output_file = "database.json"
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump(all_books, f, ensure_ascii=False, indent=4)
+
+print("-" * 40)
+print(f"🎉 สำเร็จ! สร้างไฟล์ {output_file} อัปเดตล่าสุดแล้ว")
+print(f"📚 ยอดรวมหนังสือทั้งหมดจากทุกโกดัง: {total_count} เล่ม")

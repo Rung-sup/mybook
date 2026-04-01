@@ -1,307 +1,45 @@
+Update smart-archive.html
+f99759b
+smart-archive.html
+@@ -1,644 +1,15 @@
 <!DOCTYPE html>
+
 <html lang="th">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>คลังหนังสือ - My Reader</title>
+
+    <title>คลังหนังสือคุณรันนรา - My Library</title>
+
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+   
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+
+
+
     <style>
+
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
-        body { margin: 0; background: #f4f7f9; color: #333; padding: 20px 20px 60px 20px; }
-        
-        .header-area { text-align: center; margin-bottom: 30px; }
-        h1 { color: #2c3e50; font-size: 26px; margin: 10px 0; }
-        .back-btn { display: inline-block; color: #fff; text-decoration: none; font-size: 14px; background: #34495e; padding: 8px 20px; border-radius: 8px; transition: 0.3s; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .back-btn:hover { background: #2c3e50; }
 
-        /* ชั้นหนังสือ "อ่านต่อ" */
-        .recent-section { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 2px dashed #ddd; display: none; }
-        .section-title { font-size: 18px; color: #d4af37; margin-bottom: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-        .horizontal-scroll { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 10px; }
-        .horizontal-scroll::-webkit-scrollbar { height: 6px; }
-        .horizontal-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+        body { margin: 0; background-color: #f4f1ea; min-height: 100vh; overflow-x: hidden; }
 
-        /* การจัดหน้าจอหลัก */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 20px;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
+       
 
-        /* ดีไซน์การ์ดหนังสือ */
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            transition: transform 0.3s, box-shadow 0.3s;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #eaeaea;
-            position: relative;
-            min-width: 150px;
-        }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(212, 175, 87, 0.3); border-color: #d4af37; }
+        /* Header */
 
-        /* ปกหนังสือ */
-        .cover-wrapper {
-            width: 100%;
-            height: 220px;
-            background: #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            position: relative;
-        }
-        .cover-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: 0.3s;
-        }
-        .card:hover .cover-img { transform: scale(1.05); }
-        
-        /* กรณีไม่มีรูปปก */
-        .fallback-cover {
-            padding: 15px;
-            text-align: center;
-            color: #2c3e50;
-            font-weight: 600;
-            font-size: 14px;
-            line-height: 1.4;
-            background: linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%);
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-bottom: 1px solid #eee;
-        }
+        .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; background: #fff; }
 
-        /* โฟลเดอร์ */
-        .folder-cover {
-            background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-            color: #f1c40f;
-            height: 220px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
-        .folder-icon { font-size: 50px; margin-bottom: 10px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
 
-        /* ข้อมูลใต้ปก */
-        .card-info { padding: 12px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .card-title { font-size: 13px; font-weight: 500; color: #444; margin-bottom: 10px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 38px; }
-        
-        .action-btn {
-            display: block;
-            background: #d4af37;
-            color: #fff;
-            text-decoration: none;
-            padding: 8px;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 12px;
-            transition: 0.3s;
-            text-align: center;
-            border: none;
-            width: 100%;
-            cursor: pointer;
-        }
-        .action-btn:hover { background: #b5952f; }
-        
-        #loader { text-align: center; margin-top: 50px; color: #666; }
-        #breadcrumb { text-align: center; margin-bottom: 20px; font-size: 15px; color: #555; display: none; }
-        .crumb-link { color: #d4af37; cursor: pointer; text-decoration: underline; font-weight: bold; }
-    </style>
-</head>
-<body>
+        .btn-back-home { background: #333; border: 1px solid #d4af37; color: #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 13px; }
 
-    <div class="header-area">
-        <a href="categories.html" class="back-btn" id="main-back">⬅ กลับหน้าหมวดหมู่หลัก</a>
-        <h1 id="category-name">กำลังโหลด...</h1>
-        <div id="breadcrumb">
-            <span class="crumb-link" onclick="location.reload()">หมวดหมู่หลัก</span> > <span id="current-folder-name"></span>
-        </div>
-    </div>
 
-    <div class="recent-section" id="recent-section">
-        <div class="section-title">⏱️ อ่านต่อที่ค้างไว้</div>
-        <div class="horizontal-scroll" id="recent-grid"></div>
-    </div>
-
-    <div id="loader">กำลังจัดเรียงหนังสือ...</div>
-    <div class="grid-container" id="display-area"></div>
-
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const catKey = params.get('cat');
-        const catName = params.get('name') || 'คลังหนังสือ';
-        
-        document.getElementById('category-name').innerText = catName;
-        
-        let groupedByFolder = { folders: {}, singles: [] };
-
-        // 1. โหลดข้อมูล "อ่านต่อ" จาก LocalStorage
-        loadRecentBooks();
-
-        // 2. ดึงข้อมูลหนังสือทั้งหมดจาก Database
-        fetch('database.json')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('loader').style.display = 'none';
-                const allBooksInCat = data.filter(book => book.url.includes(catKey));
-
-                // จัดกลุ่มแฟ้มและเล่มเดี่ยว
-                allBooksInCat.forEach(book => {
-                    const parts = book.url.split(catKey + '/');
-                    if (parts.length > 1) {
-                        const subPath = parts[1].split('/');
-                        if (subPath.length > 1) {
-                            const folderName = decodeURIComponent(subPath[0]);
-                            if (!groupedByFolder.folders[folderName]) groupedByFolder.folders[folderName] = [];
-                            groupedByFolder.folders[folderName].push(book);
-                        } else {
-                            groupedByFolder.singles.push(book);
-                        }
-                    }
-                });
-
-                renderMainView();
-            })
-            .catch(err => {
-                document.getElementById('loader').innerText = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
-                console.error(err);
-            });
-
-        // ฟังก์ชันวาดหน้าแรก (แฟ้ม + เล่มเดี่ยว)
-        function renderMainView() {
-            const display = document.getElementById('display-area');
-            display.innerHTML = '';
-            document.getElementById('breadcrumb').style.display = 'none';
-            document.getElementById('main-back').style.display = 'inline-block';
-
-            // วาดโฟลเดอร์
-            Object.keys(groupedByFolder.folders).forEach(folder => {
-                const count = groupedByFolder.folders[folder].length;
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.onclick = () => showBooksInFolder(folder);
-                
-                card.innerHTML = `
-                    <div class="folder-cover">
-                        <div class="folder-icon">📁</div>
-                        <div style="font-size: 13px; color:#bdc3c7;">มี ${count} เล่ม</div>
-                    </div>
-                    <div class="card-info">
-                        <div class="card-title">${folder}</div>
-                        <div class="action-btn" style="background: #34495e;">เปิดดูแฟ้ม</div>
-                    </div>
-                `;
-                display.appendChild(card);
-            });
-
-            // วาดเล่มเดี่ยวต่อท้าย
-            groupedByFolder.singles.forEach(book => {
-                display.appendChild(createBookCard(book));
-            });
-        }
-
-        // ฟังก์ชันกดเข้าไปในแฟ้ม
-        function showBooksInFolder(folderName) {
-            document.getElementById('main-back').style.display = 'none';
-            document.getElementById('breadcrumb').style.display = 'block';
-            document.getElementById('current-folder-name').innerText = folderName;
-            
-            const display = document.getElementById('display-area');
-            display.innerHTML = '';
-            
-            groupedByFolder.folders[folderName].forEach(book => {
-                display.appendChild(createBookCard(book));
-            });
-        }
-
-        // ฟังก์ชันสร้างการ์ดหนังสือ (ใช้ซ้ำได้ทั้งหน้าหลัก หน้าแฟ้ม และหน้าอ่านต่อ)
-        function createBookCard(book) {
-            const card = document.createElement('div');
-            card.className = 'card';
-            
-            // ใช้ชื่อไฟล์ .pdf เปลี่ยนเป็น .jpg เพื่อดึงรูปปก
-            const coverUrl = book.url.replace('.pdf', '.jpg'); 
-
-            card.innerHTML = `
-                <div class="cover-wrapper">
-                    <img src="${coverUrl}" class="cover-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <div class="fallback-cover" style="display:none;">
-                        ${book.title}
-                    </div>
-                </div>
-                <div class="card-info">
-                    <div class="card-title" title="${book.title}">${book.title}</div>
-                    <button class="action-btn" onclick="openBook('${book.title}', '${book.url}', '${coverUrl}')">📖 เปิดอ่าน</button>
-                </div>
-            `;
-            return card;
-        }
-
-        // --- ระบบจัดเก็บ "อ่านต่อที่ค้างไว้" (LocalStorage) ---
-
-        function openBook(title, url, coverUrl) {
-            // ดึงประวัติเก่ามา
-            let history = JSON.parse(localStorage.getItem('myreader_history') || '[]');
-            
-            // ลบเล่มนี้ออกถ้ามีอยู่แล้ว (เพื่อดันไปบนสุด)
-            history = history.filter(b => b.title !== title);
-            
-            // เพิ่มเล่มใหม่เข้าไปตำแหน่งแรก
-            history.unshift({ title, url, coverUrl });
-            
-            // เก็บสูงสุด 10 เล่ม
-            if(history.length > 10) history.pop();
-            
-            localStorage.setItem('myreader_history', JSON.stringify(history));
-            
-            // เปิดหน้าต่างใหม่ไปอ่านหนังสือ
-            window.open(url, '_blank');
-            
-            // อัปเดตชั้นหนังสืออ่านต่อทันที
-            loadRecentBooks();
-        }
-
-        function loadRecentBooks() {
-            const history = JSON.parse(localStorage.getItem('myreader_history') || '[]');
-            const recentSection = document.getElementById('recent-section');
-            const recentGrid = document.getElementById('recent-grid');
-            
-            if (history.length > 0) {
-                recentSection.style.display = 'block';
-                recentGrid.innerHTML = '';
-                
-                history.forEach(book => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.innerHTML = `
-                        <div class="cover-wrapper">
-                            <img src="${book.coverUrl}" class="cover-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                            <div class="fallback-cover" style="display:none;">${book.title}</div>
-                        </div>
-                        <div class="card-info">
-                            <div class="card-title" title="${book.title}">${book.title}</div>
-                            <button class="action-btn" onclick="openBook('${book.title}', '${book.url}', '${book.coverUrl}')">▶ อ่านต่อ</button>
-                        </div>
-                    `;
-                    recentGrid.appendChild(card);
-                });
-            } else {
-                recentSection.style.display = 'none';
-            }
-        }
-    </script>
-</body>
-</html>

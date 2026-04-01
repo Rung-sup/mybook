@@ -3,870 +3,112 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>คลังหนังสือ - My Reader</title>
+  <title>หมวดหนังสือ - My Reader</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
   <style>
     :root {
-      --bg: #f4f1ea;
-      --surface: #ffffff;
-      --surface-2: #fbf8f1;
-      --text: #2e261d;
-      --muted: #74685c;
-      --accent: #c79a2b;
-      --accent-dark: #8d6a16;
-      --border: rgba(46, 38, 29, 0.12);
-      --shadow: 0 10px 30px rgba(0,0,0,0.08);
-      --radius: 18px;
+      --bg: #191714;
+      --panel: #23201c;
+      --text: #f7f0e3;
+      --muted: #c9bba5;
+      --accent: #d4af37;
+      --border: rgba(212,175,55,0.28);
     }
-
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
     body {
+      margin: 0;
       min-height: 100vh;
       font-family: 'Prompt', sans-serif;
-      background: linear-gradient(180deg, #faf7f0 0%, var(--bg) 100%);
+      background: radial-gradient(circle at top, #30271f 0%, var(--bg) 55%);
       color: var(--text);
+      padding: 28px 16px 40px;
     }
-
-    button, input { font: inherit; }
-
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 30;
-      background: rgba(255,255,255,0.88);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
+    .wrap { max-width: 520px; margin: 0 auto; }
+    h1 {
+      margin: 0 0 8px;
+      text-align: center;
+      color: var(--accent);
+      font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem);
     }
-
-    .header-inner {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 14px 16px;
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .back-btn, .action-btn {
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--text);
-      border-radius: 999px;
-      padding: 10px 14px;
-      cursor: pointer;
-      min-height: 44px;
-    }
-
-    .title-wrap { min-width: 0; text-align: center; }
-    .title-wrap h1 {
-      margin: 0;
-      font-size: clamp(1.1rem, 1rem + 1vw, 1.6rem);
-      line-height: 1.2;
-    }
-    .title-wrap p {
-      margin: 4px 0 0;
+    .sub {
+      text-align: center;
       color: var(--muted);
-      font-size: 0.9rem;
+      margin: 0 0 24px;
+      font-size: 0.98rem;
     }
-
-    .page {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 18px 16px 32px;
-    }
-
-    .toolbar {
+    .grid {
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      margin-bottom: 18px;
+      gap: 14px;
     }
-
-    .search-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      box-shadow: var(--shadow);
-    }
-
-    .search-box input {
+    .card {
       width: 100%;
-      border: 0;
-      outline: 0;
-      background: transparent;
-      color: var(--text);
-      font-size: 1rem;
-    }
-
-    .summary-card {
-      background: linear-gradient(135deg, #fff8e6 0%, #fff 100%);
-      border: 1px solid rgba(199,154,43,0.25);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 18px;
-      box-shadow: var(--shadow);
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0,1fr));
-      gap: 12px;
-    }
-
-    .stat {
-      background: rgba(255,255,255,0.8);
-      border: 1px solid rgba(46, 38, 29, 0.08);
-      border-radius: 14px;
-      padding: 12px;
-    }
-
-    .stat-label { color: var(--muted); font-size: 0.85rem; }
-    .stat-value { margin-top: 4px; font-size: 1.25rem; font-weight: 700; color: var(--accent-dark); }
-
-    .recent-section {
-      display: none;
-      margin-bottom: 18px;
-    }
-
-    .section-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .section-title h2 {
-      margin: 0;
-      font-size: 1.05rem;
-    }
-
-    .recent-grid, .book-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
-      gap: 16px;
-    }
-
-    .book-card {
-      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 18px;
-      overflow: hidden;
+      padding: 18px;
+      text-align: left;
+      color: inherit;
+      background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
       cursor: pointer;
-      box-shadow: var(--shadow);
-      transition: transform .18s ease, box-shadow .18s ease;
-      min-height: 100%;
-      display: flex;
-      flex-direction: column;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.22);
     }
-
-    .book-card:hover { transform: translateY(-4px); box-shadow: 0 18px 36px rgba(0,0,0,.12); }
-
-    .cover {
-      aspect-ratio: 3 / 4;
-      display: grid;
-      place-items: center;
-      padding: 14px;
-      color: white;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .cover::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(160deg, rgba(255,255,255,0.2), rgba(0,0,0,0.18));
-    }
-
-    .cover-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 2;
-      background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.24);
-      backdrop-filter: blur(6px);
-      border-radius: 999px;
-      padding: 4px 8px;
-      font-size: 0.72rem;
-      font-weight: 600;
-    }
-
-    .cover-title {
-      position: relative;
-      z-index: 1;
-      text-align: center;
-      font-weight: 600;
-      line-height: 1.35;
-      font-size: 0.95rem;
-      display: -webkit-box;
-      -webkit-line-clamp: 6;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.25);
-    }
-
-    .meta {
-      padding: 12px;
-      display: grid;
-      gap: 6px;
-      flex: 1;
-    }
-
-    .book-name {
-      margin: 0;
-      font-size: 0.92rem;
-      line-height: 1.4;
-      font-weight: 600;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      min-height: 3.9em;
-    }
-
-    .book-sub {
-      color: var(--muted);
-      font-size: 0.8rem;
-    }
-
-    .status {
-      text-align: center;
-      background: var(--surface);
-      border: 1px dashed var(--border);
-      border-radius: 18px;
-      padding: 24px 16px;
-      color: var(--muted);
-      box-shadow: var(--shadow);
-    }
-
-    #reader-overlay {
-      position: fixed;
-      inset: 0;
-      background: #181512;
-      display: none;
-      flex-direction: column;
-      z-index: 100;
-    }
-
-    .reader-header {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 12px;
-      background: rgba(16, 14, 12, 0.96);
-      color: #fff;
-      padding: 10px 12px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .reader-header button {
-      min-height: 42px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.15);
-      color: white;
-      background: rgba(255,255,255,0.08);
-      padding: 10px 14px;
-      cursor: pointer;
-    }
-
-    .reader-title {
-      min-width: 0;
-      text-align: center;
-    }
-
-    .reader-title strong,
-    .reader-title small {
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .reader-title small { color: rgba(255,255,255,0.7); }
-
-    .reader-body {
-      position: relative;
-      flex: 1;
-      min-height: 0;
-      background: #28231d;
-    }
-
-    #pdf-render-container, #epub-viewer {
-      width: 100%;
-      height: 100%;
-      display: none;
-    }
-
-    #pdf-render-container {
-      overflow: auto;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 12px;
-    }
-
-    #pdf-canvas {
-      display: block;
-      margin: 0 auto;
-      background: #fff;
-      box-shadow: 0 0 30px rgba(0,0,0,0.35);
-      max-width: 100%;
-      height: auto;
-    }
-
-    #epub-render { width: 100%; height: 100%; }
-
-    .reader-nav {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 22px;
-      display: flex;
-      justify-content: space-between;
-      padding: 0 18px;
-      pointer-events: none;
-      z-index: 120;
-    }
-
-    .nav-btn {
-      width: 52px;
-      height: 52px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(0,0,0,0.55);
-      color: #fff;
-      font-size: 1.15rem;
-      pointer-events: auto;
-      cursor: pointer;
-    }
-
-    @media (max-width: 760px) {
-      .header-inner { grid-template-columns: 1fr; }
-      .title-wrap { order: -1; }
-      .summary-grid { grid-template-columns: 1fr; }
-      .recent-grid, .book-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-      .book-card:hover { transform: none; }
-      .reader-header { grid-template-columns: 1fr; }
-      .reader-title { text-align: left; }
-    }
+    .card:hover { transform: translateY(-3px); border-color: rgba(212,175,55,0.52); }
+    .eyebrow { font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+    .name { font-size: 1.1rem; font-weight: 600; }
+    .key { margin-top: 8px; color: #e8d9b5; font-size: 0.82rem; word-break: break-all; }
   </style>
 </head>
 <body>
-  <header class="header">
-    <div class="header-inner">
-      <button class="back-btn" onclick="location.href='categories.html'">⬅ กลับหน้าหมวดหมู่</button>
-      <div class="title-wrap">
-        <h1 id="header-title">คลังหนังสือ</h1>
-        <p id="header-subtitle">กำลังเตรียมรายการหนังสือ...</p>
-      </div>
-      <button class="action-btn" id="scroll-top-btn" type="button">↑ ด้านบน</button>
+  <main class="wrap">
+    <h1>📚 หมวดหนังสือ</h1>
+    <p class="sub">เวอร์ชันนี้ใช้ชื่อหมวดให้ตรงกับโฟลเดอร์จริงในฐานข้อมูลและ GitHub Pages</p>
+
+    <div class="grid">
+      <button class="card" onclick="go('1_PetchPraUma','เพชรพระอุมา')">
+        <div class="eyebrow">หมวด 1</div>
+        <div class="name">เพชรพระอุมา</div>
+        <div class="key">cat=1_PetchPraUma</div>
+      </button>
+
+      <button class="card" onclick="go('2_Thai_Novel','นิยายไทย')">
+        <div class="eyebrow">หมวด 2</div>
+        <div class="name">นิยายไทย</div>
+        <div class="key">cat=2_Thai_Novel</div>
+      </button>
+
+      <button class="card" onclick="go('3_English_Translated','นิยายแปล')">
+        <div class="eyebrow">หมวด 3</div>
+        <div class="name">นิยายแปล</div>
+        <div class="key">cat=3_English_Translated</div>
+      </button>
+
+      <button class="card" onclick="go('4_Chinese_Novel','นิยายจีน')">
+        <div class="eyebrow">หมวด 4</div>
+        <div class="name">นิยายจีน</div>
+        <div class="key">cat=4_Chinese_Novel</div>
+      </button>
+
+      <button class="card" onclick="go('5_HowTo_Religion','How-to / ศาสนา')">
+        <div class="eyebrow">หมวด 5</div>
+        <div class="name">How-to / ศาสนา</div>
+        <div class="key">cat=5_HowTo_Religion</div>
+      </button>
+
+      <button class="card" onclick="go('6_HowTo_Religion_Science','How-to / ศาสนา / วิทยาศาสตร์')">
+        <div class="eyebrow">หมวด 6</div>
+        <div class="name">How-to / ศาสนา / วิทยาศาสตร์</div>
+        <div class="key">cat=6_HowTo_Religion_Science</div>
+      </button>
     </div>
-  </header>
-
-  <main class="page">
-    <section class="toolbar">
-      <label class="search-box" for="search-input">
-        <span>🔎</span>
-        <input id="search-input" type="search" placeholder="ค้นหาชื่อหนังสือในหมวดนี้" autocomplete="off" />
-      </label>
-    </section>
-
-    <section class="summary-card">
-      <div class="summary-grid">
-        <div class="stat">
-          <div class="stat-label">หมวดที่เลือก</div>
-          <div class="stat-value" id="stat-category">-</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">จำนวนหนังสือ</div>
-          <div class="stat-value" id="stat-count">0</div>
-        </div>
-        <div class="stat">
-          <div class="stat-label">ประเภทไฟล์</div>
-          <div class="stat-value" id="stat-types">-</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="recent-section" id="recent-section">
-      <div class="section-title">
-        <h2>⭐ อ่านล่าสุด</h2>
-      </div>
-      <div class="recent-grid" id="recent-list"></div>
-    </section>
-
-    <section>
-      <div class="section-title">
-        <h2>หนังสือทั้งหมด</h2>
-        <span id="result-count" class="book-sub"></span>
-      </div>
-      <div class="book-grid" id="book-list">
-        <div class="status">กำลังโหลดชั้นหนังสือ...</div>
-      </div>
-    </section>
   </main>
 
-  <section id="reader-overlay" aria-hidden="true">
-    <div class="reader-header">
-      <button type="button" id="close-reader-btn">ปิด</button>
-      <div class="reader-title">
-        <strong id="book-title-display">-</strong>
-        <small id="page-info">หน้า 0/0</small>
-      </div>
-      <button type="button" id="open-file-btn">เปิดไฟล์ใหม่</button>
-    </div>
-    <div class="reader-body">
-      <div id="pdf-render-container">
-        <canvas id="pdf-canvas"></canvas>
-      </div>
-      <div id="epub-viewer">
-        <div id="epub-render"></div>
-      </div>
-    </div>
-    <div class="reader-nav" id="reader-nav-ui">
-      <button class="nav-btn" id="prev-btn" type="button">❮</button>
-      <button class="nav-btn" id="next-btn" type="button">❯</button>
-    </div>
-  </section>
-
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-
-    const params = new URLSearchParams(window.location.search);
-    const rawCat = params.get('cat') || '1PetchPraUma';
-    const categoryName = params.get('name') || 'คลังหนังสือ';
-
-    const categoryAliases = {
-      '1PetchPraUma': '1PetchPraUma',
-      '1_PetchPraUma': '1PetchPraUma',
-      '2ThaiNovel': '2ThaiNovel',
-      '2_ThaiNovel': '2ThaiNovel',
-      '2_Thai_Novel': '2ThaiNovel',
-      '3EnglishTranslated': '3EnglishTranslated',
-      '3_EnglishTranslated': '3EnglishTranslated',
-      '3_English_Translated': '3EnglishTranslated',
-      '4ChineseNovel': '4ChineseNovel',
-      '4_ChineseNovel': '4ChineseNovel',
-      '4_Chinese_Novel': '4ChineseNovel',
-      '5HowToReligionScience': '5HowToReligionScience',
-      '5_HowToReligionScience': '5HowToReligionScience',
-      '5_HowTo_Religion_Science': '5HowToReligionScience',
-      '6PendingSort': '6PendingSort',
-      '6_PendingSort': '6PendingSort',
-      '6_Pending_Sort': '6PendingSort'
-    };
-
-    const normalizedCat = categoryAliases[rawCat] || rawCat.replace(/_/g, '');
-
-    const headerTitle = document.getElementById('header-title');
-    const headerSubtitle = document.getElementById('header-subtitle');
-    const statCategory = document.getElementById('stat-category');
-    const statCount = document.getElementById('stat-count');
-    const statTypes = document.getElementById('stat-types');
-    const bookListEl = document.getElementById('book-list');
-    const recentSection = document.getElementById('recent-section');
-    const recentList = document.getElementById('recent-list');
-    const resultCount = document.getElementById('result-count');
-    const searchInput = document.getElementById('search-input');
-
-    const readerOverlay = document.getElementById('reader-overlay');
-    const pdfContainer = document.getElementById('pdf-render-container');
-    const epubViewer = document.getElementById('epub-viewer');
-    const pageInfo = document.getElementById('page-info');
-    const bookTitleDisplay = document.getElementById('book-title-display');
-    const openFileBtn = document.getElementById('open-file-btn');
-    const closeReaderBtn = document.getElementById('close-reader-btn');
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-
-    const canvas = document.getElementById('pdf-canvas');
-    const ctx = canvas.getContext('2d');
-
-    headerTitle.textContent = categoryName;
-    headerSubtitle.textContent = `หมวดที่ร้องขอ: ${rawCat} • หมวดที่ใช้งานจริง: ${normalizedCat}`;
-    statCategory.textContent = normalizedCat;
-
-    let allBooks = [];
-    let filteredBooks = [];
-    let currentBook = null;
-    let pdfDoc = null;
-    let pageNum = 1;
-    let pageRendering = false;
-    let pageNumPending = null;
-    let rendition = null;
-    let epubBook = null;
-    let currentType = null;
-
-    function normalizeText(value) {
-      return (value || '')
-        .toString()
-        .toLowerCase()
-        .normalize('NFKD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
+    function go(catKey, name) {
+      const url = `smart-archive.html?cat=${encodeURIComponent(catKey)}&name=${encodeURIComponent(name)}`;
+      window.location.href = url;
     }
-
-    function getFileType(url) {
-      const lower = (url || '').toLowerCase();
-      if (lower.endsWith('.epub')) return 'EPUB';
-      if (lower.endsWith('.zip')) return 'ZIP';
-      if (lower.endsWith('.pdf')) return 'PDF';
-      return 'FILE';
-    }
-
-    function escapeHtml(str) {
-      return (str || '').replace(/[&<>"']/g, ch => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[ch]));
-    }
-
-    function coverColorSeed(text) {
-      let hash = 0;
-      for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash);
-      const hue = Math.abs(hash) % 360;
-      return `linear-gradient(160deg, hsl(${hue} 48% 45%), hsl(${(hue + 50) % 360} 58% 28%))`;
-    }
-
-    function makeBookId(url) {
-      return btoa(unescape(encodeURIComponent(url))).replace(/=+$/g, '');
-    }
-
-    function saveRecent(book) {
-      const key = 'myreader_recent_books';
-      let items = [];
-      try {
-        items = JSON.parse(localStorage.getItem(key) || '[]');
-      } catch (_) {
-        items = [];
-      }
-      items = items.filter(item => item.id !== book.id);
-      items.unshift({
-        id: book.id,
-        title: book.title,
-        url: book.url,
-        type: book.type,
-        category: book.category,
-        savedAt: Date.now()
-      });
-      localStorage.setItem(key, JSON.stringify(items.slice(0, 8)));
-      renderRecent();
-    }
-
-    function getRecentByCategory() {
-      const key = 'myreader_recent_books';
-      try {
-        const items = JSON.parse(localStorage.getItem(key) || '[]');
-        return items.filter(item => item.category === normalizedCat);
-      } catch (_) {
-        return [];
-      }
-    }
-
-    function renderRecent() {
-      const items = getRecentByCategory();
-      if (!items.length) {
-        recentSection.style.display = 'none';
-        recentList.innerHTML = '';
-        return;
-      }
-      recentSection.style.display = 'block';
-      recentList.innerHTML = items.map(item => cardTemplate(item, true)).join('');
-      bindCardEvents(recentList, items);
-    }
-
-    function cardTemplate(book, isRecent = false) {
-      return `
-        <article class="book-card" data-book-id="${book.id}" tabindex="0" role="button" aria-label="เปิด ${escapeHtml(book.title)}">
-          <div class="cover" style="background:${coverColorSeed(book.title)}">
-            <div class="cover-badge">${book.type}</div>
-            <div class="cover-title">${escapeHtml(book.title)}</div>
-          </div>
-          <div class="meta">
-            <p class="book-name">${escapeHtml(book.title)}</p>
-            <div class="book-sub">${isRecent ? 'อ่านล่าสุด' : 'แตะเพื่ออ่านหรือเปิดไฟล์'}</div>
-          </div>
-        </article>
-      `;
-    }
-
-    function bindCardEvents(container, sourceBooks) {
-      container.querySelectorAll('.book-card').forEach(card => {
-        const book = sourceBooks.find(b => b.id === card.dataset.bookId);
-        if (!book) return;
-        card.addEventListener('click', () => openBook(book));
-        card.addEventListener('keydown', event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            openBook(book);
-          }
-        });
-      });
-    }
-
-    function renderBooks(list) {
-      filteredBooks = list;
-      statCount.textContent = String(list.length);
-      resultCount.textContent = `${list.length} รายการ`;
-
-      const types = [...new Set(list.map(item => item.type))];
-      statTypes.textContent = types.length ? types.join(', ') : '-';
-
-      if (!list.length) {
-        bookListEl.innerHTML = `
-          <div class="status">
-            ไม่พบหนังสือตรงคำค้นหาในหมวดนี้<br>
-            <small>หมวดที่ใช้งานจริง: ${escapeHtml(normalizedCat)}</small>
-          </div>`;
-        return;
-      }
-
-      bookListEl.innerHTML = list.map(book => cardTemplate(book)).join('');
-      bindCardEvents(bookListEl, list);
-    }
-
-    function filterBooks() {
-      const q = normalizeText(searchInput.value);
-      if (!q) {
-        renderBooks(allBooks);
-        return;
-      }
-      const list = allBooks.filter(book => normalizeText(book.title).includes(q));
-      renderBooks(list);
-    }
-
-    async function loadBooks() {
-      try {
-        const response = await fetch(`./database.json?v=${Date.now()}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-
-        if (!Array.isArray(data)) {
-          throw new Error('database.json ต้องเป็น array ของรายการหนังสือ');
-        }
-
-        const catNeedle = `https://rung-sup.github.io/${normalizedCat}`.toLowerCase();
-        const catNeedleAlt = `https://rung-sup.github.io/mybook/${normalizedCat}`.toLowerCase();
-
-        allBooks = data
-          .filter(item => item && typeof item === 'object' && item.url)
-          .filter(item => {
-            const url = String(item.url).toLowerCase();
-            return url.includes(catNeedle) || url.includes(catNeedleAlt);
-          })
-          .map((item, index) => ({
-            id: makeBookId(item.url || `${normalizedCat}-${index}`),
-            title: (item.title || `หนังสือ ${index + 1}`).toString().trim(),
-            url: item.url,
-            type: getFileType(item.url),
-            category: normalizedCat
-          }))
-          .sort((a, b) => a.title.localeCompare(b.title, 'th'));
-
-        if (!allBooks.length) {
-          bookListEl.innerHTML = `
-            <div class="status">
-              ไม่พบข้อมูลหนังสือในหมวดนี้<br>
-              <small>หมวดที่ร้องขอ: ${escapeHtml(rawCat)}</small><br>
-              <small>หมวดที่ใช้ค้นจริง: ${escapeHtml(normalizedCat)}</small>
-            </div>`;
-          statCount.textContent = '0';
-          statTypes.textContent = '-';
-          resultCount.textContent = '0 รายการ';
-          return;
-        }
-
-        renderBooks(allBooks);
-        renderRecent();
-      } catch (error) {
-        console.error(error);
-        bookListEl.innerHTML = `
-          <div class="status">
-            โหลดฐานข้อมูลไม่สำเร็จ<br>
-            <small>${escapeHtml(error.message || 'Unknown error')}</small>
-          </div>`;
-      }
-    }
-
-    async function openBook(book) {
-      currentBook = book;
-      currentType = book.type;
-      bookTitleDisplay.textContent = book.title;
-      readerOverlay.style.display = 'flex';
-      readerOverlay.setAttribute('aria-hidden', 'false');
-      saveRecent(book);
-
-      pdfContainer.style.display = 'none';
-      epubViewer.style.display = 'none';
-      pageInfo.textContent = 'กำลังโหลด...';
-
-      if (rendition) {
-        try { rendition.destroy(); } catch (_) {}
-        rendition = null;
-      }
-      if (epubBook) {
-        try { epubBook.destroy(); } catch (_) {}
-        epubBook = null;
-      }
-      pdfDoc = null;
-      pageNum = 1;
-      pageRendering = false;
-      pageNumPending = null;
-
-      if (book.type === 'PDF') {
-        await openPdf(book.url);
-      } else if (book.type === 'EPUB') {
-        await openEpub(book.url);
-      } else {
-        pageInfo.textContent = 'ไฟล์ประเภทนี้เปิดในเบราว์เซอร์ใหม่';
-        window.open(book.url, '_blank', 'noopener,noreferrer');
-      }
-    }
-
-    async function openPdf(url) {
-      try {
-        pdfContainer.style.display = 'flex';
-        const loadingTask = pdfjsLib.getDocument(url);
-        pdfDoc = await loadingTask.promise;
-        pageInfo.textContent = `หน้า 1/${pdfDoc.numPages}`;
-        renderPdfPage(1);
-      } catch (error) {
-        console.error(error);
-        pageInfo.textContent = 'เปิด PDF ไม่สำเร็จ';
-      }
-    }
-
-    function renderPdfPage(num) {
-      if (!pdfDoc) return;
-      pageRendering = true;
-      pdfDoc.getPage(num).then(page => {
-        const baseViewport = page.getViewport({ scale: 1 });
-        const maxWidth = Math.min(window.innerWidth - 24, 1000);
-        const scale = Math.max(0.8, maxWidth / baseViewport.width);
-        const viewport = page.getViewport({ scale });
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-
-        const renderContext = { canvasContext: ctx, viewport };
-        const renderTask = page.render(renderContext);
-        return renderTask.promise;
-      }).then(() => {
-        pageRendering = false;
-        pageInfo.textContent = `หน้า ${pageNum}/${pdfDoc.numPages}`;
-        if (pageNumPending !== null) {
-          const pending = pageNumPending;
-          pageNumPending = null;
-          renderPdfPage(pending);
-        }
-      });
-    }
-
-    function queueRenderPage(num) {
-      if (pageRendering) {
-        pageNumPending = num;
-      } else {
-        renderPdfPage(num);
-      }
-    }
-
-    async function openEpub(url) {
-      try {
-        epubViewer.style.display = 'block';
-        epubBook = ePub(url);
-        rendition = epubBook.renderTo('epub-render', {
-          width: '100%',
-          height: '100%',
-          spread: 'none'
-        });
-        rendition.on('relocated', location => {
-          const current = location?.start?.displayed?.page || 0;
-          const total = location?.start?.displayed?.total || 0;
-          pageInfo.textContent = `หน้า ${current}/${total}`;
-        });
-        await rendition.display();
-        pageInfo.textContent = 'กำลังอ่าน EPUB';
-      } catch (error) {
-        console.error(error);
-        pageInfo.textContent = 'เปิด EPUB ไม่สำเร็จ';
-      }
-    }
-
-    function closeBook() {
-      readerOverlay.style.display = 'none';
-      readerOverlay.setAttribute('aria-hidden', 'true');
-      if (rendition) {
-        try { rendition.destroy(); } catch (_) {}
-        rendition = null;
-      }
-      if (epubBook) {
-        try { epubBook.destroy(); } catch (_) {}
-        epubBook = null;
-      }
-      pdfDoc = null;
-      currentBook = null;
-      currentType = null;
-    }
-
-    function prevPage() {
-      if (currentType === 'PDF' && pdfDoc && pageNum > 1) {
-        pageNum -= 1;
-        queueRenderPage(pageNum);
-        return;
-      }
-      if (currentType === 'EPUB' && rendition) {
-        rendition.prev();
-      }
-    }
-
-    function nextPage() {
-      if (currentType === 'PDF' && pdfDoc && pageNum < pdfDoc.numPages) {
-        pageNum += 1;
-        queueRenderPage(pageNum);
-        return;
-      }
-      if (currentType === 'EPUB' && rendition) {
-        rendition.next();
-      }
-    }
-
-    document.getElementById('scroll-top-btn').addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    searchInput.addEventListener('input', filterBooks);
-    closeReaderBtn.addEventListener('click', closeBook);
-    prevBtn.addEventListener('click', prevPage);
-    nextBtn.addEventListener('click', nextPage);
-    openFileBtn.addEventListener('click', () => {
-      if (currentBook?.url) window.open(currentBook.url, '_blank', 'noopener,noreferrer');
-    });
-
-    document.addEventListener('keydown', event => {
-      if (readerOverlay.style.display !== 'flex') return;
-      if (event.key === 'Escape') closeBook();
-      if (event.key === 'ArrowLeft') prevPage();
-      if (event.key === 'ArrowRight') nextPage();
-    });
-
-    window.addEventListener('resize', () => {
-      if (currentType === 'PDF' && pdfDoc) queueRenderPage(pageNum);
-    });
-
-    loadBooks();
   </script>
 </body>
 </html>

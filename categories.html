@@ -3,115 +3,687 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>หมวดหมู่ - My Reader</title>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+  <title>คลังหนังสือ - My Reader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
   <style>
-    * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+    :root {
+      --bg: #f4f1ea;
+      --surface: #ffffff;
+      --surface-2: #fbf7ef;
+      --text: #2d261f;
+      --muted: #74685d;
+      --accent: #c89d31;
+      --accent-dark: #886513;
+      --border: rgba(45, 38, 31, 0.12);
+      --shadow: 0 12px 28px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
     body {
+      min-height: 100vh;
+      font-family: 'Prompt', sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #faf7f1 0%, var(--bg) 100%);
+    }
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,0.88);
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn {
+      min-height: 44px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font: inherit;
+    }
+    .title { min-width: 0; text-align: center; }
+    .title h1 {
       margin: 0;
-      background: #1a1a1a;
-      color: #fff;
+      font-size: clamp(1.1rem, 1rem + 1vw, 1.55rem);
+      line-height: 1.2;
+    }
+    .title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: .9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 16px 36px;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+      margin-bottom: 18px;
+    }
+    .search-box input {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font: inherit;
+      color: var(--text);
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .sum-card {
+      background: linear-gradient(135deg, #fff8e7 0%, #fff 100%);
+      border: 1px solid rgba(200,157,49,.26);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+    .sum-label { color: var(--muted); font-size: .85rem; }
+    .sum-value { margin-top: 4px; font-size: 1.2rem; font-weight: 700; color: var(--accent-dark); word-break: break-word; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .section-head h2 { margin: 0; font-size: 1.05rem; }
+    .muted { color: var(--muted); font-size: .88rem; }
+    .recent-section { display: none; margin-bottom: 20px; }
+    .recent-grid, .book-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+    }
+    .book-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: transform .18s ease, box-shadow .18s ease;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 40px 20px;
+      min-height: 100%;
     }
-    h1 {
-      color: #d4af37;
-      margin-bottom: 30px;
-      font-weight: 600;
-      text-align: center;
-      line-height: 1.4;
-    }
-    .category-grid {
+    .book-card:hover { transform: translateY(-4px); box-shadow: 0 18px 38px rgba(0,0,0,.12); }
+    .cover {
+      aspect-ratio: 3 / 4;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(160deg, #b88b2d, #5e4020);
+      color: #fff;
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 15px;
+      place-items: center;
+      padding: 14px;
+    }
+    .cover img {
       width: 100%;
-      max-width: 420px;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      inset: 0;
+      background: #f2efe9;
     }
-    .cat-card {
-      padding: 22px;
-      border-radius: 15px;
+    .cover-fallback {
+      position: relative;
+      z-index: 1;
       text-align: center;
-      text-decoration: none;
-      font-size: 19px;
-      font-weight: 500;
-      transition: 0.3s;
-      border: 2px solid transparent;
+      font-weight: 600;
+      line-height: 1.35;
+      font-size: .95rem;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.35);
+      display: -webkit-box;
+      -webkit-line-clamp: 6;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 2;
+      border-radius: 999px;
+      background: rgba(0,0,0,.35);
+      color: #fff;
+      padding: 4px 8px;
+      font-size: .72rem;
+      border: 1px solid rgba(255,255,255,.2);
+      backdrop-filter: blur(4px);
+    }
+    .meta {
+      padding: 12px;
+      display: grid;
+      gap: 6px;
+      flex: 1;
+    }
+    .name {
+      margin: 0;
+      font-size: .92rem;
+      line-height: 1.4;
+      font-weight: 600;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 3.9em;
+    }
+    .status {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--muted);
+      box-shadow: var(--shadow);
+    }
+    #reader-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      background: #171311;
+      z-index: 100;
+    }
+    .reader-top {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(14,12,10,.96);
+      color: white;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .reader-top button {
+      min-height: 42px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.08);
+      color: white;
+      padding: 10px 14px;
       cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      user-select: none;
+      font: inherit;
     }
-    .cat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(212, 175, 87, 0.2);
+    .reader-title { min-width: 0; text-align: center; }
+    .reader-title strong, .reader-title small {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .cat-petch {
-      background: #2d472d;
-      color: #d4af37;
-      border-color: #d4af37;
+    .reader-title small { color: rgba(255,255,255,.7); }
+    .reader-body { position: relative; flex: 1; min-height: 0; background: #2a241f; }
+    #pdf-render-container, #epub-viewer { width: 100%; height: 100%; display: none; }
+    #pdf-render-container { overflow: auto; padding: 12px; justify-content: center; align-items: flex-start; }
+    #pdf-canvas { display: block; margin: 0 auto; background: #fff; box-shadow: 0 0 30px rgba(0,0,0,.35); max-width: 100%; height: auto; }
+    #epub-render { width: 100%; height: 100%; }
+    .reader-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 22px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 18px;
+      pointer-events: none;
+      z-index: 120;
     }
-    .cat-thai {
-      background: #3d2b1f;
-      color: #e6ccb2;
+    .nav-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.55);
+      color: white;
+      font-size: 1.15rem;
+      pointer-events: auto;
+      cursor: pointer;
     }
-    .cat-translate {
-      background: #2c3e50;
-      color: #ecf0f1;
-    }
-    .cat-china {
-      background: #800000;
-      color: #ffd700;
-      border-color: #ffd700;
-    }
-    .cat-howto {
-      background: #ffffff;
-      color: #333;
-    }
-    .cat-pending {
-      background: #444;
-      color: #bbb;
-      font-size: 16px;
-      margin-top: 20px;
+    @media (max-width: 760px) {
+      .header-inner { grid-template-columns: 1fr; }
+      .title { order: -1; }
+      .summary { grid-template-columns: 1fr; }
+      .recent-grid, .book-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .reader-top { grid-template-columns: 1fr; }
+      .reader-title { text-align: left; }
+      .book-card:hover { transform: none; }
     }
   </style>
 </head>
 <body>
-  <h1>คลังหนังสือของคุณรันนรา</h1>
-
-  <div class="category-grid">
-    <div class="cat-card cat-petch" onclick="goToArchive('1_PetchPraUma', 'เพชรพระอุมา', 'forest')">
-      💎 เพชรพระอุมา
+  <header class="header">
+    <div class="header-inner">
+      <button class="btn" onclick="location.href='categories.html'">⬅ กลับหน้าหมวด</button>
+      <div class="title">
+        <h1 id="header-title">คลังหนังสือ</h1>
+        <p id="header-subtitle">กำลังโหลดข้อมูล...</p>
+      </div>
+      <button class="btn" id="scroll-top-btn" type="button">↑ ด้านบน</button>
     </div>
+  </header>
 
-    <div class="cat-card cat-thai" onclick="goToArchive('2_Thai_Novel', 'นิยายไทย', 'classic')">
-      📖 นิยายไทย
-    </div>
+  <main class="page">
+    <label class="search-box" for="search-input">
+      <span>🔎</span>
+      <input id="search-input" type="search" placeholder="ค้นหาชื่อหนังสือในหมวดนี้" autocomplete="off" />
+    </label>
 
-    <div class="cat-card cat-translate" onclick="goToArchive('3_English_Translated', 'นิยายแปล', 'classic')">
-      🌐 นิยายแปล
-    </div>
+    <section class="summary">
+      <article class="sum-card">
+        <div class="sum-label">หมวดปัจจุบัน</div>
+        <div class="sum-value" id="stat-category">-</div>
+      </article>
+      <article class="sum-card">
+        <div class="sum-label">จำนวนหนังสือ</div>
+        <div class="sum-value" id="stat-count">0</div>
+      </article>
+      <article class="sum-card">
+        <div class="sum-label">ประเภทไฟล์</div>
+        <div class="sum-value" id="stat-types">-</div>
+      </article>
+    </section>
 
-    <div class="cat-card cat-china" onclick="goToArchive('4_Chinese_Novel', 'นิยายจีน', 'china')">
-      🐉 นิยายจีน
-    </div>
+    <section class="recent-section" id="recent-section">
+      <div class="section-head">
+        <h2>⭐ อ่านล่าสุด</h2>
+      </div>
+      <div class="recent-grid" id="recent-list"></div>
+    </section>
 
-    <div class="cat-card cat-howto" onclick="goToArchive('5_HowTo_Religion', 'How-to / ศาสนา', 'classic')">
-      💡 How-to / ศาสนา
-    </div>
+    <section>
+      <div class="section-head">
+        <h2>หนังสือทั้งหมด</h2>
+        <span class="muted" id="result-count">0 รายการ</span>
+      </div>
+      <div class="book-grid" id="book-list">
+        <div class="status">กำลังโหลดชั้นหนังสือ...</div>
+      </div>
+    </section>
+  </main>
 
-    <div class="cat-card cat-pending" onclick="goToArchive('6_HowTo_Religion_Science', 'วิชาการ / วิทยาศาสตร์', 'classic')">
-      📂 วิชาการ / วิทยาศาสตร์
+  <section id="reader-overlay" aria-hidden="true">
+    <div class="reader-top">
+      <button type="button" id="close-reader-btn">ปิด</button>
+      <div class="reader-title">
+        <strong id="book-title-display">-</strong>
+        <small id="page-info">หน้า 0/0</small>
+      </div>
+      <button type="button" id="open-file-btn">เปิดไฟล์ใหม่</button>
     </div>
-  </div>
+    <div class="reader-body">
+      <div id="pdf-render-container">
+        <canvas id="pdf-canvas"></canvas>
+      </div>
+      <div id="epub-viewer">
+        <div id="epub-render"></div>
+      </div>
+    </div>
+    <div class="reader-nav">
+      <button class="nav-btn" id="prev-btn" type="button">❮</button>
+      <button class="nav-btn" id="next-btn" type="button">❯</button>
+    </div>
+  </section>
 
   <script>
-    function goToArchive(catKey, name, theme) {
-      const url = `smart-archive.html?cat=${encodeURIComponent(catKey)}&name=${encodeURIComponent(name)}&theme=${encodeURIComponent(theme)}`;
-      window.location.href = url;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+    const params = new URLSearchParams(location.search);
+    const categoryKey = params.get('cat') || '1_PetchPraUma';
+    const categoryName = params.get('name') || categoryKey;
+
+    const headerTitle = document.getElementById('header-title');
+    const headerSubtitle = document.getElementById('header-subtitle');
+    const statCategory = document.getElementById('stat-category');
+    const statCount = document.getElementById('stat-count');
+    const statTypes = document.getElementById('stat-types');
+    const resultCount = document.getElementById('result-count');
+    const bookListEl = document.getElementById('book-list');
+    const recentSection = document.getElementById('recent-section');
+    const recentList = document.getElementById('recent-list');
+    const searchInput = document.getElementById('search-input');
+
+    const readerOverlay = document.getElementById('reader-overlay');
+    const pdfContainer = document.getElementById('pdf-render-container');
+    const epubViewer = document.getElementById('epub-viewer');
+    const pageInfo = document.getElementById('page-info');
+    const bookTitleDisplay = document.getElementById('book-title-display');
+    const closeReaderBtn = document.getElementById('close-reader-btn');
+    const openFileBtn = document.getElementById('open-file-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const scrollTopBtn = document.getElementById('scroll-top-btn');
+
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas.getContext('2d');
+
+    headerTitle.textContent = categoryName;
+    headerSubtitle.textContent = `กำลังอ่านจากหมวดจริง: ${categoryKey}`;
+    statCategory.textContent = categoryKey;
+
+    let allBooks = [];
+    let currentBook = null;
+    let currentType = null;
+    let pdfDoc = null;
+    let pageNum = 1;
+    let pageRendering = false;
+    let pageNumPending = null;
+    let rendition = null;
+    let epubBook = null;
+
+    function escapeHtml(str) {
+      return (str || '').replace(/[&<>"']/g, ch => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
     }
+
+    function normalizeText(value) {
+      return (value || '').toString().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
+
+    function fileType(url) {
+      const lower = (url || '').toLowerCase();
+      if (lower.endsWith('.epub')) return 'EPUB';
+      if (lower.endsWith('.zip')) return 'ZIP';
+      if (lower.endsWith('.pdf')) return 'PDF';
+      return 'FILE';
+    }
+
+    function makeId(text) {
+      return btoa(unescape(encodeURIComponent(text))).replace(/=+$/g, '');
+    }
+
+    function coverGradient(text) {
+      let hash = 0;
+      for (let i = 0; i < text.length; i++) hash = text.charCodeAt(i) + ((hash << 5) - hash);
+      const hue = Math.abs(hash) % 360;
+      return `linear-gradient(160deg, hsl(${hue} 48% 45%), hsl(${(hue + 48) % 360} 58% 28%))`;
+    }
+
+    function coverUrl(book) {
+      if (book.type !== 'PDF') return '';
+      return `https://docs.google.com/gview?url=${encodeURIComponent(book.url)}&embedded=true`;
+    }
+
+    function cardTemplate(book, isRecent = false) {
+      const imgUrl = coverUrl(book);
+      return `
+        <article class="book-card" data-book-id="${book.id}" tabindex="0" role="button" aria-label="เปิด ${escapeHtml(book.title)}">
+          <div class="cover" style="background:${coverGradient(book.title)}">
+            <span class="badge">${book.type}</span>
+            ${imgUrl ? `<img src="${imgUrl}" alt="ปก ${escapeHtml(book.title)}" loading="lazy" onerror="this.style.display='none'">` : ''}
+            <div class="cover-fallback">${escapeHtml(book.title)}</div>
+          </div>
+          <div class="meta">
+            <p class="name">${escapeHtml(book.title)}</p>
+            <div class="muted">${isRecent ? 'อ่านล่าสุด' : 'แตะเพื่ออ่านหนังสือ'}</div>
+          </div>
+        </article>
+      `;
+    }
+
+    function bindCards(container, books) {
+      container.querySelectorAll('.book-card').forEach(card => {
+        const book = books.find(item => item.id === card.dataset.bookId);
+        if (!book) return;
+        card.addEventListener('click', () => openBook(book));
+        card.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openBook(book);
+          }
+        });
+      });
+    }
+
+    function saveRecent(book) {
+      const key = 'myreader_recent_books';
+      let items = [];
+      try { items = JSON.parse(localStorage.getItem(key) || '[]'); } catch (_) { items = []; }
+      items = items.filter(item => item.id !== book.id);
+      items.unshift({ id: book.id, title: book.title, url: book.url, type: book.type, category: book.category, savedAt: Date.now() });
+      localStorage.setItem(key, JSON.stringify(items.slice(0, 8)));
+      renderRecent();
+    }
+
+    function getRecent() {
+      const key = 'myreader_recent_books';
+      try {
+        const items = JSON.parse(localStorage.getItem(key) || '[]');
+        return items.filter(item => item.category === categoryKey);
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function renderRecent() {
+      const items = getRecent();
+      if (!items.length) {
+        recentSection.style.display = 'none';
+        recentList.innerHTML = '';
+        return;
+      }
+      recentSection.style.display = 'block';
+      recentList.innerHTML = items.map(item => cardTemplate(item, true)).join('');
+      bindCards(recentList, items);
+    }
+
+    function renderBooks(books) {
+      statCount.textContent = String(books.length);
+      resultCount.textContent = `${books.length} รายการ`;
+      const types = [...new Set(books.map(item => item.type))];
+      statTypes.textContent = types.length ? types.join(', ') : '-';
+
+      if (!books.length) {
+        bookListEl.innerHTML = `<div class="status">ไม่พบหนังสือในหมวดนี้<br><small>${escapeHtml(categoryKey)}</small></div>`;
+        return;
+      }
+      bookListEl.innerHTML = books.map(book => cardTemplate(book)).join('');
+      bindCards(bookListEl, books);
+    }
+
+    function applySearch() {
+      const q = normalizeText(searchInput.value);
+      const filtered = !q ? allBooks : allBooks.filter(book => normalizeText(book.title).includes(q));
+      renderBooks(filtered);
+    }
+
+    async function loadBooks() {
+      try {
+        const response = await fetch(`./database.json?v=${Date.now()}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (!Array.isArray(data)) throw new Error('database.json ต้องเป็น array');
+
+        const needle = `https://rung-sup.github.io/${categoryKey}/`.toLowerCase();
+
+        allBooks = data
+          .filter(item => item && item.url && String(item.url).toLowerCase().startsWith(needle))
+          .map((item, idx) => ({
+            id: makeId(item.url || `${categoryKey}-${idx}`),
+            title: (item.title || `หนังสือ ${idx + 1}`).toString().trim(),
+            url: item.url,
+            type: fileType(item.url),
+            category: categoryKey
+          }))
+          .sort((a, b) => a.title.localeCompare(b.title, 'th'));
+
+        renderBooks(allBooks);
+        renderRecent();
+      } catch (error) {
+        console.error(error);
+        bookListEl.innerHTML = `<div class="status">โหลดฐานข้อมูลไม่สำเร็จ<br><small>${escapeHtml(error.message || 'Unknown error')}</small></div>`;
+      }
+    }
+
+    async function openBook(book) {
+      currentBook = book;
+      currentType = book.type;
+      readerOverlay.style.display = 'flex';
+      readerOverlay.setAttribute('aria-hidden', 'false');
+      bookTitleDisplay.textContent = book.title;
+      pageInfo.textContent = 'กำลังโหลด...';
+      saveRecent(book);
+
+      pdfContainer.style.display = 'none';
+      epubViewer.style.display = 'none';
+
+      if (rendition) { try { rendition.destroy(); } catch (_) {} rendition = null; }
+      if (epubBook) { try { epubBook.destroy(); } catch (_) {} epubBook = null; }
+      pdfDoc = null;
+      pageNum = 1;
+      pageRendering = false;
+      pageNumPending = null;
+
+      if (book.type === 'PDF') {
+        await openPdf(book.url);
+      } else if (book.type === 'EPUB') {
+        await openEpub(book.url);
+      } else {
+        pageInfo.textContent = 'ไฟล์นี้จะเปิดในแท็บใหม่';
+        window.open(book.url, '_blank', 'noopener,noreferrer');
+      }
+    }
+
+    async function openPdf(url) {
+      try {
+        pdfContainer.style.display = 'flex';
+        const loadingTask = pdfjsLib.getDocument({ url, withCredentials: false });
+        pdfDoc = await loadingTask.promise;
+        pageInfo.textContent = `หน้า 1/${pdfDoc.numPages}`;
+        renderPdfPage(1);
+      } catch (error) {
+        console.error(error);
+        pageInfo.textContent = 'เปิด PDF ในตัวอ่านไม่สำเร็จ กำลังเปิดแท็บใหม่';
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    }
+
+    function renderPdfPage(num) {
+      if (!pdfDoc) return;
+      pageRendering = true;
+      pdfDoc.getPage(num).then(page => {
+        const rawViewport = page.getViewport({ scale: 1 });
+        const maxWidth = Math.min(window.innerWidth - 24, 1000);
+        const scale = Math.max(0.8, maxWidth / rawViewport.width);
+        const viewport = page.getViewport({ scale });
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        return page.render({ canvasContext: ctx, viewport }).promise;
+      }).then(() => {
+        pageRendering = false;
+        pageInfo.textContent = `หน้า ${pageNum}/${pdfDoc.numPages}`;
+        if (pageNumPending !== null) {
+          const pending = pageNumPending;
+          pageNumPending = null;
+          renderPdfPage(pending);
+        }
+      });
+    }
+
+    function queueRenderPage(num) {
+      if (pageRendering) pageNumPending = num;
+      else renderPdfPage(num);
+    }
+
+    async function openEpub(url) {
+      try {
+        epubViewer.style.display = 'block';
+        epubBook = ePub(url);
+        rendition = epubBook.renderTo('epub-render', {
+          width: '100%',
+          height: '100%',
+          spread: 'none'
+        });
+        rendition.on('relocated', loc => {
+          const current = loc?.start?.displayed?.page || 0;
+          const total = loc?.start?.displayed?.total || 0;
+          pageInfo.textContent = `หน้า ${current}/${total}`;
+        });
+        await rendition.display();
+        pageInfo.textContent = 'กำลังอ่าน EPUB';
+      } catch (error) {
+        console.error(error);
+        pageInfo.textContent = 'เปิด EPUB ไม่สำเร็จ กำลังเปิดแท็บใหม่';
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    }
+
+    function closeBook() {
+      readerOverlay.style.display = 'none';
+      readerOverlay.setAttribute('aria-hidden', 'true');
+      if (rendition) { try { rendition.destroy(); } catch (_) {} rendition = null; }
+      if (epubBook) { try { epubBook.destroy(); } catch (_) {} epubBook = null; }
+      pdfDoc = null;
+      currentBook = null;
+      currentType = null;
+    }
+
+    function prevPage() {
+      if (currentType === 'PDF' && pdfDoc && pageNum > 1) {
+        pageNum -= 1;
+        queueRenderPage(pageNum);
+      } else if (currentType === 'EPUB' && rendition) {
+        rendition.prev();
+      }
+    }
+
+    function nextPage() {
+      if (currentType === 'PDF' && pdfDoc && pageNum < pdfDoc.numPages) {
+        pageNum += 1;
+        queueRenderPage(pageNum);
+      } else if (currentType === 'EPUB' && rendition) {
+        rendition.next();
+      }
+    }
+
+    searchInput.addEventListener('input', applySearch);
+    closeReaderBtn.addEventListener('click', closeBook);
+    openFileBtn.addEventListener('click', () => { if (currentBook?.url) window.open(currentBook.url, '_blank', 'noopener,noreferrer'); });
+    prevBtn.addEventListener('click', prevPage);
+    nextBtn.addEventListener('click', nextPage);
+    scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    document.addEventListener('keydown', e => {
+      if (readerOverlay.style.display !== 'flex') return;
+      if (e.key === 'Escape') closeBook();
+      if (e.key === 'ArrowLeft') prevPage();
+      if (e.key === 'ArrowRight') nextPage();
+    });
+
+    window.addEventListener('resize', () => {
+      if (currentType === 'PDF' && pdfDoc) queueRenderPage(pageNum);
+    });
+
+    loadBooks();
   </script>
 </body>
 </html>

@@ -42,7 +42,10 @@
                 const firstBook = groups[cat][0]; // เล่มแรกของหมวด
                 const card = document.createElement('div');
                 card.className = 'folder-card';
-                card.onclick = () => location.href = `register.html?cat=${cat}&name=${encodeURIComponent(cat)}`;
+                card.onclick = () => {
+    const encodedCat = encodeURIComponent(cat);
+    location.href = `register.html?cat=${encodedCat}&name=${encodeURIComponent(cat)}`;
+};
                 card.innerHTML = `
                     <div class="folder-cover">
                         <span class="count-badge">${groups[cat].length} เล่ม</span>

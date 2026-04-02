@@ -3,42 +3,64 @@ import json
 import urllib.parse
 import re
 
+# ตรวจสอบที่อยู่โฟลเดอร์ให้ถูกต้อง
 base_dir = r"C:\MyLibrary"
 base_url = "https://Rung-sup.github.io" 
+
 db = []
+seen_files = set() # กันไฟล์ซ้ำซ้อนกรณีเดียวกันเป๊ะ
 
 def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
-print("📦 กำลังจัดระเบียบหอสมุดดิจิทัล...")
+print("🔍 กำลังสำรวจหอสมุดดิจิทัล (ฉบับกู้คืนไฟล์)...")
 
-# ดึงรายชื่อโฟลเดอร์หมวดหมู่
-categories = [d for d in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, d))]
-categories.sort(key=natural_sort_key) # เรียงหมวดหมู่ 1, 2, 3...
-
-for cat in categories:
-    cat_path = os.path.join(base_dir, cat)
-    file_list = []
-    for root, dirs, files in os.walk(cat_path):
-        for file in files:
-            if file.lower().endswith(('.pdf', '.epub')) and not file.startswith(('a', '._', 'ttt')):
-                file_list.append(os.path.join(root, file))
+for root, dirs, files in os.walk(base_dir):
+    # ข้ามโฟลเดอร์ที่ไม่เกี่ยวข้อง
+    if '.git' in dirs: dirs.remove('.git')
     
-    # เรียงไฟล์ในหมวดนั้นๆ ให้เป๊ะ 1, 2, 10
-    file_list.sort(key=lambda x: natural_sort_key(os.path.basename(x)))
+    for file in files:
+        # เอาเฉพาะ PDF และ EPUB (ไม่สนตัวพิมพ์เล็ก-ใหญ่)
+        if file.lower().endswith(('.pdf', '.epub')):
+            
+            # กรองเฉพาะไฟล์ขยะของระบบจริงๆ เท่านั้น (เช่น ._ หรือไฟล์ชั่วคราว)
+            if file.startswith('._') or file.startswith('~$'):
+                continue
 
-    for full_path in file_list:
-        file = os.path.basename(full_path)
-        relative_path = os.path.relpath(full_path, base_dir)
-        url_path = urllib.parse.quote(relative_path.replace("\\", "/"))
-        
-        db.append({
-            "title": os.path.splitext(file)[0],
-            "url": f"{base_url}/{url_path}",
-            "category": cat # เก็บชื่อหมวดหมู่ไว้ด้วย
-        })
+            full_path = os.path.join(root, file)
+            file_size = os.path.getsize(full_path)
+            
+            # ป้องกันไฟล์ซ้ำ (ใช้ชื่อ+ขนาด)
+            file_id = f"{file}_{file_size}"
+            if file_id in seen_files:
+                continue
+            seen_files.add(file_id)
 
+            # แยกหมวดหมู่จากโฟลเดอร์แรกถัดจาก MyLibrary
+            relative_path = os.path.relpath(full_path, base_dir)
+            path_parts = relative_path.split(os.sep)
+            
+            if len(path_parts) > 1:
+                category = path_parts[0]
+            else:
+                category = "ทั่วไป" # ไฟล์ที่ไม่ได้อยู่ในโฟลเดอร์ย่อย
+
+            url_path = urllib.parse.quote(relative_path.replace("\\", "/"))
+            
+            db.append({
+                "title": os.path.splitext(file)[0],
+                "url": f"{base_url}/{url_path}",
+                "category": category
+            })
+            print(f"✅ เพิ่มแล้ว: [{category}] {file}")
+
+# เรียงลำดับชื่อหนังสือทั้งหมดให้สวยงาม
+db.sort(key=lambda x: natural_sort_key(x['title']))
+
+# บันทึกเป็น database.json
 with open("database.json", "w", encoding="utf-8") as f:
     json.dump(db, f, ensure_ascii=False, indent=4)
 
-print(f"✨ เรียงลำดับและจัดหมวดหมู่เสร็จแล้ว {len(db)} เล่ม!")
+print("-" * 30)
+print(f"✨ ภารกิจสำเร็จ! รวมหนังสือทั้งหมดในฐานข้อมูล: {len(db)} เล่ม")
+print(f"💡 ตรวจสอบไฟล์ database.json ในเครื่องได้เลยครับ")

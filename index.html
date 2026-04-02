@@ -5,119 +5,130 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ - Reader App</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
-        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .login-container { background-color: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 100%; max-width: 400px; text-align: center; }
-        .logo { font-size: 32px; font-weight: 600; color: #333; margin-bottom: 10px; }
-        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.3s; }
-        .input-group input:focus { border-color: #764ba2; }
-        .btn-login { width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
-        .btn-login:hover { background: #667eea; }
-        .register-link { color: #666; font-size: 14px; margin-top: 20px; }
-        .register-link a { color: #764ba2; text-decoration: none; font-weight: 500; cursor: pointer; }
-        #error-msg { color: #ff4d4d; font-size: 13px; margin-top: 10px; min-height: 1.2em; }
+        body {
+            margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .auth-container {
+            background-color: rgba(255, 255, 255, 0.95); padding: 35px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 400px; text-align: center;
+        }
+        .title { font-size: 26px; font-weight: 600; color: #333; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; }
+        .btn-main {
+            width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px;
+            font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 15px;
+        }
+        .btn-main:hover { background: #667eea; }
+        .toggle-link { margin-top: 20px; font-size: 13px; color: #555; cursor: pointer; text-decoration: underline; }
+        #register-form { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
-        <div class="logo">📚 My Reader</div>
-        <div id="form-title" class="subtitle">เข้าสู่ระบบเพื่อเริ่มอ่านนิยายเรื่องโปรดของคุณ</div>
-
-        <div class="input-group">
-            <input type="email" placeholder="อีเมลของคุณ" id="userEmail">
-        </div>
-        <div class="input-group">
-            <input type="password" placeholder="รหัสผ่าน" id="userPassword">
+    <div class="auth-container">
+        <div id="login-form">
+            <div class="title">🔑 เข้าสู่ระบบ</div>
+            <input type="email" id="login-email" placeholder="อีเมลของคุณ">
+            <input type="password" id="login-pass" placeholder="รหัสผ่าน">
+            <button class="btn-main" onclick="handleLogin()">เข้าใช้งาน</button>
+            <div class="toggle-link" onclick="toggleForms()">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</div>
         </div>
 
-        <button class="btn-login" id="mainBtn">เข้าสู่ระบบ</button>
-
-        <div class="register-link">
-            <span id="switchText">ยังไม่มีบัญชี?</span> 
-            <a id="switchBtn">ลงทะเบียนใหม่</a>
+        <div id="register-form">
+            <div class="title">📝 ลงทะเบียนใหม่</div>
+            <input type="text" id="reg-name" placeholder="ชื่อ-นามสกุล">
+            <input type="email" id="reg-email" placeholder="อีเมล">
+            <input type="password" id="reg-pass" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)">
+            <button class="btn-main" id="reg-btn" onclick="handleRegister()">สมัครสมาชิก</button>
+            <div class="toggle-link" onclick="toggleForms()">มีบัญชีแล้ว? เข้าสู่ระบบที่นี่</div>
         </div>
-        <p id="error-msg"></p>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-
-        // --- Firebase Config ของคุณรันนรา ---
+    <script>
+        // --- 1. การตั้งค่า Firebase (พี่รันนราเอาข้อมูลจาก Firebase Console มาวางตรงนี้ครับ) ---
         const firebaseConfig = {
-          apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
-          authDomain: "myreaderapp-89e75.firebaseapp.com",
-          projectId: "myreaderapp-89e75",
-          storageBucket: "myreaderapp-89e75.firebasestorage.app",
-          messagingSenderId: "1016151043482",
-          appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
-        };
+  apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+  authDomain: "myreaderapp-89e75.firebaseapp.com",
+  projectId: "myreaderapp-89e75",
+  storageBucket: "myreaderapp-89e75.firebasestorage.app",
+  messagingSenderId: "1016151043482",
+  appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+};
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        firebase.initializeApp(firebaseConfig);
 
-        let isLoginMode = true;
-        const mainBtn = document.getElementById('mainBtn');
-        const switchBtn = document.getElementById('switchBtn');
-        const errorMsg = document.getElementById('error-msg');
+        const auth = firebase.auth();
 
-        // 1. ตรวจสอบการล็อกอินค้างไว้ (จดจำผู้ใช้)
-        onAuthStateChanged(auth, (user) => {
-            if (user && user.emailVerified) {
-                window.location.href = 'categories.html';
-            }
-        });
+        // สลับฟอร์ม
+        function toggleForms() {
+            const login = document.getElementById('login-form');
+            const register = document.getElementById('register-form');
+            login.style.display = (login.style.display === "none") ? "block" : "none";
+            register.style.display = (register.style.display === "none") ? "block" : "none";
+        }
 
-        // 2. สลับโหมด Login / Register
-        switchBtn.addEventListener('click', () => {
-            isLoginMode = !isLoginMode;
-            document.getElementById('form-title').innerText = isLoginMode ? "เข้าสู่ระบบเพื่อเริ่มอ่านนิยายเรื่องโปรดของคุณ" : "สร้างบัญชีใหม่เพื่อเข้าใช้งานระบบ";
-            mainBtn.innerText = isLoginMode ? "เข้าสู่ระบบ" : "ลงทะเบียน";
-            document.getElementById('switchText').innerText = isLoginMode ? "ยังไม่มีบัญชี?" : "มีบัญชีอยู่แล้ว?";
-            switchBtn.innerText = isLoginMode ? "ลงทะเบียนใหม่" : "เข้าสู่ระบบ";
-            errorMsg.innerText = "";
-        });
+        // --- 2. ฟังก์ชันลงทะเบียน + ส่งอีเมลยืนยัน ---
+        function handleRegister() {
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+            const btn = document.getElementById('reg-btn');
 
-        // 3. จัดการปุ่มกด
-        mainBtn.addEventListener('click', () => {
-            const email = document.getElementById('userEmail').value;
-            const password = document.getElementById('userPassword').value;
+            if (pass.length < 6) { alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวครับ"); return; }
 
-            if (!email || !password) {
-                errorMsg.innerText = "กรุณากรอกข้อมูลให้ครบถ้วนครับ";
-                return;
-            }
+            btn.disabled = true;
+            btn.innerText = "กำลังสร้างบัญชี...";
 
-            if (isLoginMode) {
-                signInWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        if (userCredential.user.emailVerified) {
+            auth.createUserWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    // เมื่อสร้างบัญชีสำเร็จ -> ส่งอีเมลยืนยันทันที
+                    const user = userCredential.user;
+                    return user.sendEmailVerification();
+                })
+                .then(() => {
+                    alert("ลงทะเบียนสำเร็จ! ระบบได้ส่งอีเมลยืนยันไปที่ " + email + " แล้ว กรุณาตรวจสอบในกล่องข้อความ (หรือถังขยะ) ก่อนเข้าใช้งานครับ");
+                    // ดีดไปหน้ายอมรับเงื่อนไขตามลำดับที่คุณรันนราต้องการ
+                    window.location.href = 'terms.html';
+                })
+                .catch((error) => {
+                    alert("เกิดข้อผิดพลาด: " + error.message);
+                    btn.disabled = false;
+                    btn.innerText = "สมัครสมาชิก";
+                });
+        }
+
+        // --- 3. ฟังก์ชันเข้าสู่ระบบ + เช็คสถานะการยืนยันอีเมล ---
+        function handleLogin() {
+            const email = document.getElementById('login-email').value;
+            const pass = document.getElementById('login-pass').value;
+
+            auth.signInWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+
+                    // ตรวจสอบว่ายืนยันอีเมลหรือยัง
+                    if (user.emailVerified) {
+                        // เช็คว่ายอมรับเงื่อนไขหรือยัง
+                        if (localStorage.getItem('terms_accepted') === 'true') {
                             window.location.href = 'categories.html';
                         } else {
-                            errorMsg.innerText = "กรุณายืนยันอีเมลในกล่องจดหมายก่อนครับ";
+                            window.location.href = 'terms.html';
                         }
-                    })
-                    .catch(err => {
-                        errorMsg.innerText = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
-                    });
-            } else {
-                createUserWithEmailAndPassword(auth, email, password)
-                    .then((userCredential) => {
-                        sendEmailVerification(userCredential.user);
-                        alert("ลงทะเบียนสำเร็จ! กรุณาเช็คอีเมลเพื่อยืนยันตัวตนก่อนเข้าสู่ระบบครับ");
-                        isLoginMode = true;
-                        // คลิกปุ่มสลับกลับไปหน้า login
-                        switchBtn.click();
-                    })
-                    .catch(err => {
-                        errorMsg.innerText = "ข้อผิดพลาด: " + err.message;
-                    });
-            }
-        });
+                    } else {
+                        alert("กรุณายืนยันอีเมลของคุณก่อนเข้าใช้งานครับ ระบบได้ส่งลิงก์ไปให้แล้ว");
+                        auth.signOut(); // บังคับออกเพื่อให้ไปยืนยันตัวตนก่อน
+                    }
+                })
+                .catch((error) => {
+                    alert("เข้าสู่ระบบไม่สำเร็จ: " + error.message);
+                });
+        }
     </script>
 </body>
 </html>

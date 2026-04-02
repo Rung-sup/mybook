@@ -14,44 +14,34 @@
     }
 
     async function loadData() {
-        try {
-            // เติม ?v= เพื่อบังคับให้โหลดไฟล์ใหม่ ไม่ใช้ของเก่าในเครื่อง
-            const response = await fetch(`database.json?v=${new Date().getTime()}`);
-            const data = await response.json();
-            
-            const marker = `/${categoryKey}/`;
-            let books = data.filter(item => item.url && item.url.includes(marker));
-            
-            // --- ไม้ตายการเรียงลำดับ (Natural Numeric Sort) ---
-            books.sort((a, b) => {
-                const titleA = a.title.trim();
-                const titleB = b.title.trim();
-                
-                // ใช้มาตรฐานสากลในการเรียงลำดับภาษาไทยร่วมกับตัวเลข
-                return titleA.localeCompare(titleB, 'th', { numeric: true, sensitivity: 'base' });
-            });
+    try {
+        const response = await fetch(`database.json?v=${new Date().getTime()}`);
+        const data = await response.json();
+        
+        const marker = `/${categoryKey}/`;
+        // กรองเอาเฉพาะหมวดนี้ แต่ "ห้าม" สั่ง .sort() ซ้ำในนี้ครับ 
+        // เพราะ Python เรียงมาให้ดีแล้ว
+        let books = data.filter(item => item.url && item.url.includes(marker));
 
-            console.log("ตรวจสอบการเรียงลำดับ:", books.map(b => b.title)); // ดูผลใน Console (F12)
-
-            const listDiv = document.getElementById('book-list');
-            listDiv.innerHTML = '';
-            books.forEach((book, index) => {
-                const imgId = `img-${index}`;
-                const card = document.createElement('div');
-                card.className = 'book-card';
-                card.onclick = () => openBook(book.url);
-                card.innerHTML = `
-                    <div class="cover-box">
-                        <img id="${imgId}" class="book-cover-img" style="display:none;">
-                        <span id="load-${imgId}" style="color:#aaa; font-size:10px;">โหลดปก...</span>
-                    </div>
-                    <div class="book-info">${book.title}</div>
-                `;
-                listDiv.appendChild(card);
-                generateThumb(book.url, imgId);
-            });
-        } catch (err) { console.error("Error loading books:", err); }
-    }
+        const listDiv = document.getElementById('book-list');
+        listDiv.innerHTML = '';
+        books.forEach((book, index) => {
+            const imgId = `img-${index}`;
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.onclick = () => openBook(book.url);
+            card.innerHTML = `
+                <div class="cover-box">
+                    <img id="${imgId}" class="book-cover-img" style="display:none;">
+                    <span id="load-${imgId}" style="color:#aaa; font-size:10px;">โหลดปก...</span>
+                </div>
+                <div class="book-info">${book.title}</div>
+            `;
+            listDiv.appendChild(card);
+            generateThumb(book.url, imgId);
+        });
+    } catch (err) { console.error(err); }
+}
 
     // ... (ส่วนฟังก์ชันอื่นๆ generateThumb, openBook, renderPage เหมือนเดิม) ...
 </script>

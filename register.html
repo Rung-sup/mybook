@@ -1,57 +1,117 @@
-<script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-    const params = new URLSearchParams(window.location.search);
-    const categoryKey = params.get('cat') || '1_PetchPraUma';
-    document.getElementById('header-title').innerText = params.get('name') || 'คลังหนังสือ';
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังหนังสือ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; background-color: #f4f1ea; color: #333; }
+        .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 20px; }
+        .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 12px rgba(0,0,0,0.08); cursor: pointer; transition: 0.3s; }
+        .book-card:hover { transform: translateY(-8px); }
+        .cover-box { width: 100%; height: 200px; background: #5d4037; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
+        .book-info { padding: 10px; font-size: 11px; text-align: center; height: 55px; overflow: hidden; font-weight: 500; display: flex; align-items: center; justify-content: center; }
+        #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; }
+        .reader-header { background: #111; color: #fff; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; flex-direction: column; background: #222; -webkit-overflow-scrolling: touch; padding: 15px 0; }
+        #pdf-canvas { width: 100% !important; height: auto !important; max-width: 900px; margin: 0 auto; display: block; }
+        .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; pointer-events: none; }
+        .nav-btn { width: 65px; height: 65px; border-radius: 50%; background: #d4af37; color: #fff; border: none; pointer-events: auto; cursor: pointer; font-size: 28px; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="btn-back" onclick="location.href='categories.html'">❮ กลับ</button>
+        <b id="header-title">คลังหนังสือ</b>
+        <div style="width:40px;"></div>
+    </div>
+    <div class="container" id="book-list"></div>
+    <div id="reader-overlay">
+        <div class="reader-header">
+            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 20px; border-radius:8px;">ปิด</button>
+            <span id="page-info">หน้า 0 / 0</span>
+            <div style="width:40px;"></div>
+        </div>
+        <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
+        <div class="nav-controls"><button class="nav-btn" onclick="prevPage()">❮</button><button class="nav-btn" onclick="nextPage()">❯</button></div>
+    </div>
 
-    let pdfDoc = null, pageNum = 1;
-    const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+        
+        // ดึงค่าหมวดหมู่และชื่อหมวดหมู่จาก URL
+        const params = new URLSearchParams(window.location.search);
+        const categoryKey = decodeURIComponent(params.get('cat') || "");
+        const categoryName = decodeURIComponent(params.get('name') || "คลังหนังสือ");
+        document.getElementById('header-title').innerText = categoryName;
 
-    // ฟังก์ชันดึงตัวเลขออกจากชื่อ (เช่น "เล่ม 10" -> 10)
-    function getNum(str) {
-        const match = str.match(/\d+/);
-        return match ? parseInt(match[0], 10) : 0;
-    }
+        let pdfDoc = null, pageNum = 1;
+        const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-    async function loadData() {
-        try {
-            // เติม ?v= เพื่อบังคับให้โหลดไฟล์ใหม่ ไม่ใช้ของเก่าในเครื่อง
-            const response = await fetch(`database.json?v=${new Date().getTime()}`);
-            const data = await response.json();
-            
-            const marker = `/${categoryKey}/`;
-            let books = data.filter(item => item.url && item.url.includes(marker));
-            
-            // --- ไม้ตายการเรียงลำดับ (Natural Numeric Sort) ---
-            books.sort((a, b) => {
-                const titleA = a.title.trim();
-                const titleB = b.title.trim();
+        async function loadData() {
+            try {
+                // บังคับโหลด JSON ชุดล่าสุด (กัน Cache)
+                const response = await fetch(`database.json?v=${new Date().getTime()}`);
+                const data = await response.json();
                 
-                // ใช้มาตรฐานสากลในการเรียงลำดับภาษาไทยร่วมกับตัวเลข
-                return titleA.localeCompare(titleB, 'th', { numeric: true, sensitivity: 'base' });
-            });
+                // กรองเฉพาะหนังสือที่อยู่ในหมวดที่เลือก
+                let books = data.filter(item => item.category === categoryKey);
+                
+                const listDiv = document.getElementById('book-list');
+                listDiv.innerHTML = '';
+                books.forEach((book, index) => {
+                    const imgId = `img-${index}`;
+                    const card = document.createElement('div');
+                    card.className = 'book-card';
+                    card.onclick = () => openBook(book.url);
+                    card.innerHTML = `<div class="cover-box"><img id="${imgId}" class="book-cover-img" style="display:none;"><span id="load-${imgId}" style="color:#aaa; font-size:10px;">โหลดปก...</span></div><div class="book-info">${book.title}</div>`;
+                    listDiv.appendChild(card);
+                    generateThumb(book.url, imgId);
+                });
+            } catch (err) { console.error(err); }
+        }
 
-            console.log("ตรวจสอบการเรียงลำดับ:", books.map(b => b.title)); // ดูผลใน Console (F12)
+        async function generateThumb(url, imgId) {
+            try {
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const page = await pdf.getPage(1);
+                const vp = page.getViewport({ scale: 0.3 });
+                const tCanvas = document.createElement('canvas'), tCtx = tCanvas.getContext('2d');
+                tCanvas.height = vp.height; tCanvas.width = vp.width;
+                await page.render({ canvasContext: tCtx, viewport: vp }).promise;
+                const img = document.getElementById(imgId);
+                if(img) { img.src = tCanvas.toDataURL(); img.style.display = 'block'; document.getElementById('load-' + imgId).style.display = 'none'; }
+                pdf.destroy();
+            } catch (e) { document.getElementById('load-' + imgId).innerText = "ไม่มีปก"; }
+        }
 
-            const listDiv = document.getElementById('book-list');
-            listDiv.innerHTML = '';
-            books.forEach((book, index) => {
-                const imgId = `img-${index}`;
-                const card = document.createElement('div');
-                card.className = 'book-card';
-                card.onclick = () => openBook(book.url);
-                card.innerHTML = `
-                    <div class="cover-box">
-                        <img id="${imgId}" class="book-cover-img" style="display:none;">
-                        <span id="load-${imgId}" style="color:#aaa; font-size:10px;">โหลดปก...</span>
-                    </div>
-                    <div class="book-info">${book.title}</div>
-                `;
-                listDiv.appendChild(card);
-                generateThumb(book.url, imgId);
-            });
-        } catch (err) { console.error("Error loading books:", err); }
-    }
+        async function openBook(url) {
+            document.getElementById('reader-overlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            pdfDoc = await pdfjsLib.getDocument(url).promise;
+            pageNum = 1; renderPage(pageNum);
+        }
 
-    // ... (ส่วนฟังก์ชันอื่นๆ generateThumb, openBook, renderPage เหมือนเดิม) ...
-</script>
+        async function renderPage(num) {
+            const page = await pdfDoc.getPage(num);
+            const viewport = page.getViewport({ scale: 2.0 });
+            canvas.height = viewport.height; canvas.width = viewport.width;
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+            document.getElementById('pdf-render-container').scrollTop = 0;
+        }
+
+        function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
+        function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
+        function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; document.body.style.overflow = 'auto'; pdfDoc = null; }
+
+        if (categoryKey) loadData();
+    </script>
+</body>
+</html>

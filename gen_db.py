@@ -10,32 +10,30 @@ db = []
 def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
-print("🔍 กำลังสำรวจหอสมุดแบบแยกชั้น...")
+print("🔍 กำลังกู้คืนฐานข้อมูล (ฉบับเสถียร)...")
 
 for root, dirs, files in os.walk(base_dir):
     for file in files:
         if file.lower().endswith(('.pdf', '.epub')) and not file.startswith(('._', 'ttt')):
             full_path = os.path.join(root, file)
             rel_path = os.path.relpath(full_path, base_dir)
-            parts = rel_path.split(os.sep)
+            path_parts = rel_path.split(os.sep)
             
-            # parts[0] คือ หมวดใหญ่ (เช่น 2_Thai_Novel)
-            # ถ้ามี parts[2] แปลว่าไฟล์นี้อยู่ในโฟลเดอร์ย่อย (เช่น 2_Thai_Novel/ล่องไพร/file.pdf)
-            category = parts[0]
-            sub_folder = parts[1] if len(parts) > 2 else None # ถ้าอยู่ชั้นนอกจะเป็น None
+            # หมวดหมู่คือโฟลเดอร์ชั้นแรกสุด
+            category = path_parts[0] if len(path_parts) > 1 else "ทั่วไป"
             
             url_path = urllib.parse.quote(rel_path.replace("\\", "/"))
             
             db.append({
                 "title": os.path.splitext(file)[0],
                 "url": f"{base_url}/{url_path}",
-                "category": category,
-                "subFolder": sub_folder
+                "category": category
             })
 
+# เรียงลำดับชื่อเรื่องให้ 1 มาก่อน 10 ทั่วทั้งระบบ
 db.sort(key=lambda x: natural_sort_key(x['title']))
 
 with open("database.json", "w", encoding="utf-8") as f:
     json.dump(db, f, ensure_ascii=False, indent=4)
 
-print(f"✨ สำเร็จ! พบทั้งหมด {len(db)} เล่ม")
+print(f"✨ คืนค่าสำเร็จ! พบทั้งหมด {len(db)} เล่ม (ตรวจสอบในเครื่องได้เลยครับ)")

@@ -3,79 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>หอสมุดคุณรันนรา</title>
+    <title>คลังหนังสือคุณรันนรา</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
-        body { background: #f4f1ea; margin: 0; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 25px; max-width: 1000px; margin: 0 auto; }
-        .folder-card { background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; position: relative; border: 2px solid #d4af37; }
-        .folder-card:hover { transform: translateY(-10px); }
-        .folder-cover { width: 100%; height: 220px; background: #5d4037; display: flex; align-items: center; justify-content: center; position: relative; }
-        .folder-cover img { width: 100%; height: 100%; object-fit: cover; }
-        .folder-label { padding: 12px; text-align: center; background: #fff; font-weight: 600; font-size: 14px; color: #333; }
-        .count-badge { position: absolute; top: 10px; right: 10px; background: #d4af37; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+        body { background: #f4f1ea; margin: 0; padding: 20px; text-align: center; }
+        h1 { color: #333; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 800px; margin: 0 auto; }
+        .cat-card { background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; border: 2px solid #d4af37; font-weight: 600; }
+        .cat-card:hover { background: #d4af37; color: #fff; transform: translateY(-5px); }
     </style>
 </head>
 <body>
-    <div class="header"><h1>📚 หอสมุดส่วนตัว</h1></div>
-    <div class="folder-grid" id="folder-list"></div>
-
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-
-        async function loadFolders() {
-            const response = await fetch(`database.json?v=${Date.now()}`);
-            const data = await response.json();
-            
-            // จัดกลุ่มตามหมวดหมู่
-            const groups = {};
-            data.forEach(book => {
-                if (!groups[book.category]) groups[book.category] = [];
-                groups[book.category].push(book);
-            });
-
-            const grid = document.getElementById('folder-list');
-            Object.keys(groups).forEach((cat, index) => {
-                const firstBook = groups[cat][0]; // เล่มแรกของหมวด
-                const card = document.createElement('div');
-                card.className = 'folder-card';
-                card.onclick = () => {
-    const encodedCat = encodeURIComponent(cat);
-    location.href = `register.html?cat=${encodedCat}&name=${encodeURIComponent(cat)}`;
-};
-                card.innerHTML = `
-                    <div class="folder-cover">
-                        <span class="count-badge">${groups[cat].length} เล่ม</span>
-                        <img id="cover-${index}" style="display:none;">
-                        <div id="loader-${index}" style="color:#fff; font-size:12px;">กำลังโหลดปก...</div>
-                    </div>
-                    <div class="folder-label">${cat.replace(/^\d+_/, '').replace(/_/g, ' ')}</div>
-                `;
-                grid.appendChild(card);
-                generateThumb(firstBook.url, `cover-${index}`, `loader-${index}`);
-            });
-        }
-
-        async function generateThumb(url, imgId, loaderId) {
-            try {
-                const pdf = await pdfjsLib.getDocument(url).promise;
-                const page = await pdf.getPage(1);
-                const vp = page.getViewport({ scale: 0.4 });
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.height = vp.height; canvas.width = vp.width;
-                await page.render({ canvasContext: ctx, viewport: vp }).promise;
-                document.getElementById(imgId).src = canvas.toDataURL();
-                document.getElementById(imgId).style.display = 'block';
-                document.getElementById(loaderId).style.display = 'none';
-                pdf.destroy();
-            } catch (e) { document.getElementById(loaderId).innerText = "ไม่มีรูปปก"; }
-        }
-
-        loadFolders();
-    </script>
+    <h1>📚 หอสมุดส่วนตัว</h1>
+    <div class="grid">
+        <div class="cat-card" onclick="location.href='register.html?cat=1_PetchPraUma&name=เพชรพระอุมา'">1. เพชรพระอุมา</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=2_Thai_Novel&name=นิยายไทย'">2. นิยายไทย</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=3_General&name=ความรู้ทั่วไป'">3. ความรู้ทั่วไป</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=4_Military&name=การทหาร'">4. การทหาร</div>
+    </div>
 </body>
 </html>

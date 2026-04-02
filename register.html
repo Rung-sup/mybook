@@ -12,33 +12,41 @@
         .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
         .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; }
         .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
-        .book-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; text-align: center; }
-        .book-cover { width: 100%; height: 180px; background: #5d4037; color: white; display: flex; align-items: center; justify-content: center; font-size: 11px; padding: 10px; overflow: hidden; }
-        .book-info { padding: 10px; font-size: 11px; color: #333; height: 50px; overflow: hidden; }
+        .book-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; }
+        .book-card:hover { transform: translateY(-5px); }
+        .cover-box { width: 100%; height: 200px; background: #5d4037; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
+        .book-info { padding: 10px; font-size: 11px; text-align: center; height: 50px; overflow: hidden; line-height: 1.4; }
+
+        /* Reader Overlay - ปรับให้รองรับมือถือ */
         #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; }
-        .reader-header { background: #111; color: #fff; padding: 10px; display: flex; justify-content: space-between; }
-        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; background: #333; }
-        #pdf-canvas { max-width: 100%; height: auto; margin: auto; }
+        .reader-header { background: #111; color: #fff; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; background: #333; -webkit-overflow-scrolling: touch; }
+        #pdf-canvas { width: 100% !important; height: auto !important; max-width: 800px; margin: 0 auto; } /* ปรับขนาดที่นี่ */
+        
         .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; }
-        .nav-btn { width: 50px; height: 50px; border-radius: 50%; background: rgba(0,0,0,0.8); color: #d4af37; border: 2px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 20px; }
+        .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.7); color: #d4af37; border: 2px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
     <div class="header">
         <button class="btn-back" onclick="location.href='categories.html'">⬅ กลับ</button>
-        <b id="header-title">กำลังโหลด...</b>
-        <div style="width:50px;"></div>
+        <b id="header-title">คลังหนังสือ</b>
+        <div style="width:40px;"></div>
     </div>
 
     <div class="container" id="book-list"></div>
 
     <div id="reader-overlay">
         <div class="reader-header">
-            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:5px 15px; border-radius:5px;">ปิด</button>
-            <span id="page-info">หน้า 0/0</span>
+            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">ปิด</button>
+            <span id="page-info" style="font-size:14px;">หน้า 0 / 0</span>
         </div>
         <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
-        <div class="nav-controls"><button class="nav-btn" onclick="prevPage()">❮</button><button class="nav-btn" onclick="nextPage()">❯</button></div>
+        <div class="nav-controls">
+            <button class="nav-btn" onclick="prevPage()">❮</button>
+            <button class="nav-btn" onclick="nextPage()">❯</button>
+        </div>
     </div>
 
     <script>
@@ -52,27 +60,51 @@
 
         async function loadData() {
             try {
-                // เติม ?v= เพื่อป้องกันเบราว์เซอร์จำค่าเก่า
                 const response = await fetch(`database.json?v=${Date.now()}`);
                 const data = await response.json();
                 
-                // คัดกรองเอาเฉพาะหนังสือที่อยู่ในหมวด (Repository) นี้
                 const marker = `/${categoryKey}/`;
-                const books = data.filter(item => item.url.includes(marker));
+                let books = data.filter(item => item.url && item.url.includes(marker));
                 
-                const listDiv = document.getElementById('book-list');
-                listDiv.innerHTML = books.length ? '' : '<p style="grid-column:1/-1; text-align:center;">ไม่พบหนังสือในหมวดนี้ครับ</p>';
+                // แก้ไขการเรียงลำดับ: เรียงตามตัวเลข (1, 2, 3... 10)
+                books.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true, sensitivity: 'base' }));
 
-                books.forEach(book => {
+                const listDiv = document.getElementById('book-list');
+                listDiv.innerHTML = '';
+                books.forEach((book, index) => {
+                    const imgId = `img-${index}`;
                     const card = document.createElement('div');
                     card.className = 'book-card';
                     card.onclick = () => openBook(book.url);
-                    card.innerHTML = `<div class="book-cover">${book.title}</div><div class="book-info">${book.title}</div>`;
+                    card.innerHTML = `
+                        <div class="cover-box">
+                            <img id="${imgId}" class="book-cover-img" style="display:none;">
+                            <span id="load-${imgId}" style="color:#aaa; font-size:10px;">กำลังโหลดปก...</span>
+                        </div>
+                        <div class="book-info">${book.title}</div>
+                    `;
                     listDiv.appendChild(card);
+                    generateThumb(book.url, imgId);
                 });
-            } catch (err) {
-                document.getElementById('book-list').innerHTML = `<p style="color:red; grid-column:1/-1; text-align:center;">โหลดข้อมูลไม่สำเร็จ: ${err.message}</p>`;
-            }
+            } catch (err) { console.error(err); }
+        }
+
+        async function generateThumb(url, imgId) {
+            try {
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const page = await pdf.getPage(1);
+                const vp = page.getViewport({ scale: 0.3 });
+                const tCanvas = document.createElement('canvas'), tCtx = tCanvas.getContext('2d');
+                tCanvas.height = vp.height; tCanvas.width = vp.width;
+                await page.render({ canvasContext: tCtx, viewport: vp }).promise;
+                const img = document.getElementById(imgId);
+                if(img) {
+                    img.src = tCanvas.toDataURL();
+                    img.style.display = 'block';
+                    document.getElementById('load-' + imgId).style.display = 'none';
+                }
+                pdf.destroy();
+            } catch (e) { document.getElementById('load-' + imgId).innerText = "ไม่มีหน้าปก"; }
         }
 
         async function openBook(url) {
@@ -85,9 +117,12 @@
 
         async function renderPage(num) {
             const page = await pdfDoc.getPage(num);
-            const vp = page.getViewport({ scale: 1.5 });
-            canvas.height = vp.height; canvas.width = vp.width;
-            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+            // ปรับ scale ให้เหมาะสมกับความกว้างหน้าจอจริง
+            const viewport = page.getViewport({ scale: 1.5 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
             document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
         }
 

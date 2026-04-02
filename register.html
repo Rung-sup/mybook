@@ -1,47 +1,282 @@
-<script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-    const params = new URLSearchParams(window.location.search);
-    const categoryKey = params.get('cat') || '1_PetchPraUma';
-    document.getElementById('header-title').innerText = params.get('name') || 'คลังหนังสือ';
-
-    let pdfDoc = null, pageNum = 1;
-    const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
-
-    // ฟังก์ชันดึงตัวเลขออกจากชื่อ (เช่น "เล่ม 10" -> 10)
-    function getNum(str) {
-        const match = str.match(/\d+/);
-        return match ? parseInt(match[0], 10) : 0;
-    }
-
-    async function loadData() {
-    try {
-        const response = await fetch(`database.json?v=${new Date().getTime()}`);
-        const data = await response.json();
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังหนังสือ - ระบบหอสมุด</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; background-color: #f4f1ea; color: #333; }
         
-        const marker = `/${categoryKey}/`;
-        // กรองเอาเฉพาะหมวดนี้ แต่ "ห้าม" สั่ง .sort() ซ้ำในนี้ครับ 
-        // เพราะ Python เรียงมาให้ดีแล้ว
-        let books = data.filter(item => item.url && item.url.includes(marker));
+        /* Header ปรับปรุงให้ดูหรูหราขึ้น */
+        .header { 
+            padding: 15px 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            background: #fff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+        }
+        .btn-back { 
+            background: #333; 
+            color: #d4af37; 
+            border: 1px solid #d4af37; 
+            padding: 8px 18px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            text-decoration: none; 
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .btn-back:hover { background: #d4af37; color: #fff; }
 
-        const listDiv = document.getElementById('book-list');
-        listDiv.innerHTML = '';
-        books.forEach((book, index) => {
-            const imgId = `img-${index}`;
-            const card = document.createElement('div');
-            card.className = 'book-card';
-            card.onclick = () => openBook(book.url);
-            card.innerHTML = `
-                <div class="cover-box">
-                    <img id="${imgId}" class="book-cover-img" style="display:none;">
-                    <span id="load-${imgId}" style="color:#aaa; font-size:10px;">โหลดปก...</span>
-                </div>
-                <div class="book-info">${book.title}</div>
-            `;
-            listDiv.appendChild(card);
-            generateThumb(book.url, imgId);
-        });
-    } catch (err) { console.error(err); }
-}
+        /* Grid แสดงหนังสือ */
+        .container { 
+            padding: 20px; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); 
+            gap: 20px; 
+        }
+        .book-card { 
+            background: #fff; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08); 
+            cursor: pointer; 
+            transition: 0.3s; 
+        }
+        .book-card:hover { transform: translateY(-8px); box-shadow: 0 12px 20px rgba(0,0,0,0.15); }
+        
+        .cover-box { 
+            width: 100%; 
+            height: 200px; 
+            background: #5d4037; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+        }
+        .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
+        .book-info { 
+            padding: 12px 8px; 
+            font-size: 11px; 
+            text-align: center; 
+            height: 55px; 
+            overflow: hidden; 
+            line-height: 1.4; 
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    // ... (ส่วนฟังก์ชันอื่นๆ generateThumb, openBook, renderPage เหมือนเดิม) ...
-</script>
+        /* Reader Overlay (หน้าอ่าน PDF) */
+        #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; }
+        .reader-header { 
+            background: #111; 
+            color: #fff; 
+            padding: 10px 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #333;
+        }
+        #pdf-render-container { 
+            flex-grow: 1; 
+            overflow: auto; 
+            display: flex; 
+            flex-direction: column; 
+            background: #222; 
+            -webkit-overflow-scrolling: touch; 
+            padding: 15px 0;
+        }
+        #pdf-canvas { 
+            width: 100% !important; 
+            height: auto !important; 
+            max-width: 900px; 
+            margin: 0 auto; 
+            display: block; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+        }
+        
+        /* ปุ่มควบคุมหน้า */
+        .nav-controls { 
+            position: fixed; 
+            bottom: 30px; 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 0 25px; 
+            pointer-events: none; 
+        }
+        .nav-btn { 
+            width: 65px; 
+            height: 65px; 
+            border-radius: 50%; 
+            background: rgba(212, 175, 55, 0.95); 
+            color: #fff; 
+            border: none; 
+            pointer-events: auto; 
+            cursor: pointer; 
+            font-size: 28px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <button class="btn-back" onclick="location.href='categories.html'">❮ กลับหน้าหลัก</button>
+        <b id="header-title" style="font-size: 16px;">กำลังโหลด...</b>
+        <div style="width:40px;"></div>
+    </div>
+
+    <div class="container" id="book-list"></div>
+
+    <div id="reader-overlay">
+        <div class="reader-header">
+            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">ปิดการอ่าน</button>
+            <span id="page-info" style="font-size:14px; font-weight:500;">หน้า 0 / 0</span>
+            <div style="width:40px;"></div>
+        </div>
+        <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
+        <div class="nav-controls">
+            <button class="nav-btn" onclick="prevPage()">❮</button>
+            <button class="nav-btn" onclick="nextPage()">❯</button>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+        // ดึงค่าหมวดหมู่จาก URL เช่น ?cat=1_PetchPraUma&name=เพชรพระอุมา
+        const params = new URLSearchParams(window.location.search);
+        const categoryKey = params.get('cat');
+        const categoryName = params.get('name') || 'คลังหนังสือ';
+        
+        document.getElementById('header-title').innerText = categoryName;
+
+        let pdfDoc = null, pageNum = 1;
+        const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
+
+        async function loadData() {
+            try {
+                // บังคับโหลดใหม่เสมอเพื่อป้องกัน Cache
+                const response = await fetch(`database.json?v=${new Date().getTime()}`);
+                const data = await response.json();
+                
+                // กรองเอาเฉพาะเล่มที่อยู่ในหมวดหมู่ที่ส่งมา
+                let books = data.filter(item => item.category === categoryKey);
+
+                // หมายเหตุ: ไม่ต้องสั่ง .sort() ในนี้แล้ว เพราะ Python (gen_db.py) 
+                // เรียงลำดับ 1, 2, 3... 10 มาให้เสร็จสรรพใน JSON แล้วครับ
+
+                const listDiv = document.getElementById('book-list');
+                listDiv.innerHTML = '';
+
+                if (books.length === 0) {
+                    listDiv.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #888;">ไม่พบหนังสือในหมวดนี้</p>';
+                    return;
+                }
+
+                books.forEach((book, index) => {
+                    const imgId = `img-${index}`;
+                    const card = document.createElement('div');
+                    card.className = 'book-card';
+                    card.onclick = () => openBook(book.url);
+                    card.innerHTML = `
+                        <div class="cover-box">
+                            <img id="${imgId}" class="book-cover-img" style="display:none;">
+                            <span id="load-${imgId}" style="color:#aaa; font-size:10px;">กำลังโหลดปก...</span>
+                        </div>
+                        <div class="book-info">${book.title}</div>
+                    `;
+                    listDiv.appendChild(card);
+                    generateThumb(book.url, imgId);
+                });
+            } catch (err) { 
+                console.error("Error loading books:", err);
+                alert("ไม่สามารถโหลดข้อมูลหนังสือได้ กรุณาลองใหม่อีกครั้ง");
+            }
+        }
+
+        // ฟังก์ชันสร้างหน้าปกจากหน้าแรกของ PDF
+        async function generateThumb(url, imgId) {
+            try {
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const page = await pdf.getPage(1);
+                const vp = page.getViewport({ scale: 0.4 });
+                const tCanvas = document.createElement('canvas'), tCtx = tCanvas.getContext('2d');
+                tCanvas.height = vp.height; tCanvas.width = vp.width;
+                await page.render({ canvasContext: tCtx, viewport: vp }).promise;
+                
+                const img = document.getElementById(imgId);
+                if(img) {
+                    img.src = tCanvas.toDataURL();
+                    img.style.display = 'block';
+                    document.getElementById('load-' + imgId).style.display = 'none';
+                }
+                pdf.destroy();
+            } catch (e) { 
+                const loader = document.getElementById('load-' + imgId);
+                if(loader) loader.innerText = "ไม่มีหน้าปก";
+            }
+        }
+
+        // ฟังก์ชันเปิดอ่านหนังสือ
+        async function openBook(url) {
+            document.getElementById('reader-overlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // กันสกอร์ที่หน้าหลัก
+            try {
+                const loadingTask = pdfjsLib.getDocument(url);
+                pdfDoc = await loadingTask.promise;
+                pageNum = 1;
+                renderPage(pageNum);
+            } catch (err) {
+                alert("ไม่สามารถเปิดไฟล์ PDF นี้ได้");
+                closeBook();
+            }
+        }
+
+        // ฟังก์ชันวาดหน้า PDF ลงบน Canvas
+        async function renderPage(num) {
+            const page = await pdfDoc.getPage(num);
+            // ปรับ Scale ให้สูงขึ้น (2.0) เพื่อความชัดบนหน้าจอมือถือสมัยใหม่
+            const viewport = page.getViewport({ scale: 2.0 });
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+            document.getElementById('pdf-render-container').scrollTop = 0; // กลับไปบนสุดทุกครั้งที่เปลี่ยนหน้า
+        }
+
+        function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
+        function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
+        
+        function closeBook() { 
+            document.getElementById('reader-overlay').style.display = 'none'; 
+            document.body.style.overflow = 'auto';
+            pdfDoc = null; 
+        }
+
+        // เริ่มโหลดข้อมูลเมื่อเปิดหน้า
+        if (categoryKey) {
+            loadData();
+        } else {
+            alert("กรุณาเลือกหมวดหมู่หนังสือก่อนครับ");
+            location.href = 'categories.html';
+        }
+    </script>
+</body>
+</html>

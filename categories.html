@@ -1,117 +1,78 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>หมวดหมู่ - My Reader</title>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
-    body {
-      margin: 0;
-      background: #1a1a1a;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    h1 {
-      color: #d4af37;
-      margin-bottom: 30px;
-      font-weight: 600;
-      text-align: center;
-      line-height: 1.4;
-    }
-    .category-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 15px;
-      width: 100%;
-      max-width: 420px;
-    }
-    .cat-card {
-      padding: 22px;
-      border-radius: 15px;
-      text-align: center;
-      text-decoration: none;
-      font-size: 19px;
-      font-weight: 500;
-      transition: 0.3s;
-      border: 2px solid transparent;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      user-select: none;
-    }
-    .cat-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 20px rgba(212, 175, 87, 0.2);
-    }
-    .cat-petch {
-      background: #2d472d;
-      color: #d4af37;
-      border-color: #d4af37;
-    }
-    .cat-thai {
-      background: #3d2b1f;
-      color: #e6ccb2;
-    }
-    .cat-translate {
-      background: #2c3e50;
-      color: #ecf0f1;
-    }
-    .cat-china {
-      background: #800000;
-      color: #ffd700;
-      border-color: #ffd700;
-    }
-    .cat-howto {
-      background: #ffffff;
-      color: #333;
-    }
-    .cat-pending {
-      background: #444;
-      color: #bbb;
-      font-size: 16px;
-      margin-top: 20px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>หอสมุดคุณรันนรา</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { background: #f4f1ea; margin: 0; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .folder-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 25px; max-width: 1000px; margin: 0 auto; }
+        .folder-card { background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; position: relative; border: 2px solid #d4af37; }
+        .folder-card:hover { transform: translateY(-10px); }
+        .folder-cover { width: 100%; height: 220px; background: #5d4037; display: flex; align-items: center; justify-content: center; position: relative; }
+        .folder-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .folder-label { padding: 12px; text-align: center; background: #fff; font-weight: 600; font-size: 14px; color: #333; }
+        .count-badge { position: absolute; top: 10px; right: 10px; background: #d4af37; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 10px; }
+    </style>
 </head>
 <body>
-  <h1>คลังหนังสือของคุณรันนรา</h1>
+    <div class="header"><h1>📚 หอสมุดส่วนตัว</h1></div>
+    <div class="folder-grid" id="folder-list"></div>
 
-  <div class="category-grid">
-    <div class="cat-card cat-petch" onclick="goToArchive('1_PetchPraUma', 'เพชรพระอุมา', 'forest')">
-      💎 เพชรพระอุมา
-    </div>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
-    <div class="cat-card cat-thai" onclick="goToArchive('2_Thai_Novel', 'นิยายไทย', 'classic')">
-      📖 นิยายไทย
-    </div>
+        async function loadFolders() {
+            const response = await fetch(`database.json?v=${Date.now()}`);
+            const data = await response.json();
+            
+            // จัดกลุ่มตามหมวดหมู่
+            const groups = {};
+            data.forEach(book => {
+                if (!groups[book.category]) groups[book.category] = [];
+                groups[book.category].push(book);
+            });
 
-    <div class="cat-card cat-translate" onclick="goToArchive('3_English_Translated', 'นิยายแปล', 'classic')">
-      🌐 นิยายแปล
-    </div>
+            const grid = document.getElementById('folder-list');
+            Object.keys(groups).forEach((cat, index) => {
+                const firstBook = groups[cat][0]; // เล่มแรกของหมวด
+                const card = document.createElement('div');
+                card.className = 'folder-card';
+                card.onclick = () => location.href = `register.html?cat=${cat}&name=${encodeURIComponent(cat)}`;
+                card.innerHTML = `
+                    <div class="folder-cover">
+                        <span class="count-badge">${groups[cat].length} เล่ม</span>
+                        <img id="cover-${index}" style="display:none;">
+                        <div id="loader-${index}" style="color:#fff; font-size:12px;">กำลังโหลดปก...</div>
+                    </div>
+                    <div class="folder-label">${cat.replace(/^\d+_/, '').replace(/_/g, ' ')}</div>
+                `;
+                grid.appendChild(card);
+                generateThumb(firstBook.url, `cover-${index}`, `loader-${index}`);
+            });
+        }
 
-    <div class="cat-card cat-china" onclick="goToArchive('4_Chinese_Novel', 'นิยายจีน', 'china')">
-      🐉 นิยายจีน
-    </div>
+        async function generateThumb(url, imgId, loaderId) {
+            try {
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const page = await pdf.getPage(1);
+                const vp = page.getViewport({ scale: 0.4 });
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.height = vp.height; canvas.width = vp.width;
+                await page.render({ canvasContext: ctx, viewport: vp }).promise;
+                document.getElementById(imgId).src = canvas.toDataURL();
+                document.getElementById(imgId).style.display = 'block';
+                document.getElementById(loaderId).style.display = 'none';
+                pdf.destroy();
+            } catch (e) { document.getElementById(loaderId).innerText = "ไม่มีรูปปก"; }
+        }
 
-    <div class="cat-card cat-howto" onclick="goToArchive('5_HowTo_Religion', 'How-to / ศาสนา', 'classic')">
-      💡 How-to / ศาสนา
-    </div>
-
-    <div class="cat-card cat-pending" onclick="goToArchive('6_HowTo_Religion_Science', 'วิชาการ / วิทยาศาสตร์', 'classic')">
-      📂 วิชาการ / วิทยาศาสตร์
-    </div>
-  </div>
-
-  <script>
-    function goToArchive(catKey, name, theme) {
-      const url = `smart-archive.html?cat=${encodeURIComponent(catKey)}&name=${encodeURIComponent(name)}&theme=${encodeURIComponent(theme)}`;
-      window.location.href = url;
-    }
-  </script>
+        loadFolders();
+    </script>
 </body>
 </html>

@@ -10,7 +10,7 @@ db = []
 def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
-print("🔍 กำลังกู้คืนฐานข้อมูล (ฉบับเสถียร)...")
+print("🔍 กำลังกู้คืนฐานข้อมูลเดิม...")
 
 for root, dirs, files in os.walk(base_dir):
     for file in files:
@@ -19,9 +19,7 @@ for root, dirs, files in os.walk(base_dir):
             rel_path = os.path.relpath(full_path, base_dir)
             path_parts = rel_path.split(os.sep)
             
-            # หมวดหมู่คือโฟลเดอร์ชั้นแรกสุด
             category = path_parts[0] if len(path_parts) > 1 else "ทั่วไป"
-            
             url_path = urllib.parse.quote(rel_path.replace("\\", "/"))
             
             db.append({
@@ -30,10 +28,9 @@ for root, dirs, files in os.walk(base_dir):
                 "category": category
             })
 
-# เรียงลำดับชื่อเรื่องให้ 1 มาก่อน 10 ทั่วทั้งระบบ
 db.sort(key=lambda x: natural_sort_key(x['title']))
 
 with open("database.json", "w", encoding="utf-8") as f:
     json.dump(db, f, ensure_ascii=False, indent=4)
 
-print(f"✨ คืนค่าสำเร็จ! พบทั้งหมด {len(db)} เล่ม (ตรวจสอบในเครื่องได้เลยครับ)")
+print(f"✨ คืนค่าเสร็จสมบูรณ์! พบหนังสือทั้งหมด {len(db)} เล่ม")

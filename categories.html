@@ -3,24 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>หอสมุดคุณรันนรา</title>
+    <title>หมวดหมู่หนังสือ</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         body { background: #f4f1ea; margin: 0; padding: 20px; text-align: center; }
-        h1 { color: #333; margin-bottom: 30px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; max-width: 800px; margin: 0 auto; }
-        .cat-card { background: #fff; padding: 30px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; border: 2px solid #d4af37; font-weight: 600; }
+        h1 { color: #333; margin: 30px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; max-width: 900px; margin: 0 auto; }
+        .cat-card { background: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; border: 2px solid #d4af37; font-weight: 600; color: #5d4037; }
         .cat-card:hover { background: #d4af37; color: #fff; transform: translateY(-5px); }
     </style>
 </head>
 <body>
-    <h1>📚 หอสมุดส่วนตัว</h1>
+    <h1>📚 เลือกหมวดหมู่หนังสือ</h1>
     <div class="grid">
-        <div class="cat-card" onclick="location.href='register.html?cat=1_PetchPraUma&name=เพชรพระอุมา'">1. เพชรพระอุมา</div>
-        <div class="cat-card" onclick="location.href='register.html?cat=2_Thai_Novel&name=นิยายไทย'">2. นิยายไทย</div>
-        <div class="cat-card" onclick="location.href='register.html?cat=3_General&name=ความรู้ทั่วไป'">3. ความรู้ทั่วไป</div>
-        <div class="cat-card" onclick="location.href='register.html?cat=4_Military&name=การทหาร'">4. การทหาร</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=1_PetchPraUma&name=เพชรพระอุมา'">เพชรพระอุมา</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=2_Thai_Novel&name=นิยายไทย'">นิยายไทย</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=3_Translated_Novel&name=นิยายแปล'">นิยายแปล</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=4_Chinese_Novel&name=นิยายจีน'">นิยายจีน</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=5_HowTo&name=How-to'">How-to</div>
+        <div class="cat-card" onclick="location.href='register.html?cat=6_Wait&name=หมวดรอแยก'">หมวดรอแยก</div>
     </div>
 </body>
 </html>

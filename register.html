@@ -3,38 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>คลังหนังสือ</title>
+    <title>รายการหนังสือ</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
-        body { margin: 0; background-color: #f4f1ea; color: #333; }
+        body { margin: 0; background-color: #f4f1ea; }
         .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; font-size: 14px; }
         .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 20px; }
         .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 12px rgba(0,0,0,0.08); cursor: pointer; transition: 0.3s; }
         .book-card:hover { transform: translateY(-8px); }
         .cover-box { width: 100%; height: 200px; background: #5d4037; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
-        .book-info { padding: 10px; font-size: 11px; text-align: center; height: 55px; overflow: hidden; font-weight: 500; display: flex; align-items: center; justify-content: center; }
+        .book-info { padding: 10px; font-size: 11px; text-align: center; height: 55px; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 500; }
+        /* Reader Overlay */
         #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; }
         .reader-header { background: #111; color: #fff; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; flex-direction: column; background: #222; -webkit-overflow-scrolling: touch; padding: 15px 0; }
+        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; flex-direction: column; background: #222; padding: 15px 0; }
         #pdf-canvas { width: 100% !important; height: auto !important; max-width: 900px; margin: 0 auto; display: block; }
         .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; pointer-events: none; }
-        .nav-btn { width: 65px; height: 65px; border-radius: 50%; background: #d4af37; color: #fff; border: none; pointer-events: auto; cursor: pointer; font-size: 28px; display: flex; align-items: center; justify-content: center; }
+        .nav-btn { width: 60px; height: 60px; border-radius: 50%; background: #d4af37; color: #fff; border: none; pointer-events: auto; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
     <div class="header">
         <button class="btn-back" onclick="location.href='categories.html'">❮ กลับ</button>
-        <b id="header-title">คลังหนังสือ</b>
+        <b id="header-title">กำลังโหลด...</b>
         <div style="width:40px;"></div>
     </div>
     <div class="container" id="book-list"></div>
     <div id="reader-overlay">
         <div class="reader-header">
-            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 20px; border-radius:8px;">ปิด</button>
+            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 15px; border-radius:5px;">ปิด</button>
             <span id="page-info">หน้า 0 / 0</span>
             <div style="width:40px;"></div>
         </div>
@@ -44,8 +45,6 @@
 
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
-        
-        // ดึงค่าหมวดหมู่และชื่อหมวดหมู่จาก URL
         const params = new URLSearchParams(window.location.search);
         const categoryKey = decodeURIComponent(params.get('cat') || "");
         const categoryName = decodeURIComponent(params.get('name') || "คลังหนังสือ");
@@ -56,13 +55,9 @@
 
         async function loadData() {
             try {
-                // บังคับโหลด JSON ชุดล่าสุด (กัน Cache)
                 const response = await fetch(`database.json?v=${new Date().getTime()}`);
                 const data = await response.json();
-                
-                // กรองเฉพาะหนังสือที่อยู่ในหมวดที่เลือก
                 let books = data.filter(item => item.category === categoryKey);
-                
                 const listDiv = document.getElementById('book-list');
                 listDiv.innerHTML = '';
                 books.forEach((book, index) => {

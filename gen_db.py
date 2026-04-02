@@ -2,12 +2,11 @@ import os
 import json
 import urllib.parse
 
-# ที่อยู่โฟลเดอร์ในเครื่องของคุณรันนรา
+# ข้อมูลของคุณรันนรา
 base_dir = r"C:\MyLibrary"
 github_username = "rung-sup"
-repo_name = "mybook"
 
-# รายชื่อหมวดหมู่ที่ยืนยันแล้ว
+# รายชื่อโฟลเดอร์ (ซึ่งตรงกับชื่อกล่องบน GitHub ด้วย)
 folders = [
     "1_PetchPraUma",
     "2_Thai_Novel",
@@ -17,38 +16,42 @@ folders = [
     "6_HowTo_Religion_Science"
 ]
 
-# สร้าง "ตู้เก็บรายชื่อ" แยกตามหมวดหมู่
-all_books = {}
+all_books = [] # สร้างเป็นรายการแบบ Array ตามที่แอปต้องการ
 
-print(f"🔍 กำลังเริ่มสำรวจหนังสือใน {base_dir} ...\n")
+print(f"🔍 เริ่มจดบันทึกรายชื่อหนังสือแยกตามกล่องบน GitHub...\n")
 
 for folder in folders:
     folder_path = os.path.join(base_dir, folder)
-    all_books[folder] = [] # สร้างลิ้นชักแยกไว้สำหรับแต่ละหมวด
-    folder_count = 0
-
+    
     if not os.path.exists(folder_path):
-        print(f"⚠️ ข้าม: หาโฟลเดอร์ไม่พบ -> {folder_path}")
+        print(f"⚠️ ไม่พบโฟลเดอร์: {folder}")
         continue
 
+    count = 0
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            # เก็บเฉพาะไฟล์หนังสือ
             if file.lower().endswith(('.pdf', '.epub')):
-                # สร้างที่อยู่ไฟล์สำหรับเปิดบนเว็บ (ไม่ต้องแปลงชื่อไฟล์ซ้ำซ้อน)
+                title = os.path.splitext(file)[0]
+                
+                # หาที่อยู่ไฟล์ข้างในโฟลเดอร์
                 rel_path = os.path.relpath(os.path.join(root, file), folder_path)
                 rel_path_web = rel_path.replace("\\", "/")
                 
-                # เราจะเก็บแค่ชื่อไฟล์ไว้ เดี๋ยวแอปจะไปจัดการที่อยู่เอง
-                all_books[folder].append(rel_path_web)
-                folder_count += 1
-
-    print(f"✅ หมวด [{folder}]: พบหนังสือ {folder_count} เล่ม")
+                # สร้างที่อยู่ที่ชี้ไปยังกล่อง (Repository) ของหมวดนั้นโดยเฉพาะ
+                # ตัวอย่าง: https://rung-sup.github.io/1_PetchPraUma/ชื่อหนังสือ.pdf
+                full_url = f"https://{github_username}.github.io/{folder}/{urllib.parse.quote(rel_path_web)}"
+                
+                all_books.append({
+                    "title": title,
+                    "url": full_url
+                })
+                count += 1
+    
+    print(f"✅ บันทึกจากกล่อง [{folder}] เสร็จแล้ว: {count} เล่ม")
 
 # บันทึกลงสมุดรายชื่อ database.json
-output_file = "database.json"
-with open(output_file, 'w', encoding='utf-8') as f:
+with open("database.json", 'w', encoding='utf-8') as f:
     json.dump(all_books, f, ensure_ascii=False, indent=4)
 
 print("-" * 40)
-print(f"🎉 สำเร็จ! แก้ไขไฟล์ {output_file} เรียบร้อยแล้ว")
+print(f"🎉 สำเร็จ! สร้างไฟล์ database.json เป็นแบบ Array เรียบร้อยแล้ว")

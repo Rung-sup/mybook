@@ -10,26 +10,27 @@
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         body { margin: 0; background-color: #f4f1ea; }
         .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; }
+        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; text-decoration: none; font-size: 14px; }
         .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
         .book-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; }
         .book-card:hover { transform: translateY(-5px); }
         .cover-box { width: 100%; height: 200px; background: #5d4037; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
-        .book-info { padding: 10px; font-size: 11px; text-align: center; height: 50px; overflow: hidden; line-height: 1.4; font-weight: 500; }
+        .book-info { padding: 10px; font-size: 11px; text-align: center; height: 50px; overflow: hidden; line-height: 1.4; font-weight: 500; color: #333; }
 
+        /* Reader Overlay - ปรับขนาดหน้ากระดาษให้พอดีมือถือ */
         #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 2000; flex-direction: column; }
         .reader-header { background: #111; color: #fff; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; background: #333; -webkit-overflow-scrolling: touch; }
-        #pdf-canvas { width: 100% !important; height: auto !important; max-width: 800px; margin: 0 auto; display: block; }
+        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; flex-direction: column; background: #333; -webkit-overflow-scrolling: touch; }
+        #pdf-canvas { width: 100% !important; height: auto !important; max-width: 1000px; margin: 0 auto; display: block; }
         
         .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; }
-        .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.8); color: #d4af37; border: 2px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+        .nav-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(0,0,0,0.8); color: #d4af37; border: 2px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
     <div class="header">
-        <button class="btn-back" onclick="location.href='categories.html'">⬅ กลับ</button>
+        <button class="btn-back" onclick="location.href='categories.html'">⬅ กลับหน้าหลัก</button>
         <b id="header-title">คลังหนังสือ</b>
         <div style="width:40px;"></div>
     </div>
@@ -38,8 +39,8 @@
 
     <div id="reader-overlay">
         <div class="reader-header">
-            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">ปิด</button>
-            <span id="page-info" style="font-size:14px;">หน้า 0 / 0</span>
+            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">ปิด</button>
+            <span id="page-info" style="font-size:14px; font-weight:bold;">หน้า 0 / 0</span>
         </div>
         <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
         <div class="nav-controls">
@@ -57,18 +58,27 @@
         let pdfDoc = null, pageNum = 1;
         const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
+        // ฟังก์ชันช่วยดึงเลขออกจากข้อความ
+        function extractNumber(text) {
+            const match = text.match(/\d+/);
+            return match ? parseInt(match[0], 10) : 9999;
+        }
+
         async function loadData() {
             try {
-                // ดึงข้อมูลใหม่เสมอเพื่อป้องกัน Cache
                 const response = await fetch(`database.json?v=${Date.now()}`);
                 const data = await response.json();
                 
                 const marker = `/${categoryKey}/`;
                 let books = data.filter(item => item.url && item.url.includes(marker));
                 
-                // --- จุดที่แก้ไข: การเรียงลำดับแบบฉลาด (Natural Sort) ---
-                const collator = new Intl.Collator('th', { numeric: true, sensitivity: 'base' });
-                books.sort((a, b) => collator.compare(a.title, b.title));
+                // --- แก้ไขการเรียงลำดับแบบ "สายโหด" ---
+                books.sort((a, b) => {
+                    const numA = extractNumber(a.title);
+                    const numB = extractNumber(b.title);
+                    if (numA !== numB) return numA - numB; // เรียงตามตัวเลขที่เจอ
+                    return a.title.localeCompare(b.title, 'th'); // ถ้าเลขเท่ากัน ให้เรียงตามตัวอักษร
+                });
 
                 const listDiv = document.getElementById('book-list');
                 listDiv.innerHTML = '';
@@ -80,7 +90,7 @@
                     card.innerHTML = `
                         <div class="cover-box">
                             <img id="${imgId}" class="book-cover-img" style="display:none;">
-                            <span id="load-${imgId}" style="color:#aaa; font-size:10px;">กำลังโหลดปก...</span>
+                            <span id="load-${imgId}" style="color:#aaa; font-size:10px;">โหลดปก...</span>
                         </div>
                         <div class="book-info">${book.title}</div>
                     `;
@@ -105,7 +115,7 @@
                     document.getElementById('load-' + imgId).style.display = 'none';
                 }
                 pdf.destroy();
-            } catch (e) { document.getElementById('load-' + imgId).innerText = "ไม่มีหน้าปก"; }
+            } catch (e) { document.getElementById('load-' + imgId).innerText = "ไม่มีปก"; }
         }
 
         async function openBook(url) {
@@ -118,11 +128,17 @@
 
         async function renderPage(num) {
             const page = await pdfDoc.getPage(num);
-            const viewport = page.getViewport({ scale: 2 }); // เพิ่มความชัด
+            
+            // ปรับ Scale ให้ใหญ่เพื่อความชัด แต่ CSS จะบีบให้พอดีจอเอง
+            const viewport = page.getPageViewport({ scale: 2 }); 
             canvas.height = viewport.height;
             canvas.width = viewport.width;
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+            
+            const renderContext = { canvasContext: ctx, viewport: viewport };
+            await page.render(renderContext).promise;
+            
             document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+            document.getElementById('pdf-render-container').scrollTop = 0; // เด้งขึ้นบนสุดเวลาเปลี่ยนหน้า
         }
 
         function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }

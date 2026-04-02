@@ -33,7 +33,8 @@ for folder in folders:
                 # สร้างที่อยู่เว็บที่ชี้ไปแต่ละกล่องโดยเฉพาะ
                 rel_path = os.path.relpath(os.path.join(root, file), folder_path)
                 rel_path_web = rel_path.replace("\\", "/")
-                full_url = f"https://{github_username}.github.io/{folder}/{urllib.parse.quote(rel_path_web)}"
+                # เปลี่ยนบรรทัดเดิม เป็นบรรทัดนี้ครับ (เพิ่ม safe='/')
+full_url = f"https://{github_username}.github.io/{folder}/{urllib.parse.quote(rel_path_web, safe='/')}"
                 
                 # บันทึกข้อมูลแบบมีที่อยู่เว็บ (URL)
                 all_books.append({

@@ -63,7 +63,7 @@
                 const card = document.createElement('div');
                 card.className = 'book-card';
                 // สร้างที่อยู่ไฟล์โดยใช้ชื่อหมวดและชื่อไฟล์
-                const fileUrl = `https://rung-sup.github.io/mybook/${categoryKey}/${encodeURIComponent(bookName)}`;
+                const fileUrl = `https://rung-sup.github.io/${categoryKey}/${encodeURIComponent(bookName)}`;
                 card.onclick = () => openBook(fileUrl);
                 card.innerHTML = `<div class="book-cover">${bookName.replace('.pdf','')}</div><div class="book-info">${bookName}</div>`;
                 listDiv.appendChild(card);

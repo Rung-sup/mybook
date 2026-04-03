@@ -10,7 +10,7 @@ db = []
 def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split('([0-9]+)', s)]
 
-print("🔍 กำลังกู้คืนฐานข้อมูลหอสมุด (ชุดเสถียร)...")
+print("🔍 กำลังจัดกลุ่มหนังสือตามโฟลเดอร์...")
 
 for root, dirs, files in os.walk(base_dir):
     for file in files:
@@ -19,20 +19,24 @@ for root, dirs, files in os.walk(base_dir):
             rel_path = os.path.relpath(full_path, base_dir)
             path_parts = rel_path.split(os.sep)
             
-            # แยกหมวดหมู่จากโฟลเดอร์ชั้นแรก
+            # โครงสร้าง: [หมวดหมู่] / [ชื่อชุดหนังสือ(ถ้ามี)] / [ไฟล์]
             category = path_parts[0] if len(path_parts) > 1 else "ทั่วไป"
+            # ถ้าอยู่ในโฟลเดอร์ย่อย ให้ถือเป็นชื่อชุด (Series/Folder)
+            folder_name = path_parts[1] if len(path_parts) > 2 else ""
+            
             url_path = urllib.parse.quote(rel_path.replace("\\", "/"))
             
             db.append({
                 "title": os.path.splitext(file)[0],
                 "url": f"{base_url}/{url_path}",
-                "category": category
+                "category": category,
+                "folder": folder_name  # เพิ่มฟิลด์โฟลเดอร์
             })
 
-# เรียงลำดับให้เล่ม 1 อยู่ก่อนเล่ม 10
+# เรียงลำดับตามธรรมชาติ
 db.sort(key=lambda x: natural_sort_key(x['title']))
 
-with open("database.json", "w", encoding="utf-8") as f:
-    json.dump(db, f, ensure_ascii=False, indent=4)
+with open('database.json', 'w', encoding='utf-8') as f:
+    json.dump(db, f, indent=4, ensure_ascii=False)
 
-print(f"✨ คืนค่าสำเร็จ! พบทั้งหมด {len(db)} เล่ม (รันเสร็จแล้วรบกวน Push ขึ้น GitHub เลยครับ)")
+print(f"✅ บันทึกข้อมูลเรียบร้อย! พบทั้งหมด {len(db)} เล่ม")

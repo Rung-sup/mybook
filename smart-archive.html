@@ -229,6 +229,39 @@
         function createBookCard(book, idPrefix) {
     const card = document.createElement('div');
     card.className = 'book-card';
+    card.onclick = () => openBook(book.url, book.title);
+    
+    const bookId = btoa(book.url);
+    const savedPage = parseInt(localStorage.getItem('page_' + bookId)) || 0;
+    const isFinished = localStorage.getItem('status_' + bookId) === 'finished';
+
+    // --- จุดสำคัญ: ดึงเฉพาะชื่อไฟล์ท้ายสุดมาทำเป็นชื่อปก ---
+    const pdfFullName = book.url.split('/').pop(); // เอาเฉพาะชื่อไฟล์ เช่น "เล่ม01.pdf"
+    const jpgName = pdfFullName.replace(/\.(pdf|PDF)$/i, '.jpg'); // เปลี่ยนเป็น .jpg
+    const coverUrl = `covers/${jpgName}`; // ชี้ไปที่โฟลเดอร์ covers ที่เรา "มุด" รวมไว้
+
+    let badge = '';
+    if (isFinished) {
+        badge = `<div class="badge badge-finished">อ่านจบแล้ว ✅</div>`;
+    } else if (savedPage > 0) {
+        badge = `<div class="badge badge-reading">ค้างหน้า ${savedPage}</div>`;
+    }
+
+    card.innerHTML = `
+        <div class="cover-box" style="position:relative; width:100%; height:180px; background:#eee; border-radius:8px 8px 0 0; overflow:hidden;">
+            ${badge}
+            <img src="${coverUrl}" 
+                 style="width:100%; height:100%; object-fit:cover;" 
+                 loading="lazy"
+                 onerror="this.src='default_cover.jpg'; this.style.opacity='0.5';"> 
+        </div>
+        <div class="book-info" style="padding:10px; font-size:12px; text-align:center; height:50px; overflow:hidden; font-weight:500;">
+            ${book.title}
+        </div>
+    `;
+    
+    return card;
+}
     
     // ฟังก์ชันเปิดอ่านไฟล์ PDF ยังใช้ตัวเดิมของคุณ
     card.onclick = () => openBook(book.url, book.title);

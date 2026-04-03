@@ -132,30 +132,32 @@
         }
 
         function createBookCard(book, idPrefix) {
-            const card = document.createElement('div');
-            card.className = 'book-card';
-            card.onclick = () => openBook(book.url, book.title);
-            const bookId = btoa(book.url);
-            const savedPage = parseInt(localStorage.getItem('page_' + bookId)) || 0;
-            const isFinished = localStorage.getItem('status_' + bookId) === 'finished';
-            let relPath = "";
-            try {
-                const urlObj = new URL(book.url);
-                relPath = decodeURIComponent(urlObj.pathname).substring(1);
-            } catch (e) { relPath = book.url; }
-            const imageId = md5(relPath);
-            const coverUrl = `covers/${imageId}.jpg`;
-            let badge = '';
-            if (isFinished) { badge = `<div class="badge badge-finished">อ่านจบแล้ว ✅</div>`; }
-            else if (savedPage > 0) { badge = `<div class="badge badge-reading">ค้างหน้า ${savedPage}</div>`; }
-            card.innerHTML = `
-                <div class="cover-box">
-                    ${badge}
-                    <img src="${coverUrl}" class="book-cover-img" loading="lazy" onerror="this.src='default_cover.jpg';"> 
-                </div>
-                <div class="book-info">${book.title}</div>`;
-            return card;
-        }
+    // ... ส่วนสร้าง imageId และ coverUrl เดิมของคุณ (MD5) ...
+
+    const isFolder = book.isFolder;
+    const cardTitle = isFolder ? book.title : book.title;
+    
+    // ถ้าเป็นโฟลเดอร์ ให้แสดงจำนวนเล่มข้างล่าง
+    const subInfo = isFolder ? `<div style="color:#d4af37; font-weight:600;">(${book.count} เล่ม)</div>` : "";
+
+    card.innerHTML = `
+        <div class="cover-box" style="border: ${isFolder ? '3px double #d4af37' : 'none'};">
+            ${badge}
+            <img src="${coverUrl}" class="book-cover-img" loading="lazy" 
+                 style="opacity: ${isFolder ? '0.6' : '1'};"
+                 onerror="this.src='default_cover.jpg';">
+            ${isFolder ? '<div style="position:absolute; bottom:5px; right:5px; font-size:20px;">📁</div>' : ''}
+        </div>
+        <div class="book-info">
+            <div>${cardTitle}</div>
+            ${subInfo}
+        </div>
+    `;
+    
+    // ถ้าเป็นโฟลเดอร์ ในขั้นตอนนี้ผมยังไม่ได้ทำระบบคลิกเข้าไปข้างในนะ 
+    // แค่ทำให้มัน "แสดงผลลื่น" ก่อนครับ
+    return card;
+}
 
         async function openBook(url, title) {
             currentBookUrl = url;

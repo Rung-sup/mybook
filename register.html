@@ -18,9 +18,10 @@
         .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; position: relative; border: 1px solid #eee; }
         .book-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
         .cover-box { width: 100%; height: 210px; background: #e0e0e0; display: flex; align-items: center; justify-content: center; position: relative; }
-        .cover-box img { width: 100%; height: 100%; object-fit: cover; }
+        .cover-box img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; }
+        .cover-box img.loaded { opacity: 1; }
         
-        .folder-badge { position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 3px 10px; border-radius: 15px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .folder-badge { position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 3px 10px; border-radius: 15px; font-size: 11px; font-weight: 600; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; }
         .book-info { padding: 12px; text-align: center; background: #fff; }
         .book-title { font-size: 13px; font-weight: 500; color: #333; line-height: 1.4; height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
@@ -73,6 +74,8 @@
 </div>
 
 <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
     let allBooks = [];
     let currentBookUrl = "";
     let pdfDoc = null, pageNum = 1, canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
@@ -110,21 +113,29 @@
             const isFolder = !key.startsWith('single_');
             const displayBook = items[0];
             
+            // สร้าง Card พร้อม ID รูปภาพที่ไม่ซ้ำกัน
             const card = createCard(isFolder ? key : displayBook.title, displayBook.url, isFolder, items.length);
             card.onclick = isFolder ? () => openFolder(key, items) : () => openBook(displayBook.url);
             grid.appendChild(card);
-            generateThumb(displayBook.url, 'thumb-' + btoa(encodeURIComponent(displayBook.url)).substring(0,15));
+            
+            // เรียกสร้างปกเฉพาะเล่มหลักที่โชว์หน้าแรก
+            generateThumb(displayBook.url, generateThumbId(displayBook.url));
         });
     }
 
+    // ฟังก์ชันสร้าง ID รูปภาพที่เป็น Unique 100%
+    function generateThumbId(url) {
+        return 'thumb-' + btoa(unescape(encodeURIComponent(url))).replace(/=/g, "").substring(0, 25);
+    }
+
     function createCard(title, url, isFolder, count) {
-        const id = 'thumb-' + btoa(encodeURIComponent(url)).substring(0,15);
+        const thumbId = generateThumbId(url);
         const div = document.createElement('div');
         div.className = 'book-card';
         div.innerHTML = `
             <div class="cover-box">
                 ${isFolder ? `<div class="folder-badge">ชุดหนังสือ (${count})</div>` : ''}
-                <img id="${id}" src="default_cover.jpg">
+                <img id="${thumbId}" src="default_cover.jpg" alt="ปกหนังสือ">
             </div>
             <div class="book-info">
                 <div class="book-title">${title}</div>
@@ -139,10 +150,13 @@
         fGrid.innerHTML = '';
         
         items.forEach(book => {
+            // สร้าง Card สำหรับทุกเล่มในโฟลเดอร์ พร้อม ID รูปปกเฉพาะตัว
             const card = createCard(book.title, book.url, false);
             card.onclick = () => openBook(book.url);
             fGrid.appendChild(card);
-            generateThumb(book.url, 'thumb-' + btoa(encodeURIComponent(book.url)).substring(0,15));
+            
+            // บังคับสร้างปกใหม่สำหรับทุกเล่มในโฟลเดอร์ทันที
+            generateThumb(book.url, generateThumbId(book.url));
         });
         document.getElementById('folder-overlay').style.display = 'block';
         window.scrollTo(0,0);
@@ -150,43 +164,62 @@
 
     function closeFolder() { document.getElementById('folder-overlay').style.display = 'none'; }
 
+    // ระบบสร้างหน้าปก PDF (Thumbnail) ที่ถูกต้องและไม่ชนกัน
     async function generateThumb(url, imgId) {
+        const imgElement = document.getElementById(imgId);
+        if (!imgElement || imgElement.classList.contains('loaded')) return;
+
         try {
             const pdf = await pdfjsLib.getDocument(url).promise;
             const page = await pdf.getPage(1);
-            const viewport = page.getViewport({ scale: 0.4 });
+            
+            // ปรับ Scale เพื่อความชัดและประสิทธิภาพ
+            const viewport = page.getViewport({ scale: 0.5 }); 
             const tCanvas = document.createElement('canvas');
             const tCtx = tCanvas.getContext('2d');
             tCanvas.height = viewport.height; tCanvas.width = viewport.width;
+            
             await page.render({ canvasContext: tCtx, viewport: viewport }).promise;
-            const imgElement = document.getElementById(imgId);
-            if(imgElement) imgElement.src = tCanvas.toDataURL();
+            
+            // ใส่รูปจริงลงในแท็ก img และเพิ่ม Class 'loaded'
+            imgElement.src = tCanvas.toDataURL('image/jpeg', 0.8);
+            imgElement.classList.add('loaded');
+            
+            // ล้างข้อมูล PDF เพื่อคืนหน่วยความจำ
+            page.cleanup();
             pdf.destroy();
-        } catch (e) { console.error("Thumbnail error", e); }
+        } catch (e) { 
+            console.error("Thumbnail error for " + url, e);
+            // หากโหลดปกไม่ได้ ให้ใช้ปก Default ต่อไป
+            if(imgElement) imgElement.classList.add('loaded'); 
+        }
     }
 
+    // Reader & Bookmark Functions (เหมือนเดิม)
     async function openBook(url) {
         currentBookUrl = url;
         document.getElementById('reader-overlay').style.display = 'flex';
         document.body.style.overflow = 'hidden';
         
-        pdfDoc = await pdfjsLib.getDocument(url).promise;
-        
-        // ระบบ Bookmark: ดึงหน้าที่เคยอ่านค้างไว้
-        const savedPage = localStorage.getItem('page_' + btoa(url));
-        pageNum = savedPage ? parseInt(savedPage) : 1;
-        
-        renderPage(pageNum);
+        try {
+            pdfDoc = await pdfjsLib.getDocument(url).promise;
+            const savedPage = localStorage.getItem('page_' + btoa(url));
+            pageNum = savedPage ? parseInt(savedPage) : 1;
+            renderPage(pageNum);
+        } catch (e) {
+            alert("ไม่สามารถเปิดไฟล์ PDF นี้ได้ครับ");
+            closeBook();
+        }
     }
 
     async function renderPage(num) {
+        if (!pdfDoc) return;
         const page = await pdfDoc.getPage(num);
         const viewport = page.getViewport({ scale: 1.5 });
         canvas.height = viewport.height; canvas.width = viewport.width;
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
         
-        // บันทึกหน้าปัจจุบันลง LocalStorage
         localStorage.setItem('page_' + btoa(currentBookUrl), num);
         document.getElementById('pdf-render-container').scrollTop = 0;
     }
@@ -197,6 +230,7 @@
     function closeBook() { 
         document.getElementById('reader-overlay').style.display = 'none'; 
         document.body.style.overflow = 'auto'; 
+        if(pdfDoc) pdfDoc.destroy();
         pdfDoc = null;
     }
 </script>

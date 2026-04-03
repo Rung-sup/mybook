@@ -128,7 +128,7 @@ async function generateThumb(url, imgId) {
         const img = document.getElementById(imgId);
         if(img) {
             // ใช้ JPEG คุณภาพต่ำ (0.2) เพื่อให้ขนาดไฟล์เล็กที่สุด
-            img.src = tCanvas.toDataURL('image/jpeg', 0.2); 
+            img.src = tCanvas.toDataURL('image/jpeg', 0.1); 
             img.style.display = 'block';
             if(document.getElementById('loader-' + imgId)) 
                 document.getElementById('loader-' + imgId).style.display = 'none';

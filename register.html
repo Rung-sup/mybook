@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>คลังหนังสือส่วนตัว</title>
+    <title>คลังหนังสือส่วนตัวระบบรวม</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <style>
@@ -11,25 +11,19 @@
         body { margin: 0; background-color: #f4f1ea; color: #333; }
         
         .header { 
-            padding: 15px 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            background: #fff; 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
+            padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            background: #fff; position: sticky; top: 0; z-index: 100; 
+            display: flex; align-items: center; justify-content: space-between; 
         }
         .btn-back { 
             background: #333; color: #d4af37; border: 1px solid #d4af37; 
             padding: 8px 18px; border-radius: 25px; text-decoration: none; font-size: 14px;
         }
 
+        /* ชั้นหนังสือส่วนตัว - ปรับสีพื้นหลังให้เด่นขึ้น */
         .my-library-section { 
-            background: linear-gradient(to bottom, #ece9e0, #f4f1ea); 
-            padding: 25px 20px; 
-            border-bottom: 3px solid #d4af37;
+            background: linear-gradient(to bottom, #e5e2d9, #f4f1ea); 
+            padding: 25px 20px; border-bottom: 3px solid #d4af37;
             display: none; 
         }
         .section-title { 
@@ -60,30 +54,15 @@
             font-size: 10px; padding: 4px 12px; border-radius: 20px; 
             z-index: 5; font-weight: 600; box-shadow: 0 3px 6px rgba(0,0,0,0.2);
         }
-        .badge-reading { background: #d4af37; } 
-        .badge-finished { background: #27ae60; } 
+        .badge-reading { background: #d4af37; border: 1px solid #fff; } 
+        .badge-finished { background: #27ae60; border: 1px solid #fff; } 
 
-        #reader-overlay { 
-            display: none; position: fixed; inset: 0; background: #111; 
-            z-index: 2000; flex-direction: column; 
-        }
-        .reader-header { 
-            background: #222; color: #fff; padding: 12px 15px; 
-            display: flex; justify-content: space-between; align-items: center;
-        }
+        #reader-overlay { display: none; position: fixed; inset: 0; background: #111; z-index: 2000; flex-direction: column; }
+        .reader-header { background: #222; color: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
         #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; justify-content: center; padding: 10px 0; }
         #pdf-canvas { max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
-
-        .nav-controls { 
-            position: fixed; bottom: 30px; width: 100%; 
-            display: flex; justify-content: space-between; padding: 0 30px; pointer-events: none; 
-        }
-        .nav-btn { 
-            width: 60px; height: 60px; border-radius: 50%; 
-            background: rgba(0,0,0,0.9); color: #d4af37; border: 2px solid #d4af37; 
-            pointer-events: auto; cursor: pointer; font-size: 24px;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; pointer-events: none; }
+        .nav-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(0,0,0,0.9); color: #d4af37; border: 2px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -95,7 +74,7 @@
 </div>
 
 <div id="personal-library" class="my-library-section">
-    <div class="section-title">📖 ชั้นหนังสือส่วนตัวของคุณ (ทุกหมวด)</div>
+    <div class="section-title">📖 ชั้นหนังสือส่วนตัวของคุณ (เล่มที่เคยอ่านแล้ว)</div>
     <div id="my-books-grid" class="container" style="padding:0;"></div>
 </div>
 
@@ -130,19 +109,20 @@
     async function loadApp() {
         try {
             const response = await fetch(`database.json?v=${Date.now()}`);
-            const data = await response.json();
+            const allData = await response.json();
             
-            // 1. จัดการหนังสือหมวดปัจจุบัน (Numeric Sort)
+            // 1. หมวดปัจจุบัน
             const marker = `/${categoryKey}/`;
-            let booksInCat = data.filter(item => item.url && item.url.includes(marker));
-            booksInCat.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true, sensitivity: 'base' }));
+            let booksInCat = allData.filter(item => item.url && item.url.includes(marker));
+            booksInCat.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true }));
 
-            // 2. ดึงประวัติการอ่าน
+            // 2. ดึงประวัติ (History) และเช็คสถานะจาก LocalStorage ทั้งหมด
             let readHistory = JSON.parse(localStorage.getItem('read_history') || '[]');
-
-            // 3. กรองหนังสือจากข้อมูล "ทั้งหมด" (data) เพื่อให้ข้ามหมวดหมู่ได้
-            let myPersonalBooks = data.filter(book => readHistory.includes(book.url));
-            // เรียงลำดับชั้นส่วนตัวตามชื่อ (หรือตามประวัติการอ่านล่าสุดได้ถ้าต้องการ)
+            
+            // 3. กรองหนังสือทั้งหมดในไฟล์ JSON ที่เคยมีประวัติการอ่าน
+            let myPersonalBooks = allData.filter(book => readHistory.includes(book.url));
+            
+            // เรียงลำดับชั้นส่วนตัวตามชื่อ (Numeric)
             myPersonalBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true }));
 
             renderPersonalLibrary(myPersonalBooks);
@@ -153,13 +133,10 @@
     function renderPersonalLibrary(myBooks) {
         const grid = document.getElementById('my-books-grid');
         const section = document.getElementById('personal-library');
-        
         if (myBooks.length > 0) {
             section.style.display = 'block';
             grid.innerHTML = '';
-            myBooks.forEach((book, idx) => {
-                grid.appendChild(createBookCard(book, `personal-${idx}`));
-            });
+            myBooks.forEach((book, idx) => grid.appendChild(createBookCard(book, `personal-${idx}`)));
         } else {
             section.style.display = 'none';
         }
@@ -168,9 +145,7 @@
     function renderAllBooks(books) {
         const grid = document.getElementById('all-books-grid');
         grid.innerHTML = '';
-        books.forEach((book, idx) => {
-            grid.appendChild(createBookCard(book, `all-${idx}`));
-        });
+        books.forEach((book, idx) => grid.appendChild(createBookCard(book, `all-${idx}`)));
     }
 
     function createBookCard(book, idPrefix) {
@@ -194,7 +169,7 @@
             ${badge}
             <div class="cover-box">
                 <img id="${imgId}" class="book-cover-img" style="display:none;">
-                <span id="loader-${imgId}" style="font-size:10px; color:#999;">กำลังโหลดปก...</span>
+                <span id="loader-${imgId}" style="font-size:10px; color:#999;">โหลดปก...</span>
             </div>
             <div class="book-info">${book.title}</div>
         `;
@@ -214,7 +189,7 @@
             if(img) {
                 img.src = tCanvas.toDataURL('image/jpeg', 0.6);
                 img.style.display = 'block';
-                document.getElementById('loader-' + imgId).style.display = 'none';
+                if(document.getElementById('loader-' + imgId)) document.getElementById('loader-' + imgId).style.display = 'none';
             }
             pdf.destroy();
         } catch (e) {
@@ -231,7 +206,7 @@
 
         let history = JSON.parse(localStorage.getItem('read_history') || '[]');
         if (!history.includes(url)) {
-            history.unshift(url); 
+            history.unshift(url);
             localStorage.setItem('read_history', JSON.stringify(history));
         }
 
@@ -251,6 +226,8 @@
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
         localStorage.setItem('page_' + currentBookId, num);
+        
+        // บันทึกสถานะอ่านจบ
         if (num === pdfDoc.numPages) {
             localStorage.setItem('status_' + currentBookId, 'finished');
         } else {
@@ -267,9 +244,7 @@
         pdfDoc = null; 
         loadApp(); 
     }
-
     loadApp();
 </script>
-
 </body>
 </html>

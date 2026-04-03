@@ -97,42 +97,29 @@
 </div>
 
 <script>
-    /* 1. สร้าง "คิว" สำหรับโหลดปก (ป้องกันการรุมโหลดพร้อมกัน) */
-let thumbnailQueue = [];
-let isProcessingQueue = false;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+    
+    const params = new URLSearchParams(window.location.search);
+    const categoryKey = params.get('cat') || '1_PetchPraUma';
+    document.getElementById('header-title').innerText = params.get('name') || 'คลังหนังสือ';
 
-async function processQueue() {
-    if (isProcessingQueue || thumbnailQueue.length === 0) return;
-    isProcessingQueue = true;
+    let pdfDoc = null, pageNum = 1, currentBookUrl = "", currentBookId = "";
+    const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-    while (thumbnailQueue.length > 0) {
-        const item = thumbnailQueue.shift(); // ดึงงานแรกออกมาทำ
-        await generateThumbInternal(item.url, item.imgId);
-        // พักเครื่อง 100ms ก่อนเริ่มเล่มถัดไป เพื่อให้ UI ไม่ค้าง
-        await new Promise(r => setTimeout(r, 100));
-    }
-
-    isProcessingQueue = false;
-}
-
-/* 2. ฟังก์ชันหลักที่ใช้เรียก (เปลี่ยนจากเรียกตรงๆ เป็นการส่งเข้าคิว) */
-function generateThumb(url, imgId) {
-    thumbnailQueue.push({ url, imgId });
-    processQueue(); // เริ่มประมวลผลคิว
-}
-
-/* 3. ฟังก์ชันเรนเดอร์จริง (เน้นคืนค่า RAM ทันทีที่จบ) */
-async function generateThumbInternal(url, imgId) {
-    let pdf = null;
+    /* แก้ไขฟังก์ชัน generateThumb ในโค้ดเดิมของคุณ */
+async function generateThumb(url, imgId) {
     try {
-        const loadingTask = pdfjsLib.getDocument(url);
-        pdf = await loadingTask.promise;
+        // ใช้ RequestIdleCallback หรือ Delay เพื่อไม่ให้เครื่องค้าง
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000)); 
+
+        const pdf = await pdfjsLib.getDocument(url).promise;
         const page = await pdf.getPage(1);
         
-        // ใช้ scale 0.15 เพื่อความชัดที่พอดี
-        const vp = page.getViewport({ scale: 0.15 }); 
+        // ปรับ scale ลงเหลือ 0.1 (เล็กมากแต่พอเห็นรูปทรง) เพื่อประหยัด RAM
+        const vp = page.getViewport({ scale: 0.1 }); 
         const tCanvas = document.createElement('canvas');
         const tCtx = tCanvas.getContext('2d');
+        
         tCanvas.height = vp.height; 
         tCanvas.width = vp.width;
         
@@ -140,20 +127,136 @@ async function generateThumbInternal(url, imgId) {
         
         const img = document.getElementById(imgId);
         if(img) {
-            img.src = tCanvas.toDataURL('image/jpeg', 0.4); 
+            // ใช้ JPEG คุณภาพต่ำ (0.2) เพื่อให้ขนาดไฟล์เล็กที่สุด
+            img.src = tCanvas.toDataURL('image/jpeg', 0.); 
             img.style.display = 'block';
-            const loader = document.getElementById('loader-' + imgId);
-            if(loader) loader.style.display = 'none';
+            if(document.getElementById('loader-' + imgId)) 
+                document.getElementById('loader-' + imgId).style.display = 'none';
         }
+        
+        // สำคัญมาก: ต้องทำลายออบเจ็กต์ PDF ทันทีเพื่อคืน RAM
+        pdf.destroy(); 
     } catch (e) {
-        console.error("Thumb Error:", e);
-    } finally {
-        if (pdf) {
-            await pdf.destroy(); // คืนค่า RAM ทันที (สำคัญที่สุด!)
-            pdf = null;
-        }
+        if(document.getElementById('loader-' + imgId)) 
+            document.getElementById('loader-' + imgId).innerText = "ไม่มีปก";
     }
 }
+
+    function renderPersonalLibrary(myBooks) {
+        const grid = document.getElementById('my-books-grid');
+        const section = document.getElementById('personal-library');
+        if (myBooks.length > 0) {
+            section.style.display = 'block';
+            grid.innerHTML = '';
+            myBooks.forEach((book, idx) => grid.appendChild(createBookCard(book, `personal-${idx}`)));
+        } else {
+            section.style.display = 'none';
+        }
+    }
+
+    function renderAllBooks(books) {
+        const grid = document.getElementById('all-books-grid');
+        grid.innerHTML = '';
+        books.forEach((book, idx) => grid.appendChild(createBookCard(book, `all-${idx}`)));
+    }
+
+    function createBookCard(book, idPrefix) {
+        const card = document.createElement('div');
+        card.className = 'book-card';
+        card.onclick = () => openBook(book.url, book.title);
+        
+        const bookId = btoa(book.url);
+        const savedPage = parseInt(localStorage.getItem('page_' + bookId)) || 0;
+        const isFinished = localStorage.getItem('status_' + bookId) === 'finished';
+        const imgId = `img-${idPrefix}`;
+
+        let badge = '';
+        if (isFinished) {
+            badge = `<div class="badge badge-finished">อ่านจบแล้ว ✅</div>`;
+        } else if (savedPage > 0) {
+            badge = `<div class="badge badge-reading">อ่านค้างหน้า ${savedPage}</div>`;
+        }
+
+        card.innerHTML = `
+            ${badge}
+            <div class="cover-box">
+                <img id="${imgId}" class="book-cover-img" style="display:none;">
+                <span id="loader-${imgId}" style="font-size:10px; color:#999;">โหลดปก...</span>
+            </div>
+            <div class="book-info">${book.title}</div>
+        `;
+        setTimeout(() => generateThumb(book.url, imgId), 100);
+        return card;
+    }
+
+    async function generateThumb(url, imgId) {
+        try {
+            const pdf = await pdfjsLib.getDocument(url).promise;
+            const page = await pdf.getPage(1);
+            const vp = page.getViewport({ scale: 0.2 });
+            const tCanvas = document.createElement('canvas'), tCtx = tCanvas.getContext('2d');
+            tCanvas.height = vp.height; tCanvas.width = vp.width;
+            await page.render({ canvasContext: tCtx, viewport: vp }).promise;
+            const img = document.getElementById(imgId);
+            if(img) {
+                img.src = tCanvas.toDataURL('image/jpeg', 0.6);
+                img.style.display = 'block';
+                if(document.getElementById('loader-' + imgId)) document.getElementById('loader-' + imgId).style.display = 'none';
+            }
+            pdf.destroy();
+        } catch (e) {
+            if(document.getElementById('loader-' + imgId)) document.getElementById('loader-' + imgId).innerText = "ไม่มีปก";
+        }
+    }
+
+    async function openBook(url, title) {
+        currentBookUrl = url;
+        currentBookId = btoa(url);
+        document.getElementById('reader-overlay').style.display = 'flex';
+        document.getElementById('book-title-display').innerText = title;
+        document.body.style.overflow = 'hidden';
+
+        let history = JSON.parse(localStorage.getItem('read_history') || '[]');
+        if (!history.includes(url)) {
+            history.unshift(url);
+            localStorage.setItem('read_history', JSON.stringify(history));
+        }
+
+        try {
+            pdfDoc = await pdfjsLib.getDocument(url).promise;
+            const savedPage = localStorage.getItem('page_' + currentBookId);
+            pageNum = savedPage ? parseInt(savedPage) : 1;
+            renderPage(pageNum);
+        } catch (e) { alert("Error loading PDF"); closeBook(); }
+    }
+
+    async function renderPage(num) {
+        const page = await pdfDoc.getPage(num);
+        const screenWidth = window.innerWidth > 600 ? 600 : window.innerWidth;
+        const viewport = page.getViewport({ scale: (screenWidth * 1.5) / page.getViewport({ scale: 1 }).width });
+        canvas.height = viewport.height; canvas.width = viewport.width;
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+        localStorage.setItem('page_' + currentBookId, num);
+        
+        // บันทึกสถานะอ่านจบ
+        if (num === pdfDoc.numPages) {
+            localStorage.setItem('status_' + currentBookId, 'finished');
+        } else {
+            localStorage.removeItem('status_' + currentBookId);
+        }
+        document.getElementById('pdf-render-container').scrollTop = 0;
+    }
+
+    function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
+    function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
+    function closeBook() { 
+        document.getElementById('reader-overlay').style.display = 'none'; 
+        document.body.style.overflow = 'auto';
+        pdfDoc = null; 
+        loadApp(); 
+    }
+    loadApp();
 </script>
 </body>
 </html>

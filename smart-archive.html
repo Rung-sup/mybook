@@ -219,10 +219,29 @@
         }
 
         function renderBooks(books) {
-            const listDiv = document.getElementById('book-list');
-            listDiv.innerHTML = '';
-            books.forEach((book, idx) => listDiv.appendChild(createBookCard(book, `all-${idx}`)));
+    const listDiv = document.getElementById('book-list');
+    listDiv.innerHTML = ''; // ล้างค่าเก่า
+
+    let index = 0;
+    const chunkSize = 20; // ทยอยลงทีละ 20 เล่ม
+
+    function addNextChunk() {
+        const nextBatch = books.slice(index, index + chunkSize);
+        
+        nextBatch.forEach((book, i) => {
+            listDiv.appendChild(createBookCard(book, `all-${index + i}`));
+        });
+
+        index += chunkSize;
+
+        // ถ้ายังลงไม่ครบ ให้รอจังหวะที่ Browser ว่างแล้วค่อยลงต่อ (ไม่ทำให้เครื่องค้าง)
+        if (index < books.length) {
+            requestAnimationFrame(addNextChunk);
         }
+    }
+
+    addNextChunk();
+}
 
         function createBookCard(book, idPrefix) {
     const card = document.createElement('div');

@@ -1,147 +1,32 @@
-<!DOCTYPE html>
-<html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>คลังหนังสือคุณรันนรา</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>คลังหนังสือคุณ Puk</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background-color: #f4f1ea; color: #333; overflow-x: hidden; }
-        
-        /* Header */
-        .header { 
-            padding: 15px 20px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
-            background: #fff; 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-        }
-        .btn-back { 
-            background: #333; 
-            color: #d4af37; 
-            border: 1px solid #d4af37; 
-            padding: 8px 18px; 
-            border-radius: 25px; 
-            cursor: pointer; 
-            text-decoration: none; 
-            font-size: 14px;
-        }
-
-        /* Shelf Sections */
+        .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
+        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; text-decoration: none; font-size: 14px; }
         .shelf-section { background: rgba(212, 175, 55, 0.08); padding: 20px; border-bottom: 2px solid #d4af37; display: none; }
         .section-title { font-size: 16px; font-weight: 600; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; color: #5d4037; }
-
-        /* Grid Layout */
-        .container { 
-            padding: 20px; 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); 
-            gap: 15px; 
-        }
-
-        /* Book Card */
-        .book-card { 
-            background: #fff; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
-            cursor: pointer; 
-            transition: 0.3s; 
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; transition: 0.3s; position: relative; display: flex; flex-direction: column; }
         .book-card:active { transform: scale(0.95); }
-        .cover-box { 
-            width: 100%; 
-            aspect-ratio: 2/3; 
-            background: #e0ded7; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            overflow: hidden;
-        }
+        .cover-box { width: 100%; aspect-ratio: 2/3; background: #e0ded7; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
-        .book-info { 
-            padding: 10px; 
-            font-size: 12px; 
-            text-align: center; 
-            height: 55px; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1.3;
-        }
-
-        /* Badge Styles */
-        .badge { 
-            position: absolute; 
-            top: 8px; 
-            left: 8px; 
-            color: #fff; 
-            font-size: 10px; 
-            padding: 3px 10px; 
-            border-radius: 40px;
-            z-index: 2;
-            font-weight: 500;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+        .book-info { padding: 10px; font-size: 12px; text-align: center; height: 55px; display: flex; align-items: center; justify-content: center; line-height: 1.3; }
+        .badge { position: absolute; top: 8px; left: 8px; color: #fff; font-size: 10px; padding: 3px 10px; border-radius: 40px; z-index: 2; font-weight: 500; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .badge-reading { background: #d4af37; border: 1px solid #fff; }
         .badge-finished { background: #2ecc71; border: 1px solid #fff; }
-
-        /* Reader Overlay */
-        #reader-overlay { 
-            display: none; 
-            position: fixed; 
-            inset: 0; 
-            background: #1a1a1a; 
-            z-index: 2000; 
-            flex-direction: column; 
-        }
-        .reader-header { 
-            background: #222; 
-            color: #fff; 
-            padding: 12px 15px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-        }
-        #pdf-render-container { 
-            flex-grow: 1; 
-            overflow: auto; 
-            display: flex; 
-            justify-content: center;
-            background: #1a1a1a;
-            padding: 10px 0;
-            -webkit-overflow-scrolling: touch;
-        }
+        #reader-overlay { display: none; position: fixed; inset: 0; background: #1a1a1a; z-index: 2000; flex-direction: column; }
+        .reader-header { background: #222; color: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; justify-content: center; background: #1a1a1a; padding: 10px 0; -webkit-overflow-scrolling: touch; }
         #pdf-canvas { max-width: 100%; height: auto !important; }
-
-        .nav-controls { 
-            position: fixed; 
-            bottom: 30px; 
-            width: 100%; 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 0 25px; 
-            pointer-events: none; 
-        }
-        .nav-btn { 
-            width: 55px; height: 55px; border-radius: 50%; 
-            background: rgba(0,0,0,0.85); color: #d4af37; 
-            border: 1.5px solid #d4af37; pointer-events: auto; 
-            cursor: pointer; font-size: 22px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
+        .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; pointer-events: none; }
+        .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.85); color: #d4af37; border: 1.5px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
@@ -150,17 +35,14 @@
         <b id="header-title">คลังหนังสือ</b>
         <div style="width:40px;"></div>
     </div>
-
     <div id="my-shelf" class="shelf-section">
         <div class="section-title">⭐ อ่านค้างไว้ / ล่าสุด</div>
         <div id="shelf-list" class="container" style="padding:0;"></div>
     </div>
-
     <div class="container">
         <div class="section-title" id="all-books-title">📂 รายการหนังสือ</div>
     </div>
     <div id="book-list" class="container"></div>
-
     <div id="reader-overlay">
         <div class="reader-header">
             <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:7px 15px; border-radius:6px; font-weight:600;">ปิด</button>
@@ -173,13 +55,11 @@
             <button class="nav-btn" onclick="nextPage()">❯</button>
         </div>
     </div>
-
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
         const params = new URLSearchParams(window.location.search);
         const categoryKey = params.get('cat') || '1_PetchPraUma';
         document.getElementById('header-title').innerText = params.get('name') || 'คลังหนังสือ';
-
         let pdfDoc = null, pageNum = 1, currentBookUrl = "", currentBookId = "";
         const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
@@ -190,7 +70,6 @@
                 const marker = `/${categoryKey}/`;
                 let books = data.filter(item => item.url && item.url.includes(marker));
                 books.sort((a, b) => a.title.localeCompare(b.title, 'th'));
-
                 displayShelf(books);
                 renderBooks(books);
             } catch (err) { console.error("Load Error:", err); }
@@ -200,92 +79,54 @@
             const shelfDiv = document.getElementById('shelf-list');
             const shelfSection = document.getElementById('my-shelf');
             let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
-            
             const myBooks = allBooks.filter(b => recent.includes(b.url));
-            
             if (myBooks.length > 0) {
                 shelfSection.style.display = 'block';
                 shelfDiv.innerHTML = '';
-                const sortedRecent = recent
-                    .map(url => myBooks.find(b => b.url === url))
-                    .filter(b => b !== undefined);
-
-                sortedRecent.slice(0, 4).forEach((book, idx) => {
-                    shelfDiv.appendChild(createBookCard(book, `shelf-${idx}`));
-                });
-            } else {
-                shelfSection.style.display = 'none';
-            }
+                const sortedRecent = recent.map(url => myBooks.find(b => b.url === url)).filter(b => b !== undefined);
+                sortedRecent.slice(0, 4).forEach((book, idx) => { shelfDiv.appendChild(createBookCard(book, `shelf-${idx}`)); });
+            } else { shelfSection.style.display = 'none'; }
         }
 
         function renderBooks(books) {
-    const listDiv = document.getElementById('book-list');
-    listDiv.innerHTML = ''; // ล้างค่าเก่า
-
-    let index = 0;
-    const chunkSize = 20; // ทยอยลงทีละ 20 เล่ม
-
-    function addNextChunk() {
-        const nextBatch = books.slice(index, index + chunkSize);
-        
-        nextBatch.forEach((book, i) => {
-            listDiv.appendChild(createBookCard(book, `all-${index + i}`));
-        });
-
-        index += chunkSize;
-
-        // ถ้ายังลงไม่ครบ ให้รอจังหวะที่ Browser ว่างแล้วค่อยลงต่อ (ไม่ทำให้เครื่องค้าง)
-        if (index < books.length) {
-            requestAnimationFrame(addNextChunk);
+            const listDiv = document.getElementById('book-list');
+            listDiv.innerHTML = '';
+            let index = 0;
+            const chunkSize = 20;
+            function addNextChunk() {
+                const nextBatch = books.slice(index, index + chunkSize);
+                nextBatch.forEach((book, i) => { listDiv.appendChild(createBookCard(book, `all-${index + i}`)); });
+                index += chunkSize;
+                if (index < books.length) { requestAnimationFrame(addNextChunk); }
+            }
+            addNextChunk();
         }
-    }
-
-    addNextChunk();
-}
 
         function createBookCard(book, idPrefix) {
-    const card = document.createElement('div');
-    card.className = 'book-card';
-    card.onclick = () => openBook(book.url, book.title);
-    
-    const bookId = btoa(book.url);
-    const savedPage = parseInt(localStorage.getItem('page_' + bookId)) || 0;
-    const isFinished = localStorage.getItem('status_' + bookId) === 'finished';
-
-    // --- จุดแก้ไขสำคัญ: แก้ปัญหาชื่อไฟล์ที่มีอักขระพิเศษ ---
-    // 1. ถอดรหัส URL (เช่น %E0.. ให้กลับเป็นภาษาไทย)
-    let decodedUrl = decodeURIComponent(book.url); 
-    
-    // 2. ดึงเฉพาะชื่อไฟล์ท้ายสุด (เอาเฉพาะชื่อ .pdf)
-    let fileNameOnly = decodedUrl.split('/').pop();
-    
-    // 3. เปลี่ยน .pdf เป็น .jpg (รองรับทั้งตัวเล็กตัวใหญ่)
-    let jpgName = fileNameOnly.replace(/\.(pdf|PDF)$/i, '.jpg');
-    
-    // 4. ชี้ไปที่โฟลเดอร์ covers
-    const coverUrl = `covers/${jpgName}`;
-
-    let badge = '';
-    if (isFinished) {
-        badge = `<div class="badge badge-finished">อ่านจบแล้ว ✅</div>`;
-    } else if (savedPage > 0) {
-        badge = `<div class="badge badge-reading">ค้างหน้า ${savedPage}</div>`;
-    }
-
-    card.innerHTML = `
-        <div class="cover-box" style="position:relative; width:100%; height:180px; background:#eee;">
-            ${badge}
-            <img src="${coverUrl}" class="book-cover-img" loading="lazy" 
-                 style="width:100%; height:100%; object-fit:cover;"
-                 onerror="this.src='default_cover.jpg'; this.style.opacity='0.7';"> 
-        </div>
-        <div class="book-info" style="padding:10px; font-size:12px; text-align:center; height:50px; overflow:hidden;">
-            ${book.title}
-        </div>
-    `;
-    
-    return card;
-}
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.onclick = () => openBook(book.url, book.title);
+            const bookId = btoa(book.url);
+            const savedPage = parseInt(localStorage.getItem('page_' + bookId)) || 0;
+            const isFinished = localStorage.getItem('status_' + bookId) === 'finished';
+            let relPath = "";
+            try {
+                const urlObj = new URL(book.url);
+                relPath = decodeURIComponent(urlObj.pathname).substring(1);
+            } catch (e) { relPath = book.url; }
+            const imageId = md5(relPath);
+            const coverUrl = `covers/${imageId}.jpg`;
+            let badge = '';
+            if (isFinished) { badge = `<div class="badge badge-finished">อ่านจบแล้ว ✅</div>`; }
+            else if (savedPage > 0) { badge = `<div class="badge badge-reading">ค้างหน้า ${savedPage}</div>`; }
+            card.innerHTML = `
+                <div class="cover-box">
+                    ${badge}
+                    <img src="${coverUrl}" class="book-cover-img" loading="lazy" onerror="this.src='default_cover.jpg';"> 
+                </div>
+                <div class="book-info">${book.title}</div>`;
+            return card;
+        }
 
         async function openBook(url, title) {
             currentBookUrl = url;
@@ -293,11 +134,9 @@
             document.getElementById('reader-overlay').style.display = 'flex';
             document.getElementById('book-title-display').innerText = title;
             document.body.style.overflow = 'hidden';
-
             let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
             recent = [url, ...recent.filter(u => u !== url)].slice(0, 15);
             localStorage.setItem('recent_books', JSON.stringify(recent));
-
             try {
                 pdfDoc = await pdfjsLib.getDocument(url).promise;
                 const savedPage = localStorage.getItem('page_' + currentBookId);
@@ -312,31 +151,18 @@
             const screenWidth = window.innerWidth > 600 ? 580 : window.innerWidth;
             const scale = (screenWidth * 1.5) / viewportDefault.width;
             const vp = page.getViewport({ scale: scale });
-
             canvas.height = vp.height; canvas.width = vp.width;
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
-            
             document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
             localStorage.setItem('page_' + currentBookId, num);
-            
-            if (num === pdfDoc.numPages) {
-                localStorage.setItem('status_' + currentBookId, 'finished');
-            } else {
-                localStorage.removeItem('status_' + currentBookId);
-            }
+            if (num === pdfDoc.numPages) { localStorage.setItem('status_' + currentBookId, 'finished'); }
+            else { localStorage.removeItem('status_' + currentBookId); }
             document.getElementById('pdf-render-container').scrollTop = 0;
         }
 
         function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
         function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
-        
-        function closeBook() { 
-            document.getElementById('reader-overlay').style.display = 'none'; 
-            document.body.style.overflow = 'auto';
-            pdfDoc = null; 
-            loadData();
-        }
-
+        function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; document.body.style.overflow = 'auto'; pdfDoc = null; loadData(); }
         loadData();
     </script>
 </body>

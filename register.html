@@ -2,178 +2,288 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>รายการหนังสือ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>คลังหนังสือส่วนตัว</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
-        body { margin: 0; background-color: #f4f1ea; }
-        .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; text-decoration: none; font-size: 14px; }
-        .container { padding: 20px; max-width: 1200px; margin: auto; }
-        h2 { text-align: center; color: #4a148c; margin-bottom: 30px; }
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background-color: #f4f1ea; color: #333; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
-        .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; position: relative; }
-        .book-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
-        .cover-box { width: 100%; height: 200px; background: #ddd; display: flex; align-items: center; justify-content: center; position: relative; }
-        .cover-box img { width: 100%; height: 100%; object-fit: cover; }
-        .folder-badge { position: absolute; top: 10px; right: 10px; background: #ff9800; color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; }
-        .book-info { padding: 10px; text-align: center; }
-        .book-title { font-size: 13px; font-weight: 500; color: #333; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        /* Navigation Header */
+        .header { 
+            padding: 15px 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            background: #fff; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .btn-back { 
+            background: #333; color: #d4af37; border: 1px solid #d4af37; 
+            padding: 8px 18px; border-radius: 25px; text-decoration: none; font-size: 14px;
+        }
 
-        /* Overlay สำหรับรายการเล่มย่อย */
-        .folder-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; padding: 20px; }
-        .folder-content { background: white; width: 100%; max-width: 500px; border-radius: 20px; padding: 20px; max-height: 80vh; overflow-y: auto; }
-        .list-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .list-item:hover { background: #f9f9f9; }
+        /* ส่วนชั้นหนังสือส่วนตัว (My Library) */
+        .my-library-section { 
+            background: linear-gradient(to bottom, #ece9e0, #f4f1ea); 
+            padding: 25px 20px; 
+            border-bottom: 3px solid #d4af37;
+            display: none; /* ซ่อนถ้ายังไม่มีประวัติการอ่าน */
+        }
+        .section-title { 
+            font-size: 18px; font-weight: 600; margin-bottom: 20px; 
+            display: flex; align-items: center; gap: 10px; color: #5d4037;
+        }
 
-        /* PDF Reader Overlay */
-        #reader-overlay { display: none; position: fixed; inset: 0; background: #333; z-index: 300; flex-direction: column; }
-        #pdf-render-container { flex: 1; overflow: auto; display: flex; justify-content: center; background: #525659; }
-        .reader-controls { background: #222; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        /* Grid System */
+        .container { 
+            padding: 20px; max-width: 1200px; margin: 0 auto; 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 20px; 
+        }
+
+        /* Book Card Style */
+        .book-card { 
+            background: #fff; border-radius: 12px; overflow: hidden; 
+            box-shadow: 0 6px 15px rgba(0,0,0,0.1); cursor: pointer; 
+            transition: 0.3s ease; position: relative; display: flex; flex-direction: column;
+        }
+        .book-card:hover { transform: translateY(-5px); }
+        .cover-box { 
+            width: 100%; aspect-ratio: 2/3; background: #ddd; 
+            display: flex; align-items: center; justify-content: center; overflow: hidden;
+        }
+        .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
+        .book-info { padding: 12px 8px; font-size: 12px; text-align: center; height: 55px; line-height: 1.3; font-weight: 500; }
+
+        /* Status Badges */
+        .badge { 
+            position: absolute; top: 10px; left: 10px; color: #fff; 
+            font-size: 10px; padding: 4px 12px; border-radius: 20px; 
+            z-index: 5; font-weight: 600; box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+        .badge-reading { background: #d4af37; } /* สีทอง - อ่านค้าง */
+        .badge-finished { background: #27ae60; } /* สีเขียว - อ่านจบ */
+
+        /* PDF Reader Layer */
+        #reader-overlay { 
+            display: none; position: fixed; inset: 0; background: #111; 
+            z-index: 2000; flex-direction: column; 
+        }
+        .reader-header { 
+            background: #222; color: #fff; padding: 12px 15px; 
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; justify-content: center; padding: 10px 0; }
+        #pdf-canvas { max-width: 100%; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+
+        .nav-controls { 
+            position: fixed; bottom: 30px; width: 100%; 
+            display: flex; justify-content: space-between; padding: 0 30px; pointer-events: none; 
+        }
+        .nav-btn { 
+            width: 60px; height: 60px; border-radius: 50%; 
+            background: rgba(0,0,0,0.9); color: #d4af37; border: 2px solid #d4af37; 
+            pointer-events: auto; cursor: pointer; font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+        }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <a href="categories.html" class="btn-back">⬅ กลับหน้าหลัก</a>
-    <div id="category-name" style="font-weight: 600; color: #4a148c;">กำลังโหลด...</div>
+    <a href="categories.html" class="btn-back">❮ กลับ</a>
+    <b id="header-title" style="font-size: 18px;">คลังหนังสือ</b>
+    <div style="width:40px;"></div>
+</div>
+
+<div id="personal-library" class="my-library-section">
+    <div class="section-title">📖 ชั้นหนังสือส่วนตัวของคุณ</div>
+    <div id="my-books-grid" class="container" style="padding:0;"></div>
 </div>
 
 <div class="container">
-    <h2 id="display-title">รายการหนังสือ</h2>
-    <div id="book-grid" class="grid"></div>
+    <div class="section-title">📂 รายการหนังสือทั้งหมดในหมวดนี้</div>
 </div>
-
-<div id="folder-overlay" class="folder-overlay" onclick="closeFolder()">
-    <div class="folder-content" onclick="event.stopPropagation()">
-        <h3 id="folder-title" style="margin-top: 0; color: #4a148c;"></h3>
-        <div id="folder-list"></div>
-        <button onclick="closeFolder()" style="width:100%; margin-top:15px; padding:10px; border-radius:10px; border:none; background:#eee;">ปิด</button>
-    </div>
-</div>
+<div id="all-books-grid" class="container"></div>
 
 <div id="reader-overlay">
-    <div class="reader-controls">
-        <button onclick="closeBook()" style="background:none; border:1px solid #fff; color:#fff; border-radius:5px; cursor:pointer;">ปิด</button>
-        <div id="page-info">หน้า 0 / 0</div>
-        <div>
-            <button onclick="prevPage()">ก่อนหน้า</button>
-            <button onclick="nextPage()">ถัดไป</button>
-        </div>
+    <div class="reader-header">
+        <button onclick="closeBook()" style="background:#e74c3c; color:white; border:none; padding:8px 18px; border-radius:8px; cursor:pointer; font-weight:600;">ปิด</button>
+        <div id="book-title-display" style="font-size:14px; color:#d4af37; font-weight:300;"></div>
+        <span id="page-info" style="font-size:12px;">หน้า 0 / 0</span>
     </div>
-    <div id="pdf-render-container">
-        <canvas id="pdf-canvas"></canvas>
+    <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevPage()">❮</button>
+        <button class="nav-btn" onclick="nextPage()">❯</button>
     </div>
 </div>
 
 <script>
-    let allBooks = [];
-    const urlParams = new URLSearchParams(window.location.search);
-    const cat = urlParams.get('cat');
-    const catName = urlParams.get('name');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+    
+    const params = new URLSearchParams(window.location.search);
+    const categoryKey = params.get('cat') || '1_PetchPraUma';
+    document.getElementById('header-title').innerText = params.get('name') || 'คลังหนังสือ';
 
-    document.getElementById('category-name').innerText = catName;
-    document.getElementById('display-title').innerText = "หมวด " + catName;
+    let pdfDoc = null, pageNum = 1, currentBookUrl = "", currentBookId = "";
+    const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-    // โหลด Database
-    fetch('database.json')
-        .then(res => res.json())
-        .then(data => {
-            allBooks = data.filter(b => b.category === cat);
-            renderGrid();
-        });
+    async function loadApp() {
+        try {
+            const response = await fetch(`database.json?v=${Date.now()}`);
+            const data = await response.json();
+            const marker = `/${categoryKey}/`;
+            
+            // กรองหนังสือในหมวดหมู่
+            let booksInCat = data.filter(item => item.url && item.url.includes(marker));
+            booksInCat.sort((a, b) => a.title.localeCompare(b.title, 'th'));
 
-    function renderGrid() {
-        const grid = document.getElementById('book-grid');
-        grid.innerHTML = '';
+            // ดึงประวัติการอ่าน (จากทุุกหมวด)
+            let readHistory = JSON.parse(localStorage.getItem('read_history') || '[]');
+
+            renderPersonalLibrary(booksInCat, readHistory);
+            renderAllBooks(booksInCat);
+        } catch (e) { console.error(e); }
+    }
+
+    // 1. เรนเดอร์ชั้นหนังสือส่วนตัว (เฉพาะเล่มที่เคยเปิดในหมวดนี้)
+    function renderPersonalLibrary(allBooks, historyUrls) {
+        const grid = document.getElementById('my-books-grid');
+        const section = document.getElementById('personal-library');
         
-        const grouped = {};
-        allBooks.forEach(book => {
-            if (book.folder) {
-                if (!grouped[book.folder]) grouped[book.folder] = [];
-                grouped[book.folder].push(book);
-            } else {
-                // ถ้าไม่มีโฟลเดอร์ ให้ใช้ title เป็น key เฉพาะตัว
-                grouped['single_' + book.title] = [book];
-            }
-        });
+        const myBooks = allBooks.filter(book => historyUrls.includes(book.url));
 
-        Object.keys(grouped).forEach(key => {
-            const items = grouped[key];
-            const isFolder = !key.startsWith('single_');
-            const mainBook = items[0];
-            
-            const card = document.createElement('div');
-            card.className = 'book-card';
-            card.onclick = isFolder ? () => openFolder(key, items) : () => openBook(mainBook.url);
-            
-            card.innerHTML = `
-                <div class="cover-box">
-                    ${isFolder ? '<div class="folder-badge">ชุดหนังสือ ('+items.length+')</div>' : ''}
-                    <img id="img-${mainBook.title.replace(/\s+/g, '')}" src="default_cover.jpg">
-                </div>
-                <div class="book-info">
-                    <div class="book-title">${isFolder ? key : mainBook.title}</div>
-                </div>
-            `;
-            grid.appendChild(card);
-            generateThumb(mainBook.url, 'img-' + mainBook.title.replace(/\s+/g, ''));
+        if (myBooks.length > 0) {
+            section.style.display = 'block';
+            grid.innerHTML = '';
+            myBooks.forEach((book, idx) => {
+                grid.appendChild(createBookCard(book, `personal-${idx}`));
+            });
+        } else {
+            section.style.display = 'none';
+        }
+    }
+
+    // 2. เรนเดอร์หนังสือทั้งหมด
+    function renderAllBooks(books) {
+        const grid = document.getElementById('all-books-grid');
+        grid.innerHTML = '';
+        books.forEach((book, idx) => {
+            grid.appendChild(createBookCard(book, `all-${idx}`));
         });
     }
 
-    function openFolder(folderName, items) {
-        document.getElementById('folder-title').innerText = folderName;
-        const list = document.getElementById('folder-list');
-        list.innerHTML = '';
-        items.forEach(book => {
-            const div = document.createElement('div');
-            div.className = 'list-item';
-            div.innerHTML = `<span>${book.title}</span> <span style="color:#667eea;">อ่าน ➔</span>`;
-            div.onclick = () => { closeFolder(); openBook(book.url); };
-            list.appendChild(div);
-        });
-        document.getElementById('folder-overlay').style.display = 'flex';
+    function createBookCard(book, idPrefix) {
+        const card = document.createElement('div');
+        card.className = 'book-card';
+        card.onclick = () => openBook(book.url, book.title);
+        
+        const bookId = btoa(book.url);
+        const savedPage = parseInt(localStorage.getItem('page_' + bookId)) || 0;
+        const isFinished = localStorage.getItem('status_' + bookId) === 'finished';
+        const imgId = `img-${idPrefix}`;
+
+        let badge = '';
+        if (isFinished) {
+            badge = `<div class="badge badge-finished">อ่านจบแล้ว ✅</div>`;
+        } else if (savedPage > 0) {
+            badge = `<div class="badge badge-reading">อ่านค้างหน้า ${savedPage}</div>`;
+        }
+
+        card.innerHTML = `
+            ${badge}
+            <div class="cover-box">
+                <img id="${imgId}" class="book-cover-img" style="display:none;">
+                <span id="loader-${imgId}" style="font-size:10px; color:#999;">กำลังโหลดปก...</span>
+            </div>
+            <div class="book-info">${book.title}</div>
+        `;
+        setTimeout(() => generateThumb(book.url, imgId), 100);
+        return card;
     }
-
-    function closeFolder() { document.getElementById('folder-overlay').style.display = 'none'; }
-
-    // PDF Functions
-    let pdfDoc = null, pageNum = 1, canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
     async function generateThumb(url, imgId) {
         try {
             const pdf = await pdfjsLib.getDocument(url).promise;
             const page = await pdf.getPage(1);
-            const viewport = page.getViewport({ scale: 0.3 });
-            const tCanvas = document.createElement('canvas');
-            const tCtx = tCanvas.getContext('2d');
-            tCanvas.height = viewport.height; tCanvas.width = viewport.width;
-            await page.render({ canvasContext: tCtx, viewport: viewport }).promise;
-            document.getElementById(imgId).src = tCanvas.toDataURL();
-        } catch (e) { console.log("Thumb error", e); }
+            const vp = page.getViewport({ scale: 0.2 });
+            const tCanvas = document.createElement('canvas'), tCtx = tCanvas.getContext('2d');
+            tCanvas.height = vp.height; tCanvas.width = vp.width;
+            await page.render({ canvasContext: tCtx, viewport: vp }).promise;
+            const img = document.getElementById(imgId);
+            if(img) {
+                img.src = tCanvas.toDataURL('image/jpeg', 0.6);
+                img.style.display = 'block';
+                document.getElementById('loader-' + imgId).style.display = 'none';
+            }
+            pdf.destroy();
+        } catch (e) {
+            if(document.getElementById('loader-' + imgId)) document.getElementById('loader-' + imgId).innerText = "ไม่มีปก";
+        }
     }
 
-    async function openBook(url) {
+    async function openBook(url, title) {
+        currentBookUrl = url;
+        currentBookId = btoa(url);
         document.getElementById('reader-overlay').style.display = 'flex';
+        document.getElementById('book-title-display').innerText = title;
         document.body.style.overflow = 'hidden';
-        pdfDoc = await pdfjsLib.getDocument(url).promise;
-        pageNum = 1; renderPage(pageNum);
+
+        // บันทึกเข้าประวัติการอ่าน (ถ้ายังไม่มี)
+        let history = JSON.parse(localStorage.getItem('read_history') || '[]');
+        if (!history.includes(url)) {
+            history.push(url);
+            localStorage.setItem('read_history', JSON.stringify(history));
+        }
+
+        try {
+            pdfDoc = await pdfjsLib.getDocument(url).promise;
+            const savedPage = localStorage.getItem('page_' + currentBookId);
+            pageNum = savedPage ? parseInt(savedPage) : 1;
+            renderPage(pageNum);
+        } catch (e) { alert("Error loading PDF"); closeBook(); }
     }
 
     async function renderPage(num) {
         const page = await pdfDoc.getPage(num);
-        const viewport = page.getViewport({ scale: 1.5 });
+        const screenWidth = window.innerWidth > 600 ? 600 : window.innerWidth;
+        const viewport = page.getViewport({ scale: (screenWidth * 1.5) / page.getViewport({ scale: 1 }).width });
+
         canvas.height = viewport.height; canvas.width = viewport.width;
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+        
+        // บันทึกเลขหน้า
+        localStorage.setItem('page_' + currentBookId, num);
+        
+        // บันทึกสถานะจบ
+        if (num === pdfDoc.numPages) {
+            localStorage.setItem('status_' + currentBookId, 'finished');
+        } else {
+            localStorage.removeItem('status_' + currentBookId);
+        }
+
+        document.getElementById('pdf-render-container').scrollTop = 0;
     }
 
     function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
     function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
-    function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; document.body.style.overflow = 'auto'; }
+    
+    function closeBook() { 
+        document.getElementById('reader-overlay').style.display = 'none'; 
+        document.body.style.overflow = 'auto';
+        pdfDoc = null; 
+        loadApp(); // รีเฟรชหน้าเพื่ออัปเดตชั้นหนังสือส่วนตัว
+    }
+
+    loadApp();
 </script>
+
 </body>
 </html>

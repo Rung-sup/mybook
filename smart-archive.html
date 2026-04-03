@@ -64,16 +64,45 @@
         const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
         async function loadData() {
-            try {
-                const response = await fetch(`database.json?v=${Date.now()}`);
-                const data = await response.json();
-                const marker = `/${categoryKey}/`;
-                let books = data.filter(item => item.url && item.url.includes(marker));
-                books.sort((a, b) => a.title.localeCompare(b.title, 'th'));
-                displayShelf(books);
-                renderBooks(books);
-            } catch (err) { console.error("Load Error:", err); }
-        }
+    try {
+        const response = await fetch(`database.json?v=${Date.now()}`);
+        const data = await response.json();
+        const marker = `/${categoryKey}/`;
+        
+        // 1. กรองเอาเฉพาะเล่มที่อยู่ในหมวดนี้
+        let allBooks = data.filter(item => item.url && item.url.includes(marker));
+        allBooks.sort((a, b) => a.title.localeCompare(b.title, 'th'));
+
+        // 2. ตรรกะการรวมกลุ่ม (Grouping Logic)
+        let displayList = [];
+        let folderMap = new Map();
+
+        allBooks.forEach(book => {
+            if (book.folder && book.folder.trim() !== "") {
+                // ถ้ามีโฟลเดอร์ ให้เช็คว่าเราสร้างกลุ่มนี้ไปหรือยัง
+                if (!folderMap.has(book.folder)) {
+                    // สร้าง "ตัวแทนกลุ่ม" โดยใช้ข้อมูลเล่มแรกมาทำปก
+                    const folderRepresent = {
+                        ...book,
+                        isFolder: true,
+                        title: `[กลุ่ม] ${book.folder}`,
+                        count: 1
+                    };
+                    folderMap.set(book.folder, folderRepresent);
+                    displayList.push(folderRepresent);
+                } else {
+                    folderMap.get(book.folder).count++;
+                }
+            } else {
+                // ถ้าไม่มีโฟลเดอร์ (เหมือนเพชรพระอุมา) ให้โชว์เป็นเล่มแยกตามปกติ
+                displayList.push({ ...book, isFolder: false });
+            }
+        });
+
+        displayShelf(allBooks); // ส่วนอ่านค้างไว้ใช้ข้อมูลเดิม
+        renderBooks(displayList); // ส่วนรายการหลักใช้ข้อมูลที่ "ยุบ" แล้ว
+    } catch (err) { console.error("Load Error:", err); }
+}
 
         function displayShelf(allBooks) {
             const shelfDiv = document.getElementById('shelf-list');

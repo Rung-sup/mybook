@@ -106,29 +106,41 @@
     let pdfDoc = null, pageNum = 1, currentBookUrl = "", currentBookId = "";
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-    async function loadApp() {
-        try {
-            const response = await fetch(`database.json?v=${Date.now()}`);
-            const allData = await response.json();
-            
-            // 1. หมวดปัจจุบัน
-            const marker = `/${categoryKey}/`;
-            let booksInCat = allData.filter(item => item.url && item.url.includes(marker));
-            booksInCat.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true }));
+    /* แก้ไขฟังก์ชัน generateThumb ในโค้ดเดิมของคุณ */
+async function generateThumb(url, imgId) {
+    try {
+        // ใช้ RequestIdleCallback หรือ Delay เพื่อไม่ให้เครื่องค้าง
+        await new Promise(resolve => setTimeout(resolve, Math.random() * 2000)); 
 
-            // 2. ดึงประวัติ (History) และเช็คสถานะจาก LocalStorage ทั้งหมด
-            let readHistory = JSON.parse(localStorage.getItem('read_history') || '[]');
-            
-            // 3. กรองหนังสือทั้งหมดในไฟล์ JSON ที่เคยมีประวัติการอ่าน
-            let myPersonalBooks = allData.filter(book => readHistory.includes(book.url));
-            
-            // เรียงลำดับชั้นส่วนตัวตามชื่อ (Numeric)
-            myPersonalBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true }));
-
-            renderPersonalLibrary(myPersonalBooks);
-            renderAllBooks(booksInCat);
-        } catch (e) { console.error(e); }
+        const pdf = await pdfjsLib.getDocument(url).promise;
+        const page = await pdf.getPage(1);
+        
+        // ปรับ scale ลงเหลือ 0.1 (เล็กมากแต่พอเห็นรูปทรง) เพื่อประหยัด RAM
+        const vp = page.getViewport({ scale: 0.1 }); 
+        const tCanvas = document.createElement('canvas');
+        const tCtx = tCanvas.getContext('2d');
+        
+        tCanvas.height = vp.height; 
+        tCanvas.width = vp.width;
+        
+        await page.render({ canvasContext: tCtx, viewport: vp }).promise;
+        
+        const img = document.getElementById(imgId);
+        if(img) {
+            // ใช้ JPEG คุณภาพต่ำ (0.2) เพื่อให้ขนาดไฟล์เล็กที่สุด
+            img.src = tCanvas.toDataURL('image/jpeg', 0.2); 
+            img.style.display = 'block';
+            if(document.getElementById('loader-' + imgId)) 
+                document.getElementById('loader-' + imgId).style.display = 'none';
+        }
+        
+        // สำคัญมาก: ต้องทำลายออบเจ็กต์ PDF ทันทีเพื่อคืน RAM
+        pdf.destroy(); 
+    } catch (e) {
+        if(document.getElementById('loader-' + imgId)) 
+            document.getElementById('loader-' + imgId).innerText = "ไม่มีปก";
     }
+}
 
     function renderPersonalLibrary(myBooks) {
         const grid = document.getElementById('my-books-grid');

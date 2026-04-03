@@ -141,8 +141,8 @@
             
             // กรองหนังสือในหมวดหมู่
             let booksInCat = data.filter(item => item.url && item.url.includes(marker));
-            booksInCat.sort((a, b) => a.title.localeCompare(b.title, 'th'));
-
+            // เปลี่ยนจากแบบเดิม เป็นแบบ Numeric Sort เพื่อให้เล่ม 1 มาก่อนเล่ม 10
+booksInCat.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true, sensitivity: 'base' }));
             // ดึงประวัติการอ่าน (จากทุุกหมวด)
             let readHistory = JSON.parse(localStorage.getItem('read_history') || '[]');
 

@@ -23,7 +23,7 @@
         .badge { position: absolute; top: 8px; left: 8px; color: #fff; font-size: 10px; padding: 3px 10px; border-radius: 40px; z-index: 2; font-weight: 500; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .badge-reading { background: #d4af37; border: 1px solid #fff; }
         .badge-finished { background: #2ecc71; border: 1px solid #fff; }
-        .count-badge { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 4px; z-index: 2; }
+        .count-badge { position: absolute; bottom: 8px; right: 8px; background: rgba(212, 175, 55, 0.9); color: #333; font-size: 10px; padding: 2px 8px; border-radius: 4px; z-index: 2; font-weight: 600; border: 1px solid #fff; }
         
         /* Modal สำหรับเลือกเล่มในโฟลเดอร์ */
         #folder-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 3000; align-items: center; justify-content: center; padding: 20px; }
@@ -60,7 +60,7 @@
     <div id="folder-modal" onclick="this.style.display='none'">
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-header">
-                <strong id="modal-folder-title">ชื่อโฟลเดอร์</strong>
+                <strong id="modal-folder-title">ชื่อกลุ่มหนังสือ</strong>
                 <button onclick="document.getElementById('folder-modal').style.display='none'" style="border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
             </div>
             <div id="folder-files-list"></div>
@@ -88,50 +88,48 @@
         
         let pdfDoc = null, pageNum = 1, currentBookUrl = "", currentBookId = "";
         const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
-        let fullDatabase = [];
 
         async function loadData() {
             try {
                 const response = await fetch(`database.json?v=${Date.now()}`);
-                fullDatabase = await response.json();
+                const allData = await response.json();
                 const marker = `/${categoryKey}/`;
                 
-                let allBooks = fullDatabase.filter(item => item.url && item.url.includes(marker));
-                allBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
+                // 1. กรองเฉพาะหนังสือในหมวดนี้
+                let catBooks = allData.filter(item => item.url && item.url.includes(marker));
+                catBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
 
-                // Logic: จัดกลุ่มโฟลเดอร์
-                let displayList = [];
-                let folderGroups = {};
+                // 2. แยกกลุ่มตามฟิลด์ "folder" (ถ้าไม่มีให้มองเป็นไฟล์เดี่ยว)
+                let groups = {};
+                let displayItems = [];
 
-                allBooks.forEach(book => {
-                    if (book.folder && book.folder.trim() !== "") {
-                        if (!folderGroups[book.folder]) {
-                            folderGroups[book.folder] = [];
-                        }
-                        folderGroups[book.folder].push(book);
+                catBooks.forEach(book => {
+                    const fName = (book.folder && book.folder.trim() !== "") ? book.folder : null;
+                    if (fName) {
+                        if (!groups[fName]) groups[fName] = [];
+                        groups[fName].push(book);
                     } else {
-                        displayList.push({ ...book, isFolder: false });
+                        displayItems.push({ ...book, isFolder: false });
                     }
                 });
 
-                // เพิ่มกลุ่มโฟลเดอร์เข้าไปในรายการแสดงผล
-                for (let folderName in folderGroups) {
-                    let booksInFolder = folderGroups[folderName];
-                    displayList.push({
-                        title: folderName,
+                // 3. รวมกลุ่มที่พบเข้า displayItems
+                for (let fName in groups) {
+                    let files = groups[fName];
+                    displayItems.push({
+                        title: fName,
                         isFolder: true,
-                        count: booksInFolder.length,
-                        files: booksInFolder,
-                        // ใช้ URL ของเล่มแรกมาทำปก
-                        url: booksInFolder[0].url 
+                        count: files.length,
+                        files: files,
+                        url: files[0].url // ใช้ไฟล์แรกทำปก
                     });
                 }
 
-                // เรียงหน้าหลักอีกครั้ง (ชื่อโฟลเดอร์ผสมกับชื่อไฟล์เดี่ยว)
-                displayList.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
+                // 4. เรียงลำดับชื่อหน้าหลัก
+                displayItems.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
 
-                displayShelf(allBooks); 
-                renderBooks(displayList);
+                displayShelf(catBooks); 
+                renderBooks(displayItems);
             } catch (err) { console.error("Load Error:", err); }
         }
 
@@ -148,58 +146,49 @@
             } else { shelfSection.style.display = 'none'; }
         }
 
-        function renderBooks(books) {
+        function renderBooks(items) {
             const listDiv = document.getElementById('book-list');
             listDiv.innerHTML = '';
-            books.forEach((book, i) => { listDiv.appendChild(createBookCard(book, `all-${i}`)); });
+            items.forEach((item, i) => listDiv.appendChild(createBookCard(item, `all-${i}`)));
         }
 
-        function createBookCard(book, idPrefix) {
+        function createBookCard(item, idPrefix) {
             const card = document.createElement('div');
             card.className = 'book-card';
             
-            // การจัดการรูปหน้าปกแบบ MD5 (อิงจากโครงสร้างที่คุณทำใน Python)
+            // การหา Image ID (MD5) จาก URL จริง
             let relPath = "";
             try {
-                // ตัดส่วนที่เป็น domain ออกให้เหลือ path สัมพัทธ์เหมือนใน Python
-                const urlObj = new URL(book.url, window.location.origin);
-                relPath = decodeURIComponent(urlObj.pathname);
-                if(relPath.startsWith('/')) relPath = relPath.substring(1);
-            } catch (e) { relPath = book.url; }
+                const urlPath = new URL(item.url, window.location.origin).pathname;
+                relPath = decodeURIComponent(urlPath).substring(1); 
+            } catch (e) { relPath = item.url; }
             
             const imageId = md5(relPath); 
             const coverUrl = `covers/${imageId}.jpg`;
 
-            // Badge สถานะ (เฉพาะไฟล์เดี่ยว)
             let badge = '';
-            if (!book.isFolder) {
-                const bookId = btoa(book.url);
-                const savedPage = parseInt(localStorage.getItem('page_' + bookId)) || 0;
-                const isFinished = localStorage.getItem('status_' + bookId) === 'finished';
-                if (isFinished) badge = `<div class="badge badge-finished">จบแล้ว ✅</div>`;
-                else if (savedPage > 0) badge = `<div class="badge badge-reading">หน้า ${savedPage}</div>`;
+            if (!item.isFolder) {
+                const bId = btoa(item.url);
+                const p = parseInt(localStorage.getItem('page_' + bId)) || 0;
+                if (localStorage.getItem('status_' + bId) === 'finished') badge = `<div class="badge badge-finished">จบแล้ว ✅</div>`;
+                else if (p > 0) badge = `<div class="badge badge-reading">หน้า ${p}</div>`;
             }
 
             card.innerHTML = `
                 <div class="cover-box">
                     ${badge}
                     <img src="${coverUrl}" class="book-cover-img" loading="lazy" onerror="this.src='https://via.placeholder.com/150x220?text=No+Cover';">
-                    ${book.isFolder ? `<div class="count-badge">📦 ${book.count} เล่ม</div>` : ''}
+                    ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
                 </div>
                 <div class="book-info">
-                    <div style="font-weight:600; color:${book.isFolder ? '#5d4037' : '#333'}">${book.title}</div>
-                    ${book.isFolder ? `<span style="font-size:10px; color:#d4af37;">(กลุ่มหนังสือ)</span>` : ''}
+                    <div style="font-weight:600; color:${item.isFolder ? '#5d4037' : '#333'}">${item.title}</div>
                 </div>
             `;
 
             card.onclick = () => {
-                if (book.isFolder) {
-                    showFolderFiles(book.title, book.files);
-                } else {
-                    openBook(book.url, book.title);
-                }
+                if (item.isFolder) showFolderFiles(item.title, item.files);
+                else openBook(item.url, item.title);
             };
-            
             return card;
         }
 
@@ -208,15 +197,11 @@
             const list = document.getElementById('folder-files-list');
             document.getElementById('modal-folder-title').innerText = title;
             list.innerHTML = '';
-
-            files.forEach(file => {
+            files.forEach(f => {
                 const div = document.createElement('div');
                 div.className = 'file-item';
-                div.innerHTML = `<span>📄</span> ${file.title}`;
-                div.onclick = () => {
-                    modal.style.display = 'none';
-                    openBook(file.url, file.title);
-                };
+                div.innerHTML = `<span>📄</span> ${f.title}`;
+                div.onclick = () => { modal.style.display = 'none'; openBook(f.url, f.title); };
                 list.appendChild(div);
             });
             modal.style.display = 'flex';
@@ -228,31 +213,26 @@
             document.getElementById('reader-overlay').style.display = 'flex';
             document.getElementById('book-title-display').innerText = title;
             document.body.style.overflow = 'hidden';
-            
             let recent = JSON.parse(localStorage.getItem('recent_books') || '[]');
             recent = [url, ...recent.filter(u => u !== url)].slice(0, 15);
             localStorage.setItem('recent_books', JSON.stringify(recent));
-
             try {
                 pdfDoc = await pdfjsLib.getDocument(url).promise;
-                const savedPage = localStorage.getItem('page_' + currentBookId);
-                pageNum = savedPage ? parseInt(savedPage) : 1;
+                pageNum = parseInt(localStorage.getItem('page_' + currentBookId)) || 1;
                 renderPage(pageNum);
-            } catch (err) { alert("ไม่สามารถโหลด PDF ได้"); closeBook(); }
+            } catch (err) { alert("โหลด PDF ไม่สำเร็จ"); closeBook(); }
         }
 
         async function renderPage(num) {
             const page = await pdfDoc.getPage(num);
-            const screenWidth = window.innerWidth > 600 ? 580 : window.innerWidth;
-            const viewportDefault = page.getViewport({ scale: 1 });
-            const scale = (screenWidth * 1.5) / viewportDefault.width;
-            const vp = page.getViewport({ scale: scale });
+            const sw = window.innerWidth > 600 ? 580 : window.innerWidth;
+            const vp = page.getViewport({ scale: (sw * 1.5) / page.getViewport({ scale: 1 }).width });
             canvas.height = vp.height; canvas.width = vp.width;
             await page.render({ canvasContext: ctx, viewport: vp }).promise;
             document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
             localStorage.setItem('page_' + currentBookId, num);
-            if (num === pdfDoc.numPages) { localStorage.setItem('status_' + currentBookId, 'finished'); }
-            else { localStorage.removeItem('status_' + currentBookId); }
+            if (num === pdfDoc.numPages) localStorage.setItem('status_' + currentBookId, 'finished');
+            else localStorage.removeItem('status_' + currentBookId);
             document.getElementById('pdf-render-container').scrollTop = 0;
         }
 
@@ -264,7 +244,6 @@
             pdfDoc = null; 
             loadData(); 
         }
-        
         loadData();
     </script>
 </body>

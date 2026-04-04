@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>คลังหนังสือคุณ Puk</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
@@ -13,45 +13,35 @@
         .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
         .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; text-decoration: none; font-size: 14px; }
         .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
-        .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; position: relative; min-height: 235px; border: 1px solid #eee; }
-        .cover-box { width: 100%; aspect-ratio: 2/3; background: #e0ded7; display: flex; align-items: center; justify-content: center; position: relative; }
-        .book-cover-img { width: 100%; height: 100%; object-fit: cover; background: #eee; }
-        .book-info { padding: 8px; font-size: 12px; text-align: center; height: 50px; display: flex; align-items: center; justify-content: center; line-height: 1.2; overflow: hidden; }
-        .count-badge { position: absolute; bottom: 8px; right: 8px; background: #d4af37; color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; z-index: 5; }
+        .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; position: relative; min-height: 235px; border: 1px solid #eee; transition: transform 0.2s; }
+        .book-card:active { transform: scale(0.96); }
+        .cover-box { width: 100%; aspect-ratio: 2/3; background: #e0ded7; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .book-cover-img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; }
+        .book-cover-img.loaded { opacity: 1; }
+        .book-info { padding: 10px; font-size: 12px; text-align: center; height: 55px; display: flex; align-items: center; justify-content: center; line-height: 1.2; font-weight: 500; }
         
-        /* Reader UI */
-        #reader-overlay { display: none; position: fixed; inset: 0; background: #111; z-index: 2000; flex-direction: column; }
+        #reader-overlay { display: none; position: fixed; inset: 0; background: #1a1a1a; z-index: 4000; flex-direction: column; }
+        .reader-header { background: #222; color: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
         #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; justify-content: center; padding: 10px 0; }
         #pdf-canvas { max-width: 100%; height: auto !important; }
         .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; pointer-events: none; }
-        .nav-btn { width: 60px; height: 60px; border-radius: 50%; background: rgba(0,0,0,0.9); color: #d4af37; border: 2px solid #d4af37; pointer-events: auto; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-        
-        #folder-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1500; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: #fff; width: 100%; max-width: 500px; max-height: 80vh; border-radius: 12px; overflow-y: auto; padding: 20px; }
-        .file-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
-        .file-item:last-child { border-bottom: none; }
+        .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.85); color: #d4af37; border: 1.5px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <a href="categories.html" class="btn-back">❮ กลับ</a>
-    <b id="header-title" style="font-size: 16px;">คลังหนังสือ</b>
+    <b id="header-title">คลังหนังสือ</b>
     <div style="width:40px;"></div>
 </div>
 
 <div id="book-list" class="container"></div>
 
-<div id="folder-modal" onclick="this.style.display='none'">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <div id="modal-title" style="font-weight:600; margin-bottom:15px; color:#d4af37; border-bottom:1px solid #eee; padding-bottom:10px;"></div>
-        <div id="folder-files-list"></div>
-    </div>
-</div>
-
 <div id="reader-overlay">
-    <div style="background:#222; color:#fff; padding:12px; display:flex; justify-content:space-between; align-items:center;">
-        <button onclick="closeBook()" style="background:#e74c3c; color:white; border:none; padding:8px 15px; border-radius:5px;">ปิด</button>
+    <div class="reader-header">
+        <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:7px 15px; border-radius:6px; font-weight:600;">ปิด</button>
+        <div id="book-title-display" style="font-size:13px; color:#d4af37; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:45%;"></div>
         <span id="page-info" style="font-size:12px;"></span>
     </div>
     <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
@@ -64,109 +54,90 @@
 <script>
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
     const params = new URLSearchParams(window.location.search);
-    const catKey = params.get('cat') || '1_PetchPraUma';
+    const categoryKey = params.get('cat') || '1_PetchPraUma';
     document.getElementById('header-title').innerText = params.get('name') || 'คลังหนังสือ';
-
+    
     let pdfDoc = null, pageNum = 1, currentBookId = "";
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-    // 1. โหลดข้อมูลและจัดการ Memory
-    async function init() {
+    async function loadData() {
         try {
-            const res = await fetch(`database.json?v=${Date.now()}`);
-            const data = await res.json();
-            const filtered = data.filter(b => b.url.includes(`/${catKey}/`));
+            const response = await fetch(`database.json?v=${Date.now()}`);
+            const allData = await response.json();
+            const marker = `/${categoryKey}/`;
             
-            // ระบบ Grouping
-            const groups = {};
-            const singleBooks = [];
-            filtered.forEach(b => {
-                if (b.folder && b.folder.trim() !== "") {
-                    if (!groups[b.folder]) groups[b.folder] = [];
-                    groups[b.folder].push(b);
-                } else {
-                    singleBooks.push({...b, isFolder: false});
-                }
-            });
+            // กรองข้อมูลและเรียงลำดับ
+            const catBooks = allData.filter(item => item.url && item.url.includes(marker));
+            catBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
 
-            const displayList = [...singleBooks];
-            for (let f in groups) {
-                displayList.push({ title: f, isFolder: true, count: groups[f].length, files: groups[f], url: groups[f][0].url });
-            }
-            displayList.sort((a,b) => a.title.localeCompare(b.title, 'th', {numeric:true}));
-            
-            render(displayList);
-        } catch (e) { console.error(e); }
+            renderBooks(catBooks);
+        } catch (err) { console.error(err); }
     }
 
-    // 2. Render แบบประหยัดทรัพยากร
-    function render(items) {
-        const list = document.getElementById('book-list');
-        list.innerHTML = '';
-        items.forEach(item => {
+    function renderBooks(books) {
+        const listDiv = document.getElementById('book-list');
+        listDiv.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+
+        books.forEach((book, i) => {
             const card = document.createElement('div');
             card.className = 'book-card';
             
-            // สร้าง Path รูปภาพ
-            let path = "";
-            try { path = decodeURIComponent(new URL(item.url, window.location.origin).pathname).substring(1); } catch(e){ path = item.url; }
-            const imgUrl = `covers/${catKey}/${md5(path)}.jpg`;
+            let relPath = "";
+            try {
+                const urlPath = new URL(book.url, window.location.origin).pathname;
+                relPath = decodeURIComponent(urlPath);
+                if(relPath.startsWith('/')) relPath = relPath.substring(1);
+            } catch (e) { relPath = book.url; }
+            
+            const imageId = md5(relPath); 
+            const coverUrl = `covers/${categoryKey}/${imageId}.jpg`;
 
             card.innerHTML = `
                 <div class="cover-box">
-                    <img data-src="${imgUrl}" class="book-cover-img" loading="lazy">
-                    ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
+                    <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
                 </div>
-                <div class="book-info"><div>${item.title}</div></div>
+                <div class="book-info"><div>${book.title}</div></div>
             `;
 
-            card.onclick = () => item.isFolder ? showFolder(item.title, item.files) : openBook(item.url, item.title);
-            list.appendChild(card);
+            card.onclick = () => openBook(book.url, book.title);
+            fragment.appendChild(card);
         });
+        
+        listDiv.appendChild(fragment);
 
-        // ระบบ Lazy Load แบบ Native
-        const images = document.querySelectorAll('.book-cover-img');
+        // ระบบ Lazy Load เพื่อความเร็ว
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const img = entry.target;
                     img.src = img.dataset.src;
-                    img.onerror = () => { img.src = 'https://via.placeholder.com/150x220?text=No+Cover'; };
+                    img.onload = () => img.classList.add('loaded');
+                    img.onerror = () => { img.src = 'https://via.placeholder.com/150x220?text=No+Cover'; img.classList.add('loaded'); };
                     observer.unobserve(img);
                 }
             });
-        }, { rootMargin: '100px' });
-        images.forEach(img => observer.observe(img));
-    }
+        }, { rootMargin: '200px' });
 
-    function showFolder(title, files) {
-        document.getElementById('modal-title').innerText = title;
-        const list = document.getElementById('folder-files-list');
-        list.innerHTML = '';
-        files.forEach(f => {
-            const item = document.createElement('div');
-            item.className = 'file-item';
-            item.innerText = `📖 ${f.title}`;
-            item.onclick = () => { document.getElementById('folder-modal').style.display='none'; openBook(f.url, f.title); };
-            list.appendChild(item);
-        });
-        document.getElementById('folder-modal').style.display = 'flex';
+        document.querySelectorAll('.book-cover-img').forEach(img => observer.observe(img));
     }
 
     async function openBook(url, title) {
         currentBookId = btoa(url);
         document.getElementById('reader-overlay').style.display = 'flex';
+        document.getElementById('book-title-display').innerText = title;
         document.body.style.overflow = 'hidden';
         try {
             pdfDoc = await pdfjsLib.getDocument(url).promise;
             pageNum = parseInt(localStorage.getItem('page_' + currentBookId)) || 1;
             renderPage(pageNum);
-        } catch (e) { alert("Error"); closeBook(); }
+        } catch (err) { alert("โหลดไฟล์ไม่สำเร็จ"); closeBook(); }
     }
 
     async function renderPage(num) {
         const page = await pdfDoc.getPage(num);
-        const vp = page.getViewport({ scale: (window.innerWidth * 1.5) / page.getViewport({ scale: 1 }).width });
+        const sw = window.innerWidth > 600 ? 580 : window.innerWidth;
+        const vp = page.getViewport({ scale: (sw * 1.5) / page.getViewport({ scale: 1 }).width });
         canvas.height = vp.height; canvas.width = vp.width;
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
@@ -175,14 +146,12 @@
 
     function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
     function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
-    
     function closeBook() { 
         document.getElementById('reader-overlay').style.display = 'none'; 
         document.body.style.overflow = 'auto'; 
-        if(pdfDoc) { pdfDoc.destroy(); pdfDoc = null; } // คืน Memory ทันที
+        if(pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
     }
-
-    init();
+    loadData();
 </script>
 </body>
 </html>

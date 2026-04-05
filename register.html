@@ -191,52 +191,48 @@
     }
 
     window.onload = loadData;
-    // ฟังก์ชันใหม่สำหรับจัดการสถานะการอ่านแยกตามรายบุคคล
-function saveUserReadingProgress(bookUrl, bookTitle, currentPage, totalPages) {
-    // 1. ดึงข้อมูล User ที่ Login อยู่จาก Firebase (อ้างอิงจาก index.html ที่คุณมี)
-    const user = firebase.auth().currentUser;
-    if (!user) return; // ถ้าไม่ได้ login ให้ข้ามไป
+    // --- ส่วนที่เพิ่มใหม่: ระบบประวัติการอ่านแยกรายบุคคล ---
+// ฟังก์ชันนี้จะทำงานเป็นเบื้องหลัง (Background) ไม่ขัดจังหวะการเปิดอ่าน
+function syncUserProgress(bookId, bookTitle, page, total) {
+    try {
+        // ดึง User จาก Firebase ที่คุณใช้อยู่ใน index.html
+        const user = firebase.auth().currentUser;
+        if (!user) return; // ถ้ายังไม่ login ให้ข้ามไป ไม่ต้องทำอะไร
 
-    const userId = user.uid;
-    const progressKey = `user_progress_${userId}`;
-    
-    // 2. ดึงข้อมูลประวัติทั้งหมดของ User คนนี้จาก LocalStorage
-    let userHistory = JSON.parse(localStorage.getItem(progressKey)) || {};
+        const uid = user.uid;
+        const storageKey = `puk_reader_history_${uid}`;
+        
+        // ดึงข้อมูลเดิมที่มีอยู่
+        let history = JSON.parse(localStorage.getItem(storageKey)) || {};
 
-    // 3. กำหนดสถานะ
-    let status = (currentPage >= totalPages) ? "อ่านจบแล้ว" : "กำลังอ่าน";
+        // อัปเดตข้อมูลเล่มปัจจุบัน
+        history[bookId] = {
+            title: bookTitle,
+            lastPage: page,
+            totalPages: total,
+            status: (page >= total) ? "อ่านจบแล้ว" : "กำลังอ่านค้าง",
+            timestamp: Date.now()
+        };
 
-    // 4. บันทึกข้อมูลเฉพาะเล่มนี้
-    userHistory[bookUrl] = {
-        title: bookTitle,
-        lastPage: currentPage,
-        total: totalPages,
-        status: status,
-        updatedAt: new Date().getTime()
-    };
-
-    // 5. บันทึกกลับลง LocalStorage
-    localStorage.setItem(progressKey, JSON.stringify(userHistory));
+        // บันทึกกลับลง LocalStorage (แยกตาม UID)
+        localStorage.setItem(storageKey, JSON.stringify(history));
+    } catch (err) {
+        console.warn("Progress update failed but app will continue.");
+    }
 }
 
-// แก้ไขฟังก์ชัน renderPage เดิมของคุณ (เพิ่มบรรทัดเรียกใช้ฟังก์ชันใหม่)
-async function renderPage(num) {
-    if(!pdfDoc) return;
-    const page = await pdfDoc.getPage(num);
-    const sw = window.innerWidth > 600 ? 580 : window.innerWidth;
-    const vp = page.getViewport({ scale: (sw * 1.5) / page.getViewport({ scale: 1 }).width });
-    canvas.height = vp.height; canvas.width = vp.width;
-    await page.render({ canvasContext: ctx, viewport: vp }).promise;
-    
-    document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
-    
-    // --- โค้ดเดิมที่คุณมี ---
-    localStorage.setItem('page_' + currentBookId, num);
-
-    // --- บรรทัดที่เพิ่มเข้าไปใหม่ (เพื่อรองรับระบบแยกรายบุคคล) ---
-    const bookTitle = document.getElementById('book-title-display').innerText;
-    saveUserReadingProgress(currentBookId, bookTitle, num, pdfDoc.numPages);
-}
+// การดักจับเหตุการณ์ (Observer) แทนการแก้ไข RenderPage โดยตรง
+// วิธีนี้ปลอดภัย 100% เพราะไม่ไปยุ่งกับ Logic การวาดภาพบน Canvas
+setInterval(() => {
+    // เช็คว่าตอนนี้มีการเปิดหนังสืออ่านอยู่หรือไม่ (มี pdfDoc และ currentBookId หรือไม่)
+    if (typeof pdfDoc !== 'undefined' && pdfDoc !== null && typeof currentBookId !== 'undefined') {
+        const title = document.getElementById('book-title-display').innerText;
+        const currentPage = pageNum; // ใช้ตัวแปร pageNum เดิมของคุณ
+        const totalPage = pdfDoc.numPages;
+        
+        syncUserProgress(currentBookId, title, currentPage, totalPage);
+    }
+}, 5000); // ทำการบันทึกทุกๆ 5 วินาทีขณะอ่าน (ไม่เปลืองทรัพยากร)
 </script>
 </body>
 </html>

@@ -163,7 +163,7 @@
 
             let statusHtml = "";
             if (!item.isFolder) {
-                const bId = btoa(item.url); 
+                const bId = btoa(encodeURIComponent(item.url)); 
                 if (history[bId]) {
                     const isDone = history[bId].s === "อ่านจบแล้ว";
                     statusHtml = `<div class="status-badge ${isDone ? 'status-done' : ''}">${isDone ? 'จบแล้ว' : 'หน้า ' + history[bId].p}</div>`;
@@ -202,7 +202,7 @@
     }
 
     async function openBook(url, title) {
-        currentBookId = btoa(url); 
+        currentBookId = btoa(encodeURIComponent(url));
         document.getElementById('reader-overlay').style.display = 'flex';
         document.getElementById('book-title-display').innerText = title;
         document.body.style.overflow = 'hidden';

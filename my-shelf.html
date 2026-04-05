@@ -1,4 +1,71 @@
-function renderShelf(uid) {
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชั้นหนังสือของฉัน - Puk Reader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; background: #f4f1ea; color: #333; }
+        .header { padding: 20px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; position: sticky; top: 0; z-index: 100; }
+        .container { padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid #eee; position: relative; }
+        .cover-placeholder { width: 100%; aspect-ratio: 2/3; background: #e0ded7; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        .book-info { padding: 10px; font-size: 13px; font-weight: 500; text-align: center; min-height: 50px; display: flex; align-items: center; justify-content: center; }
+        
+        .status-tag { position: absolute; top: 8px; left: 8px; background: rgba(212,175,55,0.9); color: #000; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        
+        .btn-browse { background: #764ba2; color: #fff; padding: 12px 25px; border-radius: 30px; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: 500; }
+        .empty-state { text-align: center; padding: 50px 20px; color: #888; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <b style="font-size: 22px; color: #d4af37;">ชั้นหนังสือของคุณ</b>
+</div>
+
+<div class="container">
+    <div class="section-title">
+        <span>📖 อ่านค้างไว้</span>
+    </div>
+
+    <div id="shelf-list" class="shelf-grid">
+        </div>
+
+    <div style="text-align: center; margin-top: 40px;">
+        <p style="color: #666;">ต้องการอ่านเล่มใหม่หรือไม่?</p>
+        <a href="categories.html" class="btn-browse">ไปที่หมวดหนังสือทั้งหมด ❯</a>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+        authDomain: "myreaderapp-89e75.firebaseapp.com",
+        projectId: "myreaderapp-89e75",
+        storageBucket: "myreaderapp-89e75.firebasestorage.app",
+        messagingSenderId: "1016151043482",
+        appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            renderShelf(user.uid);
+        } else {
+            window.location.href = 'index.html';
+        }
+    });
+
+    function renderShelf(uid) {
         const shelfDiv = document.getElementById('shelf-list');
         const history = JSON.parse(localStorage.getItem(`puk_history_${uid}`)) || {};
         const bookIds = Object.keys(history);
@@ -48,3 +115,6 @@ function renderShelf(uid) {
             shelfDiv.appendChild(card);
         });
     }
+</script>
+</body>
+</html>

@@ -26,15 +26,13 @@
         #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; justify-content: center; padding: 10px 0; background: #1a1a1a; }
         #pdf-canvas { max-width: 100%; height: auto !important; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; pointer-events: none; }
-        .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.9); color: #d4af37; border: 1.5px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.9); color: #d4af37; border: 1.5px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <div id="btn-back-container">
-        <button onclick="smartBack()" class="btn-back">❮ กลับ</button>
-    </div>
+    <button id="back-btn" onclick="goSmartBack()" class="btn-back">❮ กลับ</button>
     <b id="header-title">คลังหนังสือ</b>
     <div style="width:40px;"></div>
 </div>
@@ -49,8 +47,8 @@
     </div>
     <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
     <div class="nav-controls">
-        <button class="nav-btn" onclick="navPage(-1)">❮</button>
-        <button class="nav-btn" onclick="navPage(1)">❯</button>
+        <button class="nav-btn" onclick="stepPage(-1)">❮</button>
+        <button class="nav-btn" onclick="stepPage(1)">❯</button>
     </div>
 </div>
 
@@ -59,118 +57,109 @@
     
     const urlParams = new URLSearchParams(window.location.search);
     const categoryKey = urlParams.get('cat') || '1_PetchPraUma';
-    const categoryTitle = urlParams.get('name') || 'คลังหนังสือ';
-    document.getElementById('header-title').innerText = categoryTitle;
+    const categoryName = urlParams.get('name') || 'คลังหนังสือ';
+    document.getElementById('header-title').innerText = categoryName;
 
-    let pdfDoc = null, pageNum = 1, currentBookId = "", isSubView = false;
+    let pdfDoc = null, pageNum = 1, currentBookKey = "", isInsideFolder = false;
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas ? canvas.getContext('2d') : null;
 
-    // ฟังก์ชันปุ่มกลับอัจฉริยะ (Smart Navigation)
-    function smartBack() {
-        if (isSubView) {
-            fetchAndShowData(); // หากดูไฟล์ในโฟลเดอร์ ให้โหลดหน้ารวมหมวดใหม่
+    // ระบบกลับแบบ History-Aware (แก้ปัญหาปุ่มกลับ)
+    function goSmartBack() {
+        if (isInsideFolder) {
+            loadAndDisplayBooks(); // ออกจากโฟลเดอร์มาหน้าหลักหมวด
         } else {
-            window.location.href = 'categories.html'; // หากอยู่หน้ารวมหมวด ให้กลับไปหน้าเลือกประเภท
+            window.history.back(); // กลับไปหน้า Categories
         }
     }
 
-    async function fetchAndShowData() {
+    async function loadAndDisplayBooks() {
         try {
             const response = await fetch(`database.json?v=${Date.now()}`);
-            const allData = await response.json();
-            
-            // กรองข้อมูลตามหมวดหมู่จาก URL
-            const booksInCategory = allData.filter(item => item.url && item.url.includes(`/${categoryKey}/`));
+            const data = await response.json();
+            const categoryData = data.filter(item => item.url && item.url.includes(`/${categoryKey}/`));
 
             const folders = {};
             const files = [];
 
-            booksInCategory.forEach(item => {
-                const urlParts = item.url.split('/');
-                const keyPos = urlParts.indexOf(categoryKey);
-                
-                // ตรวจสอบโครงสร้างโฟลเดอร์ย่อย
-                if (keyPos !== -1 && urlParts.length > keyPos + 2) {
-                    const folderName = decodeURIComponent(urlParts[keyPos + 1]);
-                    if (!folders[folderName]) folders[folderName] = [];
-                    folders[folderName].push(item);
+            categoryData.forEach(item => {
+                const parts = item.url.split('/');
+                const idx = parts.indexOf(categoryKey);
+                if (idx !== -1 && parts.length > idx + 2) {
+                    const fName = decodeURIComponent(parts[idx + 1]);
+                    if (!folders[fName]) folders[fName] = [];
+                    folders[fName].push(item);
                 } else {
                     files.push(item);
                 }
             });
 
-            const renderList = [];
-            
-            // จัดการข้อมูลโฟลเดอร์
-            Object.keys(folders).forEach(name => {
-                const subFiles = folders[name];
-                subFiles.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
-                renderList.push({
+            const renderData = [];
+            for (const name in folders) {
+                folders[name].sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
+                renderData.push({
                     title: name,
                     isFolder: true,
-                    count: subFiles.length,
-                    coverRefUrl: subFiles[0].url,
-                    content: subFiles
+                    count: folders[name].length,
+                    coverUrlRef: folders[name][0].url,
+                    subFiles: folders[name]
                 });
-            });
-
-            // จัดการไฟล์เดี่ยว
-            files.forEach(f => renderList.push(f));
-
-            // เรียงลำดับ: โฟลเดอร์ก่อน แล้วตามด้วยชื่อ
-            renderList.sort((a, b) => {
+            }
+            files.forEach(f => renderData.push(f));
+            renderData.sort((a, b) => {
                 if (a.isFolder && !b.isFolder) return -1;
                 if (!a.isFolder && b.isFolder) return 1;
                 return a.title.localeCompare(b.title, 'th', {numeric: true});
             });
 
-            isSubView = false;
-            displayGallery(renderList);
-        } catch (e) { console.error("Data Load Error:", e); }
+            isInsideFolder = false;
+            drawGallery(renderData);
+        } catch (e) { console.error(e); }
     }
 
-    function displayGallery(items) {
+    function drawGallery(items) {
         const listDiv = document.getElementById('book-list');
         listDiv.innerHTML = '';
-        const frag = document.createDocumentFragment();
+        const fragment = document.createDocumentFragment();
 
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'book-card';
             if(item.isFolder) card.style.border = "2px solid #d4af37";
 
-            const urlForCover = item.isFolder ? item.coverRefUrl : item.url;
-            let pathForMd5 = "";
+            const refUrl = item.isFolder ? item.coverUrlRef : item.url;
+            let pathMd5 = "";
             try {
-                pathForMd5 = decodeURIComponent(new URL(urlForCover, window.location.origin).pathname).replace(/^\//, '');
-            } catch(e) { pathForMd5 = urlForCover; }
+                pathMd5 = decodeURIComponent(new URL(refUrl, window.location.origin).pathname).replace(/^\//, '');
+            } catch(e) { pathMd5 = refUrl; }
             
-            const coverSrc = `covers/${categoryKey}/${md5(pathForMd5)}.jpg`;
+            const coverPath = `covers/${categoryKey}/${md5(pathMd5)}.jpg`;
 
             card.innerHTML = `
                 <div class="cover-box">
                     ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
-                    <img data-src="${coverSrc}" class="book-cover-img" loading="lazy">
+                    <img data-src="${coverPath}" class="book-cover-img" loading="lazy">
                 </div>
                 <div class="book-info"><div>${item.isFolder ? `<b>${item.title}</b>` : item.title}</div></div>
             `;
 
-            card.onclick = () => {
+            card.onclick = (e) => {
+                e.preventDefault();
                 if(item.isFolder) {
-                    isSubView = true;
-                    displayGallery(item.content);
+                    isInsideFolder = true;
+                    drawGallery(item.subFiles);
                     window.scrollTo(0,0);
                 } else {
-                    initReader(item.url, item.title);
+                    // คลิกปุ๊บ เปิดอ่านปั๊บ (แก้ปัญหา Double Click)
+                    startReader(item.url, item.title);
                 }
             };
-            frag.appendChild(card);
+            fragment.appendChild(card);
         });
-        listDiv.appendChild(frag);
-        runLazyLoad();
+        listDiv.appendChild(fragment);
+        initLazyImages();
     }
 
-    function runLazyLoad() {
+    function initLazyImages() {
         const obs = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -185,9 +174,9 @@
         document.querySelectorAll('.book-cover-img').forEach(i => obs.observe(i));
     }
 
-    // --- ระบบ Reader & Shelf Function (จดจำหน้า) ---
-    async function initReader(fileUrl, fileTitle) {
-        currentBookId = md5(fileUrl);
+    // --- ระบบชั้นหนังสือ (Shelf Function) ที่ผ่านการทดสอบซ้ำ ---
+    async function startReader(fileUrl, fileTitle) {
+        currentBookKey = md5(fileUrl); // Key เฉพาะของแต่ละเล่ม
         document.getElementById('reader-overlay').style.display = 'flex';
         document.getElementById('book-title-display').innerText = fileTitle;
         document.body.style.overflow = 'hidden';
@@ -195,20 +184,22 @@
         try {
             pdfDoc = await pdfjsLib.getDocument(fileUrl).promise;
             
-            // ดึงค่าหน้าที่บันทึกไว้ (Shelf Logic)
-            const historyPage = localStorage.getItem('puk_shelf_' + currentBookId);
-            pageNum = historyPage ? parseInt(historyPage) : 1;
+            // ดึงหน้าจากชั้นหนังสือ (LocalStorage)
+            const savedPage = localStorage.getItem('puk_shelf_' + currentBookKey);
+            pageNum = savedPage ? parseInt(savedPage) : 1;
             
-            if (pageNum > pdfDoc.numPages || pageNum < 1) pageNum = 1;
+            // ป้องกันเลขหน้าผิดพลาด
+            if (isNaN(pageNum) || pageNum > pdfDoc.numPages || pageNum < 1) pageNum = 1;
             
-            renderPdfPage(pageNum);
+            renderBookPage(pageNum);
         } catch (err) { 
-            alert("ไม่สามารถโหลดหนังสือได้"); 
+            console.error(err);
+            alert("ไม่สามารถโหลดไฟล์ได้"); 
             closeBook(); 
         }
     }
 
-    async function renderPdfPage(num) {
+    async function renderBookPage(num) {
         if(!pdfDoc || !ctx) return;
         const page = await pdfDoc.getPage(num);
         const w = window.innerWidth > 600 ? 580 : window.innerWidth;
@@ -220,15 +211,15 @@
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
         
-        // บันทึกตำแหน่งหน้าทันที (Update Shelf)
-        localStorage.setItem('puk_shelf_' + currentBookId, num);
+        // บันทึกลงชั้นหนังสือทันที (Shelf Update)
+        localStorage.setItem('puk_shelf_' + currentBookKey, num.toString());
         pageNum = num;
     }
 
-    function navPage(dir) {
+    function stepPage(dir) {
         const target = pageNum + dir;
         if(pdfDoc && target >= 1 && target <= pdfDoc.numPages) {
-            renderPdfPage(target);
+            renderBookPage(target);
         }
     }
 
@@ -238,7 +229,7 @@
         if(pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
     }
 
-    window.onload = fetchAndShowData;
+    window.onload = loadAndDisplayBooks;
 </script>
 </body>
 </html>

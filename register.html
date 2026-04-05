@@ -73,9 +73,8 @@
             catBooks.forEach(item => {
                 const parts = item.url.split('/');
                 const catIndex = parts.indexOf(categoryKey);
-                
                 if (catIndex !== -1 && parts.length > catIndex + 2) {
-                    const folderName = decodeURIComponent(parts[catIndex + 1]); // แก้ปัญหาชื่อ ID เป็นชื่อภาษาไทย
+                    const folderName = decodeURIComponent(parts[catIndex + 1]);
                     if (!groupedData[folderName]) groupedData[folderName] = [];
                     groupedData[folderName].push(item);
                 } else {
@@ -96,7 +95,6 @@
                 });
             }
             standaloneFiles.forEach(file => displayList.push(file));
-
             displayList.sort((a, b) => {
                 if (a.isFolder && !b.isFolder) return -1;
                 if (!a.isFolder && b.isFolder) return 1;
@@ -115,7 +113,7 @@
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'book-card';
-            if(item.isFolder) card.style.border = "2px solid #d4af37"; // ขอบทองแทนสัญลักษณ์ Folder
+            if(item.isFolder) card.style.border = "2px solid #d4af37";
 
             const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
             let relPath = "";
@@ -157,37 +155,57 @@
         document.querySelectorAll('.book-cover-img').forEach(img => observer.observe(img));
     }
 
+    // ฟังก์ชันชั้นหนังสือ (Shelf Function) - ปรับปรุงใหม่
     async function openBook(url, title) {
-        currentBookId = btoa(url); // ใช้ Base64 URL เป็น Key ของชั้นหนังสือ
+        currentBookId = md5(url); // ใช้ MD5 เพื่อความแม่นยำในการจำหน้า
         document.getElementById('reader-overlay').style.display = 'flex';
         document.getElementById('book-title-display').innerText = title;
         document.body.style.overflow = 'hidden';
+        
         try {
             pdfDoc = await pdfjsLib.getDocument(url).promise;
-            // ดึงเลขหน้าจาก localStorage (ฟังก์ชันชั้นหนังสือ)
-            pageNum = parseInt(localStorage.getItem('page_' + currentBookId)) || 1;
+            // ดึงเลขหน้าจากชั้นหนังสือ (LocalStorage)
+            const savedPage = localStorage.getItem('shelf_' + currentBookId);
+            pageNum = savedPage ? parseInt(savedPage) : 1;
+            
+            // ตรวจสอบว่าหน้าที่บันทึกไว้ไม่เกินจำนวนหน้าจริง
+            if (pageNum > pdfDoc.numPages) pageNum = 1;
+            
             renderPage(pageNum);
-        } catch (err) { alert("โหลดไฟล์ไม่สำเร็จ"); closeBook(); }
+        } catch (err) { 
+            console.error(err);
+            alert("โหลดไฟล์ไม่สำเร็จ"); 
+            closeBook(); 
+        }
     }
 
     async function renderPage(num) {
-        if(!pdfDoc) return;
+        if(!pdfDoc || !ctx) return;
         const page = await pdfDoc.getPage(num);
         const sw = window.innerWidth > 600 ? 580 : window.innerWidth;
         const vp = page.getViewport({ scale: (sw * 1.5) / page.getViewport({ scale: 1 }).width });
-        canvas.height = vp.height; canvas.width = vp.width;
+        
+        canvas.height = vp.height; 
+        canvas.width = vp.width;
+        
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
-        // บันทึกเลขหน้าปัจจุบันลงชั้นหนังสือ
-        localStorage.setItem('page_' + currentBookId, num);
+        
+        // บันทึกลงชั้นหนังสือทุกครั้งที่เปลี่ยนหน้า
+        localStorage.setItem('shelf_' + currentBookId, num);
+        pageNum = num;
     }
 
-    function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
-    function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
+    function prevPage() { if(pageNum > 1) renderPage(pageNum - 1); }
+    function nextPage() { if(pdfDoc && pageNum < pdfDoc.numPages) renderPage(pageNum + 1); }
+
     function closeBook() { 
         document.getElementById('reader-overlay').style.display = 'none'; 
         document.body.style.overflow = 'auto'; 
-        if(pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
+        if(pdfDoc) { 
+            pdfDoc.destroy(); 
+            pdfDoc = null; 
+        }
     }
 
     window.onload = loadData;

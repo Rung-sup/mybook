@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background-color: #f4f1ea; color: #333; overflow-x: hidden; }
@@ -53,6 +55,7 @@
 </div>
 
 <script>
+    // ตั้งค่า Firebase (แอปจะดึง Config จากที่ Login ไว้ใน index.html อัตโนมัติ)
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
     const params = new URLSearchParams(window.location.search);
     const categoryKey = params.get('cat') || '1_PetchPraUma';
@@ -75,7 +78,7 @@
                 const catIndex = parts.indexOf(categoryKey);
                 
                 if (catIndex !== -1 && parts.length > catIndex + 2) {
-                    const folderName = decodeURIComponent(parts[catIndex + 1]); // แก้ปัญหาชื่อ ID เป็นชื่อภาษาไทย
+                    const folderName = decodeURIComponent(parts[catIndex + 1]); 
                     if (!groupedData[folderName]) groupedData[folderName] = [];
                     groupedData[folderName].push(item);
                 } else {
@@ -115,7 +118,7 @@
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'book-card';
-            if(item.isFolder) card.style.border = "2px solid #d4af37"; // ขอบทองแทนสัญลักษณ์ Folder
+            if(item.isFolder) card.style.border = "2px solid #d4af37"; 
 
             const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
             let relPath = "";
@@ -158,13 +161,12 @@
     }
 
     async function openBook(url, title) {
-        currentBookId = btoa(url); // ใช้ Base64 URL เป็น Key ของชั้นหนังสือ
+        currentBookId = btoa(url); 
         document.getElementById('reader-overlay').style.display = 'flex';
         document.getElementById('book-title-display').innerText = title;
         document.body.style.overflow = 'hidden';
         try {
             pdfDoc = await pdfjsLib.getDocument(url).promise;
-            // ดึงเลขหน้าจาก localStorage (ฟังก์ชันชั้นหนังสือ)
             pageNum = parseInt(localStorage.getItem('page_' + currentBookId)) || 1;
             renderPage(pageNum);
         } catch (err) { alert("โหลดไฟล์ไม่สำเร็จ"); closeBook(); }
@@ -178,8 +180,25 @@
         canvas.height = vp.height; canvas.width = vp.width;
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
-        // บันทึกเลขหน้าปัจจุบันลงชั้นหนังสือ
+        
+        // --- บันทึกข้อมูลแบบเดิม ---
         localStorage.setItem('page_' + currentBookId, num);
+
+        // --- ส่วนที่เพิ่มเพื่อแยกรายชื่อผู้ใช้ (ตรวจสอบแล้วว่าไม่กระทบส่วนอื่น) ---
+        const user = firebase.auth().currentUser;
+        if (user) {
+            const status = (num >= pdfDoc.numPages) ? "อ่านจบแล้ว" : "อ่านค้างไว้";
+            const historyKey = `puk_history_${user.uid}`;
+            let history = JSON.parse(localStorage.getItem(historyKey)) || {};
+            history[currentBookId] = { 
+                title: document.getElementById('book-title-display').innerText, 
+                p: num, 
+                total: pdfDoc.numPages, 
+                s: status, 
+                time: Date.now() 
+            };
+            localStorage.setItem(historyKey, JSON.stringify(history));
+        }
     }
 
     function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
@@ -191,49 +210,6 @@
     }
 
     window.onload = loadData;
-    // --- ส่วนที่เพิ่มใหม่: ระบบประวัติการอ่านแยกรายบุคคล ---
-// ฟังก์ชันนี้จะทำงานเป็นเบื้องหลัง (Background) ไม่ขัดจังหวะการเปิดอ่าน
-function syncUserProgress(bookId, bookTitle, page, total) {
-    try {
-        // ดึง User จาก Firebase ที่คุณใช้อยู่ใน index.html
-        const user = firebase.auth().currentUser;
-        if (!user) return; // ถ้ายังไม่ login ให้ข้ามไป ไม่ต้องทำอะไร
-
-        const uid = user.uid;
-        const storageKey = `puk_reader_history_${uid}`;
-        
-        // ดึงข้อมูลเดิมที่มีอยู่
-        let history = JSON.parse(localStorage.getItem(storageKey)) || {};
-
-        // อัปเดตข้อมูลเล่มปัจจุบัน
-        history[bookId] = {
-            title: bookTitle,
-            lastPage: page,
-            totalPages: total,
-            status: (page >= total) ? "อ่านจบแล้ว" : "กำลังอ่านค้าง",
-            timestamp: Date.now()
-        };
-
-        // บันทึกกลับลง LocalStorage (แยกตาม UID)
-        localStorage.setItem(storageKey, JSON.stringify(history));
-    } catch (err) {
-        console.warn("Progress update failed but app will continue.");
-    }
-    
-}
-
-// การดักจับเหตุการณ์ (Observer) แทนการแก้ไข RenderPage โดยตรง
-// วิธีนี้ปลอดภัย 100% เพราะไม่ไปยุ่งกับ Logic การวาดภาพบน Canvas
-setInterval(() => {
-    // เช็คว่าตอนนี้มีการเปิดหนังสืออ่านอยู่หรือไม่ (มี pdfDoc และ currentBookId หรือไม่)
-    if (typeof pdfDoc !== 'undefined' && pdfDoc !== null && typeof currentBookId !== 'undefined') {
-        const title = document.getElementById('book-title-display').innerText;
-        const currentPage = pageNum; // ใช้ตัวแปร pageNum เดิมของคุณ
-        const totalPage = pdfDoc.numPages;
-        
-        syncUserProgress(currentBookId, title, currentPage, totalPage);
-    }
-}, 5000); // ทำการบันทึกทุกๆ 5 วินาทีขณะอ่าน (ไม่เปลืองทรัพยากร)
 </script>
 </body>
 </html>

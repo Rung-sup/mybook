@@ -1,108 +1,113 @@
 <script>
-    // ใช้คำสั่งนี้เพื่อดึงค่าจาก URL (เช่น ?cat=2_Thai_Novel)
+    // 1. ตั้งค่าพื้นฐาน
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
     const params = new URLSearchParams(window.location.search);
     const categoryKey = params.get('cat') || '1_PetchPraUma';
-    document.getElementById('header-title').innerText = params.get('name') || 'คลังหนังสือ';
+    const categoryName = params.get('name') || 'คลังหนังสือ';
     
-    let pdfDoc = null, pageNum = 1, currentBookId = "";
-    const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
+    // อัปเดตหัวข้อหน้าเว็บ
+    if(document.getElementById('header-title')) {
+        document.getElementById('header-title').innerText = categoryName;
+    }
 
+    let pdfDoc = null, pageNum = 1, currentBookId = "";
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+
+    // 2. ฟังก์ชันโหลดข้อมูล
     async function loadData() {
+        const listDiv = document.getElementById('book-list');
+        if(!listDiv) {
+            console.error("ไม่พบ Element id='book-list' ในหน้า HTML");
+            return;
+        }
+
         try {
             const response = await fetch(`database.json?v=${Date.now()}`);
             const allData = await response.json();
             
-            // กรองข้อมูลตามหมวดที่คลิกเข้ามา
+            // กรองเฉพาะหมวดหมู่ที่เลือก
             const catBooks = allData.filter(item => item.url && item.url.includes(`/${categoryKey}/`));
 
-            // ตรวจสอบเงื่อนไข: ถ้าเป็นหมวด "นิยายไทย" ให้มัดรวม "ล่องไพร"
             if (categoryKey === '2_Thai_Novel') {
+                // แยก "ล่องไพร" ออกมาทำ Folder
                 const longPhraiFiles = catBooks.filter(item => item.url.includes('ล่องไพร'));
                 const otherBooks = catBooks.filter(item => !item.url.includes('ล่องไพร'));
 
                 let displayItems = [];
-
                 if (longPhraiFiles.length > 0) {
                     longPhraiFiles.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
                     displayItems.push({
-                        title: "ชุด ล่องไพร (รวมตอน)",
+                        title: "ชุด ล่องไพร (น้อย อินทนนท์)",
                         isFolder: true,
                         count: longPhraiFiles.length,
                         firstBookUrl: longPhraiFiles[0].url,
                         allFiles: longPhraiFiles
                     });
                 }
-
-                // แสดง Folder ล่องไพร ก่อน แล้วตามด้วยนิยายไทยเรื่องอื่นๆ
                 renderItems([...displayItems, ...otherBooks]);
             } else {
-                // หมวดอื่นๆ (เช่น เพชรพระอุมา) ให้แสดงรายเล่มตามปกติ
                 catBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
                 renderItems(catBooks);
             }
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            listDiv.innerHTML = `<div style="padding:20px; color:red;">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}</div>`;
+        }
     }
 
+    // 3. ฟังก์ชัน Render (แสดงผล)
     function renderItems(items) {
         const listDiv = document.getElementById('book-list');
         listDiv.innerHTML = '';
         
+        if(items.length === 0) {
+            listDiv.innerHTML = `<div style="padding:20px;">ไม่พบหนังสือในหมวดนี้</div>`;
+            return;
+        }
+
         items.forEach((item) => {
             const card = document.createElement('div');
             card.className = 'book-card';
             
-            // หา Image ID จาก URL (ถ้าเป็น Folder ให้ใช้ URL ของเล่มแรก)
+            // สร้าง Image ID
             const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
             let relPath = "";
             try {
-                const urlPath = new URL(targetUrl, window.location.origin).pathname;
-                relPath = decodeURIComponent(urlPath);
+                const urlObj = new URL(targetUrl, window.location.origin);
+                relPath = decodeURIComponent(urlObj.pathname);
                 if(relPath.startsWith('/')) relPath = relPath.substring(1);
             } catch (e) { relPath = targetUrl; }
             
-            const imageId = md5(relPath); 
+            const imageId = typeof md5 !== 'undefined' ? md5(relPath) : 'default';
             const coverUrl = `covers/${categoryKey}/${imageId}.jpg`;
 
             if (item.isFolder) {
-                card.style.border = "2px solid #d4af37"; // ขอบสีทองแสดงความเป็น Folder
+                card.style.border = "2px solid #d4af37";
                 card.innerHTML = `
                     <div class="cover-box">
-                        <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
-                        <div style="position:absolute; top:5px; left:5px; background:#d4af37; color:#000; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold;">FOLDER</div>
-                        <div style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.85); color:#fff; padding:2px 6px; border-radius:4px; font-size:10px;">${item.count} เล่ม</div>
+                        <div style="position:absolute; top:8px; left:8px; background:#d4af37; color:#000; padding:2px 8px; border-radius:4px; font-size:10px; font-weight:bold; z-index:10;">FOLDER</div>
+                        <img data-src="${coverUrl}" class="book-cover-img" loading="lazy" style="width:100%; height:100%; object-fit:cover;">
+                        <div style="position:absolute; bottom:8px; right:8px; background:rgba(0,0,0,0.8); color:#fff; padding:2px 6px; border-radius:4px; font-size:10px; z-index:10;">${item.count} เล่ม</div>
                     </div>
-                    <div class="book-info"><div><b>${item.title}</b></div></div>
+                    <div class="book-info" style="padding:10px; text-align:center; font-weight:bold;">${item.title}</div>
                 `;
-                card.onclick = () => renderItems(item.allFiles); // คลิกแล้วแสดงไฟล์ข้างใน
+                card.onclick = () => renderItems(item.allFiles);
             } else {
                 card.innerHTML = `
                     <div class="cover-box">
-                        <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
+                        <img data-src="${coverUrl}" class="book-cover-img" loading="lazy" style="width:100%; height:100%; object-fit:cover;">
                     </div>
-                    <div class="book-info"><div>${item.title}</div></div>
+                    <div class="book-info" style="padding:10px; text-align:center;">${item.title}</div>
                 `;
-                card.onclick = () => openBook(item.url, item.title);
+                card.onclick = () => typeof openBook === 'function' ? openBook(item.url, item.title) : console.log("กำลังเปิด:", item.title);
             }
             listDiv.appendChild(card);
         });
-        setupLazyLoad();
+        
+        // สั่งให้ Lazy Load ทำงาน
+        if(typeof setupLazyLoad === 'function') setupLazyLoad();
     }
 
-    // --- ฟังก์ชันอื่นๆ (setupLazyLoad, openBook, renderPage) ให้คงไว้ตามเดิม ---
-    function setupLazyLoad() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    img.src = img.dataset.src;
-                    img.onload = () => img.classList.add('loaded');
-                    img.onerror = () => { img.src = 'https://via.placeholder.com/150x220?text=No+Cover'; img.classList.add('loaded'); };
-                    observer.unobserve(img);
-                }
-            });
-        }, { rootMargin: '200px' });
-        document.querySelectorAll('.book-cover-img').forEach(img => observer.observe(img));
-    }
-    // ... (ส่วนโค้ด openBook และ renderPage เดิมของคุณ) ...
-    loadData();
+    // เริ่มทำงานเมื่อโหลดหน้าเสร็จ
+    window.onload = loadData;
 </script>

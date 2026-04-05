@@ -60,36 +60,67 @@
     let pdfDoc = null, pageNum = 1, currentBookId = "";
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
-    // เพิ่มฟังก์ชันสำหรับสร้าง Folder "ล่องไพร"
-function groupLongPhrai(allData) {
-    // กรองเฉพาะไฟล์ที่อยู่ในเส้นทาง /ล่องไพร/
-    const longPhraiFiles = allData.filter(item => item.url && item.url.includes('/ล่องไพร/'));
-    
-    if (longPhraiFiles.length === 0) return [];
+    async function loadData() {
+        try {
+            const response = await fetch(`database.json?v=${Date.now()}`);
+            const allData = await response.json();
+            const marker = `/${categoryKey}/`;
+            
+            // กรองข้อมูลและเรียงลำดับ
+            const catBooks = allData.filter(item => item.url && item.url.includes(marker));
+            catBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
 
-    // เรียงลำดับเพื่อให้เล่มแรก (เช่น เล่ม 1 หรือ ตอนที่ 1) อยู่บนสุด
-    longPhraiFiles.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
+            renderBooks(catBooks);
+        } catch (err) { console.error(err); }
+    }
 
-    // สร้าง Object จำลองที่เป็นตัวแทนของโฟล์เดอร์
-    return [{
-        isFolder: true,
-        title: "ชุด ล่องไพร (รวมทุกตอน)",
-        count: longPhraiFiles.length,
-        firstBookUrl: longPhraiFiles[0].url, // ใช้เล่มแรกทำปก
-        files: longPhraiFiles
-    }];
-}
+    function renderBooks(books) {
+        const listDiv = document.getElementById('book-list');
+        listDiv.innerHTML = '';
+        const fragment = document.createDocumentFragment();
 
-async function loadData() {
-    try {
-        const response = await fetch(`database.json?v=${Date.now()}`);
-        const allData = await response.json();
+        books.forEach((book, i) => {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            
+            let relPath = "";
+            try {
+                const urlPath = new URL(book.url, window.location.origin).pathname;
+                relPath = decodeURIComponent(urlPath);
+                if(relPath.startsWith('/')) relPath = relPath.substring(1);
+            } catch (e) { relPath = book.url; }
+            
+            const imageId = md5(relPath); 
+            const coverUrl = `covers/${categoryKey}/${imageId}.jpg`;
+
+            card.innerHTML = `
+                <div class="cover-box">
+                    <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
+                </div>
+                <div class="book-info"><div>${book.title}</div></div>
+            `;
+
+            card.onclick = () => openBook(book.url, book.title);
+            fragment.appendChild(card);
+        });
         
-        // สำหรับการทดสอบนี้ เราจะดึงเฉพาะ Folder ล่องไพร ขึ้นมาแสดง
-        const folders = groupLongPhrai(allData);
-        renderFolders(folders);
-    } catch (err) { console.error(err); }
-}
+        listDiv.appendChild(fragment);
+
+        // ระบบ Lazy Load เพื่อความเร็ว
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.onload = () => img.classList.add('loaded');
+                    img.onerror = () => { img.src = 'https://via.placeholder.com/150x220?text=No+Cover'; img.classList.add('loaded'); };
+                    observer.unobserve(img);
+                }
+            });
+        }, { rootMargin: '200px' });
+
+        document.querySelectorAll('.book-cover-img').forEach(img => observer.observe(img));
+    }
 
     async function openBook(url, title) {
         currentBookId = btoa(url);

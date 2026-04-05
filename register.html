@@ -65,7 +65,7 @@
 <div class="header">
     <button onclick="goBack()" class="btn-back">❮ กลับ</button>
     <div class="search-container">
-        <input type="text" id="global-search" class="search-input" placeholder="ค้นหาชื่อหนังสือ/ผู้แต่ง..." oninput="handleSearch()">
+        <input type="text" id="global-search" class="search-input" placeholder="ค้นหาชื่อหนังสือ..." oninput="handleSearch()">
     </div>
     <button onclick="handleLogout()" class="btn-logout" title="ออกจากระบบ">🚪</button>
 </div>
@@ -104,25 +104,36 @@
     const categoryKey = params.get('cat') || '1_PetchPraUma';
     
     let pdfDoc = null, pageNum = 1, currentBookId = "";
-    let lastViewedItems = null; // จดจำรายการล่าสุดเพื่อใช้ตอนปิดหนังสือ
-    let isSearching = false;    // สถานะว่ากำลังค้นหาอยู่หรือไม่
+    let lastViewedItems = null; 
+    let isSearching = false;    
+    let isInFolder = false; // ตัวแปรเก็บสถานะว่ากำลังดูข้างในโฟลเดอร์อยู่หรือไม่
+
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas ? canvas.getContext('2d') : null;
 
-    // ระบบปุ่มกลับแบบอัจฉริยะ (Smart Back)
+    // แก้ไขระบบปุ่มกลับให้ฉลาดขึ้นตามที่คุณปุ๊กต้องการ
     function goBack() {
-        // ถ้ากำลังค้นหาอยู่ ให้ยกเลิกการค้นหาแล้วกลับไปหน้ารายการปกติก่อน
-        if (isSearching) {
-            document.getElementById('global-search').value = "";
+        const searchInput = document.getElementById('global-search');
+        
+        // 1. ถ้ากำลังค้นหาอยู่ ให้ล้างค่าค้นหาแล้วกลับไปหน้ารายการปกติ
+        if (searchInput.value !== "") {
+            searchInput.value = "";
             isSearching = false;
             loadData();
             return;
         }
+
+        // 2. ถ้าอยู่ลึกในโฟลเดอร์ ให้ถอยกลับมาที่หน้ารวมของหมวดหมู่นั้น
+        if (isInFolder) {
+            isInFolder = false;
+            loadData();
+            return;
+        }
         
-        // ถ้าประวัติหน้าก่อนหน้าคือหน้า Login ให้กลับไปที่หน้าหมวดหมู่แทนเพื่อไม่ให้ติดลูป
+        // 3. ถ้าอยู่หน้าหลักของหมวดแล้ว ให้ถอยกลับไปหน้าก่อนหน้าจริงๆ (เช่น Shelf หรือ Categories)
         if (document.referrer.includes('index.html') || document.referrer === "") {
             window.location.href = 'categories.html';
         } else {
-            window.history.back(); // ถอยหลังตามลำดับจริงเหมือนมือถือ
+            window.history.back();
         }
     }
 
@@ -132,7 +143,6 @@
         }
     }
 
-    // ฟังก์ชันค้นหาทั่วทั้งแอปจากฐานข้อมูล
     async function handleSearch() {
         const query = document.getElementById('global-search').value.toLowerCase().trim();
         if (query === "") {
@@ -144,13 +154,12 @@
         try {
             const response = await fetch(`database.json?v=${Date.now()}`);
             const allData = await response.json();
-            // ค้นหาทั้งชื่อหนังสือและชื่อไฟล์ใน URL
             const results = allData.filter(item => 
                 item.title.toLowerCase().includes(query) || 
                 (item.url && item.url.toLowerCase().includes(query))
             );
             renderItems(results);
-        } catch (err) { console.error("Search Error:", err); }
+        } catch (err) { console.error(err); }
     }
 
     async function loadData() {
@@ -195,13 +204,11 @@
             });
 
             renderItems(displayList);
-        } catch (err) { console.error("Load Data Error:", err); }
+        } catch (err) { console.error(err); }
     }
 
     function renderItems(items) {
-        // บันทึกรายการล่าสุดไว้เสมอ เพื่อให้เวลาปิดหนังสือสามารถกลับมาแสดงโฟลเดอร์เดิมได้
         lastViewedItems = items; 
-        
         const listDiv = document.getElementById('book-list');
         listDiv.innerHTML = '';
         const fragment = document.createDocumentFragment();
@@ -217,7 +224,6 @@
 
             const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
             
-            // ค้นหา Category แบบอัตโนมัติจาก URL เพื่อดึงปกให้ถูกต้อง
             const urlParts = targetUrl.split('/');
             const catIdx = urlParts.findIndex(part => /^[0-9]+_/.test(part));
             const currentCat = catIdx !== -1 ? urlParts[catIdx] : categoryKey;
@@ -233,7 +239,6 @@
 
             let statusHtml = "";
             if (!item.isFolder) {
-                // เข้ารหัส URL ภาษาไทยก่อนทำ Base64 เพื่อป้องกัน Error
                 const bId = btoa(encodeURIComponent(item.url)); 
                 if (history[bId]) {
                     const isDone = history[bId].s === "อ่านจบแล้ว";
@@ -250,7 +255,15 @@
                 <div class="book-info"><div>${item.isFolder ? `<b>${item.title}</b>` : item.title}</div></div>
             `;
 
-            card.onclick = () => item.isFolder ? renderItems(item.allFiles) : openBook(item.url, item.title);
+            // เมื่อกดโฟลเดอร์ ให้เปลี่ยนสถานะ isInFolder เป็นจริง
+            card.onclick = () => {
+                if (item.isFolder) {
+                    isInFolder = true;
+                    renderItems(item.allFiles);
+                } else {
+                    openBook(item.url, item.title);
+                }
+            };
             fragment.appendChild(card);
         });
         listDiv.appendChild(fragment);
@@ -313,19 +326,14 @@
     function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
     function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
     
-    // ฟังก์ชันปิดหนังสือที่ปรับปรุงใหม่: จำโฟลเดอร์ล่าสุดที่เปิดอยู่
     function closeBook() { 
         document.getElementById('reader-overlay').style.display = 'none'; 
         document.body.style.overflow = 'auto'; 
         if(pdfDoc) { 
             pdfDoc.destroy().then(() => {
                 pdfDoc = null;
-                // แทนที่จะโหลดใหม่ทั้งหมด ให้แสดงรายการล่าสุด (เช่น โฟลเดอร์ที่ค้างอยู่)
-                if (lastViewedItems) {
-                    renderItems(lastViewedItems);
-                } else {
-                    loadData(); 
-                }
+                if (lastViewedItems) renderItems(lastViewedItems);
+                else loadData(); 
             });
         } else {
             if (lastViewedItems) renderItems(lastViewedItems);

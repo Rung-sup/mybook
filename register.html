@@ -13,7 +13,11 @@
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background-color: #f4f1ea; color: #333; overflow-x: hidden; }
         .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
-        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        
+        /* ปรับสไตล์ปุ่มย้อนกลับให้รองรับการเป็นปุ่มกด (Button) */
+        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+        .btn-back:hover { background: #444; }
+
         .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; position: relative; min-height: 235px; border: 1px solid #eee; transition: transform 0.2s; }
         .book-card:active { transform: scale(0.96); }
@@ -23,7 +27,6 @@
         .book-info { padding: 10px; font-size: 12px; text-align: center; height: 55px; display: flex; align-items: center; justify-content: center; line-height: 1.2; font-weight: 500; }
         .count-badge { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.85); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; z-index: 10; }
         
-        /* สไตล์แถบสถานะบนหน้าปก */
         .status-badge { position: absolute; top: 8px; left: 8px; background: rgba(212,175,55,0.95); color: #000; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; z-index: 20; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .status-done { background: rgba(40, 167, 69, 0.95); color: #fff; }
 
@@ -38,7 +41,7 @@
 <body>
 
 <div class="header">
-    <a href="categories.html" class="btn-back">❮ กลับ</a>
+    <button onclick="goBack()" class="btn-back">❮ กลับ</button>
     <b id="header-title">คลังหนังสือ</b>
     <div style="width:40px;"></div>
 </div>
@@ -59,7 +62,6 @@
 </div>
 
 <script>
-    // --- 1. ตั้งค่า Firebase Config ของคุณพุก ---
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -69,7 +71,6 @@
         appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
     };
 
-    // เริ่มการทำงาน Firebase
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
@@ -81,6 +82,15 @@
     
     let pdfDoc = null, pageNum = 1, currentBookId = "";
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas ? canvas.getContext('2d') : null;
+
+    // --- เพิ่มฟังก์ชันจัดการการย้อนกลับให้ฉลาดขึ้น ---
+    function goBack() {
+        if (document.referrer.includes('my-shelf.html')) {
+            window.location.href = 'my-shelf.html';
+        } else {
+            window.location.href = 'categories.html';
+        }
+    }
 
     async function loadData() {
         try {
@@ -94,7 +104,6 @@
             catBooks.forEach(item => {
                 const parts = item.url.split('/');
                 const catIndex = parts.indexOf(categoryKey);
-                
                 if (catIndex !== -1 && parts.length > catIndex + 2) {
                     const folderName = decodeURIComponent(parts[catIndex + 1]); 
                     if (!groupedData[folderName]) groupedData[folderName] = [];
@@ -129,58 +138,53 @@
     }
 
     function renderItems(items) {
-    const listDiv = document.getElementById('book-list');
-    listDiv.innerHTML = '';
-    const fragment = document.createDocumentFragment();
+        const listDiv = document.getElementById('book-list');
+        listDiv.innerHTML = '';
+        const fragment = document.createDocumentFragment();
 
-    // --- ส่วนที่เพิ่ม: ดึงประวัติผู้ใช้มาเตรียมไว้ ---
-    const user = firebase.auth().currentUser;
-    const historyKey = user ? `puk_history_${user.uid}` : null;
-    const history = historyKey ? JSON.parse(localStorage.getItem(historyKey)) || {} : {};
-    // -------------------------------------------
+        const user = firebase.auth().currentUser;
+        const historyKey = user ? `puk_history_${user.uid}` : null;
+        const history = historyKey ? JSON.parse(localStorage.getItem(historyKey)) || {} : {};
 
-    items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'book-card';
-        if(item.isFolder) card.style.border = "2px solid #d4af37"; 
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            if(item.isFolder) card.style.border = "2px solid #d4af37"; 
 
-        const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
-        let relPath = "";
-        try {
-            const u = new URL(targetUrl, window.location.origin);
-            relPath = decodeURIComponent(u.pathname).replace(/^\//, '');
-        } catch(e) { relPath = targetUrl; }
-        
-        const imgId = md5(relPath);
-        const coverUrl = `covers/${categoryKey}/${imgId}.jpg`;
+            const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
+            let relPath = "";
+            try {
+                const u = new URL(targetUrl, window.location.origin);
+                relPath = decodeURIComponent(u.pathname).replace(/^\//, '');
+            } catch(e) { relPath = targetUrl; }
+            
+            const imgId = md5(relPath);
+            const coverUrl = `covers/${categoryKey}/${imgId}.jpg`;
 
-        // --- ส่วนที่เพิ่ม: ตรวจสอบสถานะเพื่อสร้าง Badge บนหน้าปก ---
-        let statusHtml = "";
-        if (!item.isFolder) {
-            const bId = btoa(item.url); // ID ของหนังสือเล่มนี้
-            if (history[bId]) {
-                const isDone = history[bId].s === "อ่านจบแล้ว";
-                // สร้างแถบ Badge สีทอง (ถ้าจบแล้วจะเป็นสีเขียวตาม Style ที่เราคุยกัน)
-                statusHtml = `<div class="status-badge ${isDone ? 'status-done' : ''}">${isDone ? 'จบแล้ว' : 'หน้า ' + history[bId].p}</div>`;
+            let statusHtml = "";
+            if (!item.isFolder) {
+                const bId = btoa(item.url); 
+                if (history[bId]) {
+                    const isDone = history[bId].s === "อ่านจบแล้ว";
+                    statusHtml = `<div class="status-badge ${isDone ? 'status-done' : ''}">${isDone ? 'จบแล้ว' : 'หน้า ' + history[bId].p}</div>`;
+                }
             }
-        }
-        // -------------------------------------------------------
 
-        card.innerHTML = `
-            <div class="cover-box">
-                ${statusHtml} 
-                ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
-                <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
-            </div>
-            <div class="book-info"><div>${item.isFolder ? `<b>${item.title}</b>` : item.title}</div></div>
-        `;
+            card.innerHTML = `
+                <div class="cover-box">
+                    ${statusHtml} 
+                    ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
+                    <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
+                </div>
+                <div class="book-info"><div>${item.isFolder ? `<b>${item.title}</b>` : item.title}</div></div>
+            `;
 
-        card.onclick = () => item.isFolder ? renderItems(item.allFiles) : openBook(item.url, item.title);
-        fragment.appendChild(card);
-    });
-    listDiv.appendChild(fragment);
-    setupLazyLoad();
-}
+            card.onclick = () => item.isFolder ? renderItems(item.allFiles) : openBook(item.url, item.title);
+            fragment.appendChild(card);
+        });
+        listDiv.appendChild(fragment);
+        setupLazyLoad();
+    }
 
     function setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
@@ -217,11 +221,8 @@
         canvas.height = vp.height; canvas.width = vp.width;
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
-        
-        // --- บันทึกข้อมูลแบบเดิม ---
         localStorage.setItem('page_' + currentBookId, num);
 
-        // --- ส่วนที่เพิ่มเพื่อแยกรายชื่อผู้ใช้ ---
         const user = firebase.auth().currentUser;
         if (user) {
             const status = (num >= pdfDoc.numPages) ? "อ่านจบแล้ว" : "อ่านค้างไว้";
@@ -240,31 +241,24 @@
 
     function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
     function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
+    
     function closeBook() { 
-    // 1. ปิดหน้าจออ่านหนังสือทันที
-    document.getElementById('reader-overlay').style.display = 'none'; 
-    document.body.style.overflow = 'auto'; 
-
-    // 2. ทำลายไฟล์ PDF ในหน่วยความจำ และรอให้เสร็จ (ใช้ .then)
-    if(pdfDoc) { 
-        pdfDoc.destroy().then(() => {
-            pdfDoc = null;
-            // 3. เมื่อไฟล์ปิดสนิทแล้ว ให้รีโหลดหน้าปกทันที
-            // เพื่อให้ Badge "หน้า 5" หรือ "จบแล้ว" อัปเดตตามที่เราเพิ่งอ่านไป
-            loadData(); 
-        });
-    } else {
-        // กรณีไม่มีไฟล์เปิดอยู่ (เช่น Error) ก็ให้โหลดหน้าปกใหม่เพื่อความชัวร์
-        loadData();
+        document.getElementById('reader-overlay').style.display = 'none'; 
+        document.body.style.overflow = 'auto'; 
+        if(pdfDoc) { 
+            pdfDoc.destroy().then(() => {
+                pdfDoc = null;
+                loadData(); 
+            });
+        } else {
+            loadData();
+        }
     }
-}
 
-    // รอให้ Firebase เช็คสถานะผู้ใช้เสร็จก่อนค่อยโหลดข้อมูลหนังสือ
-    // --- แก้ไขจุดที่ 1: ใช้ชุดนี้แทนของเดิมที่ท้ายไฟล์ ---
-firebase.auth().onAuthStateChanged((user) => {
-    console.log("สถานะผู้ใช้เปลี่ยนเป็น:", user ? user.uid : "ไม่ได้ Login");
-    loadData(); // บังคับให้โหลดข้อมูลใหม่ทุกครั้งที่สถานะผู้ใช้ชัดเจน
-});
+    firebase.auth().onAuthStateChanged((user) => {
+        console.log("สถานะผู้ใช้เปลี่ยนเป็น:", user ? user.uid : "ไม่ได้ Login");
+        loadData(); 
+    });
 </script>
 </body>
 </html>

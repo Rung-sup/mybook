@@ -14,21 +14,16 @@
         .header { padding: 20px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; position: sticky; top: 0; z-index: 100; }
         .container { padding: 20px; max-width: 1000px; margin: 0 auto; }
         .section-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        
         .shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; border: 1px solid #eee; position: relative; transition: transform 0.2s; }
         .book-card:active { transform: scale(0.96); }
-        
-        .cover-box { width: 100%; aspect-ratio: 2/3; background: #e0ded7; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        .cover-box { width: 100%; aspect-ratio: 2/3; background: #e0ded7; overflow: hidden; position: relative; }
         .book-cover-img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .status-badge { position: absolute; top: 8px; left: 8px; background: rgba(212,175,55,0.95); color: #000; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; z-index: 20; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .status-badge { position: absolute; top: 8px; left: 8px; background: rgba(212,175,55,0.95); color: #000; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; z-index: 20; }
         .status-done { background: rgba(40, 167, 69, 0.95); color: #fff; }
-        
-        .book-info { padding: 10px; font-size: 12px; text-align: center; height: 55px; display: flex; align-items: center; justify-content: center; line-height: 1.2; font-weight: 500; }
-        
-        .btn-browse { background: #764ba2; color: #fff; padding: 12px 25px; border-radius: 30px; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: 500; transition: all 0.3s; }
-        .empty-state { text-align: center; padding: 50px 20px; color: #888; }
+        .book-info { padding: 10px; font-size: 12px; text-align: center; height: 55px; display: flex; align-items: center; justify-content: center; font-weight: 500; }
+        .btn-browse { background: #764ba2; color: #fff; padding: 12px 25px; border-radius: 30px; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: 500; }
+        .empty-state { text-align: center; padding: 50px 20px; color: #888; grid-column: 1/-1; }
     </style>
 </head>
 <body>
@@ -38,13 +33,8 @@
 </div>
 
 <div class="container">
-    <div id="shelf-title-area" class="section-title">
-        <span>📖 อ่านค้างไว้</span>
-    </div>
-
-    <div id="shelf-list" class="shelf-grid">
-        </div>
-
+    <div id="shelf-title-area" class="section-title"><span>📖 อ่านค้างไว้</span></div>
+    <div id="shelf-list" class="shelf-grid"></div>
     <div id="browse-more-area" style="text-align: center; margin-top: 40px;">
         <p style="color: #666;">ต้องการอ่านเล่มใหม่หรือไม่?</p>
         <a href="categories.html" class="btn-browse">ไปที่หมวดหนังสือทั้งหมด ❯</a>
@@ -60,15 +50,11 @@
         messagingSenderId: "1016151043482",
         appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
     };
-
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
     firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-            renderShelf(user.uid);
-        } else {
-            window.location.href = 'index.html';
-        }
+        if (user) renderShelf(user.uid);
+        else window.location.href = 'index.html';
     });
 
     function renderShelf(uid) {
@@ -76,62 +62,40 @@
         const history = JSON.parse(localStorage.getItem(`puk_history_${uid}`)) || {};
         const bookIds = Object.keys(history);
 
-        // กรณีผู้ใช้ใหม่ (ยังไม่มีประวัติการอ่าน)
         if (bookIds.length === 0) {
-            shelfDiv.innerHTML = `
-                <div class="empty-state" style="grid-column: 1 / -1; background: #fff; padding: 40px 20px; border-radius: 20px; border: 2px dashed #d4af37;">
-                    <div style="font-size: 50px; margin-bottom: 15px;">👋</div>
-                    <h3 style="margin: 0 0 10px 0; color: #333;">ยินดีต้อนรับคุณเข้าสู่คลังหนังสือ</h3>
-                    <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">ดูเหมือนว่าคุณยังไม่ได้เริ่มอ่านเล่มไหนเลย<br>ลองไปเลือกหนังสือที่น่าสนใจในหอสมุดดูไหมครับ?</p>
-                    <a href="categories.html" class="btn-browse" style="margin-top: 0;">สำรวจหอสมุดตอนนี้ ❯</a>
-                </div>
-            `;
+            shelfDiv.innerHTML = `<div class="empty-state" style="border: 2px dashed #d4af37; border-radius:20px; padding:40px;"><h3>ยินดีต้อนรับครับ</h3><p>คุณยังไม่มีหนังสือที่อ่านค้างไว้</p><a href="categories.html" class="btn-browse">ไปเลือกหนังสือกัน ❯</a></div>`;
             document.getElementById('shelf-title-area').style.display = 'none';
             document.getElementById('browse-more-area').style.display = 'none';
             return;
         }
 
-        // กรณีผู้ใช้เดิม
-        document.getElementById('shelf-title-area').style.display = 'flex';
-        document.getElementById('browse-more-area').style.display = 'block';
-
-        // เรียงตามเวลาอ่านล่าสุด
         bookIds.sort((a, b) => history[b].time - history[a].time);
-
         shelfDiv.innerHTML = '';
         bookIds.forEach(id => {
             const data = history[id];
-            const card = document.createElement('div');
-            card.className = 'book-card';
-            
-            // --- Logic การดึงรูปปกจริง ---
             const bookUrl = atob(id);
-            const parts = bookUrl.split('/');
-            const cat = parts[parts.length - 3] || '1_PetchPraUma'; 
+            
+            // ค้นหา Category จาก Path ของ URL
+            let cat = "1_PetchPraUma"; 
+            if (bookUrl.includes("2_Thai_Novel")) cat = "2_Thai_Novel";
+            else if (bookUrl.includes("3_International_Novel")) cat = "3_International_Novel";
+            else if (bookUrl.includes("4_Knowledge")) cat = "4_Knowledge";
+            else if (bookUrl.includes("5_HowTo_Religion")) cat = "5_HowTo_Religion";
             
             let relPath = "";
-            try {
-                const u = new URL(bookUrl, window.location.origin);
-                relPath = decodeURIComponent(u.pathname).replace(/^\//, '');
-            } catch(e) { relPath = bookUrl; }
-            
-            const imgId = md5(relPath);
-            const coverUrl = `covers/${cat}/${imgId}.jpg`;
-            const isDone = data.s === 'อ่านจบแล้ว';
+            try { relPath = decodeURIComponent(new URL(bookUrl).pathname).replace(/^\//, ''); } catch(e) { relPath = bookUrl; }
+            const coverUrl = `covers/${cat}/${md5(relPath)}.jpg`;
 
+            const card = document.createElement('div');
+            card.className = 'book-card';
             card.innerHTML = `
                 <div class="cover-box">
-                    <div class="status-badge ${isDone ? 'status-done' : ''}">
-                        ${isDone ? 'จบแล้ว' : 'หน้า ' + data.p}
-                    </div>
+                    <div class="status-badge ${data.s === 'อ่านจบแล้ว' ? 'status-done' : ''}">${data.s === 'อ่านจบแล้ว' ? 'จบแล้ว' : 'หน้า ' + data.p}</div>
                     <img src="${coverUrl}" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=No+Cover'">
                 </div>
                 <div class="book-info"><div>${data.title}</div></div>
             `;
-
-            card.onclick = () => {
-                window.location.href = `register.html?cat=${cat}&name=${encodeURIComponent(data.title)}`;
-            };
+            card.onclick = () => window.location.href = `register.html?cat=${cat}&name=${encodeURIComponent(data.title)}`;
             shelfDiv.appendChild(card);
         });
     }

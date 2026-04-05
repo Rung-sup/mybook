@@ -60,18 +60,70 @@
     let pdfDoc = null, pageNum = 1, currentBookId = "";
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
 
+    // ฟังก์ชันจัดการแสดงผลแบบ Folder สำหรับ "ล่องไพร"
     async function loadData() {
         try {
             const response = await fetch(`database.json?v=${Date.now()}`);
             const allData = await response.json();
-            const marker = `/${categoryKey}/`;
             
-            // กรองข้อมูลและเรียงลำดับ
-            const catBooks = allData.filter(item => item.url && item.url.includes(marker));
-            catBooks.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
+            // 1. กรองเฉพาะไฟล์ที่มีคำว่า /ล่องไพร/ ใน URL
+            const longPhraiFiles = allData.filter(item => item.url && item.url.includes('/ล่องไพร/'));
+            
+            // เรียงลำดับชื่อไฟล์ (เช่น เล่ม 1, 2, 3...)
+            longPhraiFiles.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
 
-            renderBooks(catBooks);
+            if (longPhraiFiles.length > 0) {
+                // 2. สร้าง Folder Object เพียงอันเดียว
+                const folderObject = {
+                    title: "ชุด ล่องไพร (น้อย อินทนนท์)",
+                    isFolder: true,
+                    count: longPhraiFiles.length,
+                    firstBookUrl: longPhraiFiles[0].url, // ใช้ URL เล่มแรกไปหา Image ID
+                    allFiles: longPhraiFiles
+                };
+                renderMainList([folderObject]);
+            } else {
+                // ถ้าไม่มีล่องไพร ให้แสดงแบบปกติ (เผื่อไว้)
+                renderBooks(allData.filter(item => item.url.includes(`/${categoryKey}/`)));
+            }
         } catch (err) { console.error(err); }
+    }
+
+    function renderMainList(items) {
+        const listDiv = document.getElementById('book-list');
+        listDiv.innerHTML = '';
+        
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.style.border = "1.5px solid #d4af37"; // ตกแต่งขอบให้ดูเป็นหมวดหมู่พิเศษ
+
+            // คำนวณ Image ID จาก URL ของเล่มแรกเพื่อดึงปก
+            let relPath = "";
+            try {
+                const urlPath = new URL(item.firstBookUrl, window.location.origin).pathname;
+                relPath = decodeURIComponent(urlPath);
+                if(relPath.startsWith('/')) relPath = relPath.substring(1);
+            } catch (e) { relPath = item.firstBookUrl; }
+            
+            const imageId = md5(relPath);
+            const coverUrl = `covers/${categoryKey}/${imageId}.jpg`;
+
+            card.innerHTML = `
+                <div class="cover-box">
+                    <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
+                    <div style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.7); color:#fff; padding:2px 6px; border-radius:4px; font-size:10px;">
+                        ${item.count} เล่ม
+                    </div>
+                </div>
+                <div class="book-info"><div><b>${item.title}</b></div></div>
+            `;
+
+            // เมื่อคลิก Folder ให้ Render รายชื่อหนังสือล่องไพรทั้งหมดออกมา
+            card.onclick = () => renderBooks(item.allFiles);
+            listDiv.appendChild(card);
+        });
+        setupLazyLoad();
     }
 
     function renderBooks(books) {
@@ -79,7 +131,7 @@
         listDiv.innerHTML = '';
         const fragment = document.createDocumentFragment();
 
-        books.forEach((book, i) => {
+        books.forEach((book) => {
             const card = document.createElement('div');
             card.className = 'book-card';
             
@@ -105,8 +157,10 @@
         });
         
         listDiv.appendChild(fragment);
+        setupLazyLoad();
+    }
 
-        // ระบบ Lazy Load เพื่อความเร็ว
+    function setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -118,7 +172,6 @@
                 }
             });
         }, { rootMargin: '200px' });
-
         document.querySelectorAll('.book-cover-img').forEach(img => observer.observe(img));
     }
 

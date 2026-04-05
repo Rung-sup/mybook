@@ -12,11 +12,34 @@
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background-color: #f4f1ea; color: #333; overflow-x: hidden; }
-        .header { padding: 15px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
         
-        /* ปรับสไตล์ปุ่มย้อนกลับให้รองรับการเป็นปุ่มกด (Button) */
-        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 8px 18px; border-radius: 25px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
-        .btn-back:hover { background: #444; }
+        .header { 
+            padding: 10px 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            background: #fff; 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+        }
+        
+        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; white-space: nowrap; }
+        
+        /* สไตล์ช่องค้นหาใน Header */
+        .search-container { flex-grow: 1; }
+        .search-input { 
+            width: 100%; 
+            padding: 8px 15px; 
+            border-radius: 20px; 
+            border: 1px solid #ddd; 
+            font-size: 13px; 
+            outline: none;
+        }
+        .search-input:focus { border-color: #764ba2; }
+
+        .btn-logout { background: none; border: none; font-size: 20px; cursor: pointer; padding: 0 5px; }
 
         .container { padding: 20px; max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; position: relative; min-height: 235px; border: 1px solid #eee; transition: transform 0.2s; }
@@ -42,8 +65,10 @@
 
 <div class="header">
     <button onclick="goBack()" class="btn-back">❮ กลับ</button>
-    <b id="header-title">คลังหนังสือ</b>
-    <div style="width:40px;"></div>
+    <div class="search-container">
+        <input type="text" id="global-search" class="search-input" placeholder="ค้นหาหนังสือ..." oninput="handleSearch()">
+    </div>
+    <button onclick="handleLogout()" class="btn-logout">🚪</button>
 </div>
 
 <div id="book-list" class="container"></div>
@@ -78,18 +103,37 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
     const params = new URLSearchParams(window.location.search);
     const categoryKey = params.get('cat') || '1_PetchPraUma';
-    document.getElementById('header-title').innerText = params.get('name') || 'คลังหนังสือ';
     
     let pdfDoc = null, pageNum = 1, currentBookId = "";
+    let lastViewedItems = null; // ตัวแปรสำหรับจำรายการล่าสุด (ใช้ตอนปิดหนังสือ)
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas ? canvas.getContext('2d') : null;
 
-    // --- เพิ่มฟังก์ชันจัดการการย้อนกลับให้ฉลาดขึ้น ---
     function goBack() {
         if (document.referrer.includes('my-shelf.html')) {
             window.location.href = 'my-shelf.html';
         } else {
             window.location.href = 'categories.html';
         }
+    }
+
+    function handleLogout() {
+        if(confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
+            firebase.auth().signOut().then(() => { window.location.href = 'index.html'; });
+        }
+    }
+
+    async function handleSearch() {
+        const query = document.getElementById('global-search').value.toLowerCase().trim();
+        if (query === "") {
+            loadData();
+            return;
+        }
+        try {
+            const response = await fetch(`database.json?v=${Date.now()}`);
+            const allData = await response.json();
+            const results = allData.filter(item => item.title.toLowerCase().includes(query));
+            renderItems(results);
+        } catch (err) { console.error(err); }
     }
 
     async function loadData() {
@@ -138,6 +182,7 @@
     }
 
     function renderItems(items) {
+        lastViewedItems = items; // จำรายการที่แสดงผลอยู่ล่าสุด
         const listDiv = document.getElementById('book-list');
         listDiv.innerHTML = '';
         const fragment = document.createDocumentFragment();
@@ -152,6 +197,12 @@
             if(item.isFolder) card.style.border = "2px solid #d4af37"; 
 
             const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
+            
+            // ดึง Category แบบ Dynamic จาก URL
+            const urlParts = targetUrl.split('/');
+            const catIdx = urlParts.findIndex(part => /^[0-9]+_/.test(part));
+            const currentCat = catIdx !== -1 ? urlParts[catIdx] : categoryKey;
+
             let relPath = "";
             try {
                 const u = new URL(targetUrl, window.location.origin);
@@ -159,7 +210,7 @@
             } catch(e) { relPath = targetUrl; }
             
             const imgId = md5(relPath);
-            const coverUrl = `covers/${categoryKey}/${imgId}.jpg`;
+            const coverUrl = `covers/${currentCat}/${imgId}.jpg`;
 
             let statusHtml = "";
             if (!item.isFolder) {
@@ -248,7 +299,9 @@
         if(pdfDoc) { 
             pdfDoc.destroy().then(() => {
                 pdfDoc = null;
-                loadData(); 
+                // กลับไปแสดงรายการล่าสุด (เช่น โฟลเดอร์เดิม) ไม่ต้องโหลดใหม่ทั้งหมด
+                if (lastViewedItems) renderItems(lastViewedItems);
+                else loadData(); 
             });
         } else {
             loadData();
@@ -256,7 +309,6 @@
     }
 
     firebase.auth().onAuthStateChanged((user) => {
-        console.log("สถานะผู้ใช้เปลี่ยนเป็น:", user ? user.uid : "ไม่ได้ Login");
         loadData(); 
     });
 </script>

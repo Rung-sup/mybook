@@ -235,11 +235,23 @@
     function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
     function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
     function closeBook() { 
-        document.getElementById('reader-overlay').style.display = 'none'; 
-        document.body.style.overflow = 'auto'; 
-        if(pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
-        loadData(); // รีโหลดข้อมูลเพื่ออัปเดต Badge บนหน้าปกทันทีหลังปิดหนังสือ
+    // 1. ปิดหน้าจออ่านหนังสือทันที
+    document.getElementById('reader-overlay').style.display = 'none'; 
+    document.body.style.overflow = 'auto'; 
+
+    // 2. ทำลายไฟล์ PDF ในหน่วยความจำ และรอให้เสร็จ (ใช้ .then)
+    if(pdfDoc) { 
+        pdfDoc.destroy().then(() => {
+            pdfDoc = null;
+            // 3. เมื่อไฟล์ปิดสนิทแล้ว ให้รีโหลดหน้าปกทันที
+            // เพื่อให้ Badge "หน้า 5" หรือ "จบแล้ว" อัปเดตตามที่เราเพิ่งอ่านไป
+            loadData(); 
+        });
+    } else {
+        // กรณีไม่มีไฟล์เปิดอยู่ (เช่น Error) ก็ให้โหลดหน้าปกใหม่เพื่อความชัวร์
+        loadData();
     }
+}
 
     // รอให้ Firebase เช็คสถานะผู้ใช้เสร็จก่อนค่อยโหลดข้อมูลหนังสือ
     // --- แก้ไขจุดที่ 1: ใช้ชุดนี้แทนของเดิมที่ท้ายไฟล์ ---

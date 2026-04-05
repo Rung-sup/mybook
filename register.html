@@ -27,7 +27,6 @@
         
         .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; white-space: nowrap; }
         
-        /* สไตล์ช่องค้นหาใน Header */
         .search-container { flex-grow: 1; }
         .search-input { 
             width: 100%; 
@@ -66,9 +65,9 @@
 <div class="header">
     <button onclick="goBack()" class="btn-back">❮ กลับ</button>
     <div class="search-container">
-        <input type="text" id="global-search" class="search-input" placeholder="ค้นหาหนังสือ..." oninput="handleSearch()">
+        <input type="text" id="global-search" class="search-input" placeholder="ค้นหาชื่อหนังสือ/ผู้แต่ง..." oninput="handleSearch()">
     </div>
-    <button onclick="handleLogout()" class="btn-logout">🚪</button>
+    <button onclick="handleLogout()" class="btn-logout" title="ออกจากระบบ">🚪</button>
 </div>
 
 <div id="book-list" class="container"></div>
@@ -105,14 +104,25 @@
     const categoryKey = params.get('cat') || '1_PetchPraUma';
     
     let pdfDoc = null, pageNum = 1, currentBookId = "";
-    let lastViewedItems = null; // ตัวแปรสำหรับจำรายการล่าสุด (ใช้ตอนปิดหนังสือ)
+    let lastViewedItems = null; // จดจำรายการล่าสุดเพื่อใช้ตอนปิดหนังสือ
+    let isSearching = false;    // สถานะว่ากำลังค้นหาอยู่หรือไม่
     const canvas = document.getElementById('pdf-canvas'), ctx = canvas ? canvas.getContext('2d') : null;
 
+    // ระบบปุ่มกลับแบบอัจฉริยะ (Smart Back)
     function goBack() {
-        if (document.referrer.includes('my-shelf.html')) {
-            window.location.href = 'my-shelf.html';
-        } else {
+        // ถ้ากำลังค้นหาอยู่ ให้ยกเลิกการค้นหาแล้วกลับไปหน้ารายการปกติก่อน
+        if (isSearching) {
+            document.getElementById('global-search').value = "";
+            isSearching = false;
+            loadData();
+            return;
+        }
+        
+        // ถ้าประวัติหน้าก่อนหน้าคือหน้า Login ให้กลับไปที่หน้าหมวดหมู่แทนเพื่อไม่ให้ติดลูป
+        if (document.referrer.includes('index.html') || document.referrer === "") {
             window.location.href = 'categories.html';
+        } else {
+            window.history.back(); // ถอยหลังตามลำดับจริงเหมือนมือถือ
         }
     }
 
@@ -122,18 +132,25 @@
         }
     }
 
+    // ฟังก์ชันค้นหาทั่วทั้งแอปจากฐานข้อมูล
     async function handleSearch() {
         const query = document.getElementById('global-search').value.toLowerCase().trim();
         if (query === "") {
+            isSearching = false;
             loadData();
             return;
         }
+        isSearching = true;
         try {
             const response = await fetch(`database.json?v=${Date.now()}`);
             const allData = await response.json();
-            const results = allData.filter(item => item.title.toLowerCase().includes(query));
+            // ค้นหาทั้งชื่อหนังสือและชื่อไฟล์ใน URL
+            const results = allData.filter(item => 
+                item.title.toLowerCase().includes(query) || 
+                (item.url && item.url.toLowerCase().includes(query))
+            );
             renderItems(results);
-        } catch (err) { console.error(err); }
+        } catch (err) { console.error("Search Error:", err); }
     }
 
     async function loadData() {
@@ -178,11 +195,13 @@
             });
 
             renderItems(displayList);
-        } catch (err) { console.error(err); }
+        } catch (err) { console.error("Load Data Error:", err); }
     }
 
     function renderItems(items) {
-        lastViewedItems = items; // จำรายการที่แสดงผลอยู่ล่าสุด
+        // บันทึกรายการล่าสุดไว้เสมอ เพื่อให้เวลาปิดหนังสือสามารถกลับมาแสดงโฟลเดอร์เดิมได้
+        lastViewedItems = items; 
+        
         const listDiv = document.getElementById('book-list');
         listDiv.innerHTML = '';
         const fragment = document.createDocumentFragment();
@@ -198,7 +217,7 @@
 
             const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
             
-            // ดึง Category แบบ Dynamic จาก URL
+            // ค้นหา Category แบบอัตโนมัติจาก URL เพื่อดึงปกให้ถูกต้อง
             const urlParts = targetUrl.split('/');
             const catIdx = urlParts.findIndex(part => /^[0-9]+_/.test(part));
             const currentCat = catIdx !== -1 ? urlParts[catIdx] : categoryKey;
@@ -214,6 +233,7 @@
 
             let statusHtml = "";
             if (!item.isFolder) {
+                // เข้ารหัส URL ภาษาไทยก่อนทำ Base64 เพื่อป้องกัน Error
                 const bId = btoa(encodeURIComponent(item.url)); 
                 if (history[bId]) {
                     const isDone = history[bId].s === "อ่านจบแล้ว";
@@ -293,18 +313,23 @@
     function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
     function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
     
+    // ฟังก์ชันปิดหนังสือที่ปรับปรุงใหม่: จำโฟลเดอร์ล่าสุดที่เปิดอยู่
     function closeBook() { 
         document.getElementById('reader-overlay').style.display = 'none'; 
         document.body.style.overflow = 'auto'; 
         if(pdfDoc) { 
             pdfDoc.destroy().then(() => {
                 pdfDoc = null;
-                // กลับไปแสดงรายการล่าสุด (เช่น โฟลเดอร์เดิม) ไม่ต้องโหลดใหม่ทั้งหมด
-                if (lastViewedItems) renderItems(lastViewedItems);
-                else loadData(); 
+                // แทนที่จะโหลดใหม่ทั้งหมด ให้แสดงรายการล่าสุด (เช่น โฟลเดอร์ที่ค้างอยู่)
+                if (lastViewedItems) {
+                    renderItems(lastViewedItems);
+                } else {
+                    loadData(); 
+                }
             });
         } else {
-            loadData();
+            if (lastViewedItems) renderItems(lastViewedItems);
+            else loadData();
         }
     }
 

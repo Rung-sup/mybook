@@ -242,9 +242,11 @@
     }
 
     // รอให้ Firebase เช็คสถานะผู้ใช้เสร็จก่อนค่อยโหลดข้อมูลหนังสือ
-    firebase.auth().onAuthStateChanged(() => {
-        loadData();
-    });
+    // --- แก้ไขจุดที่ 1: ใช้ชุดนี้แทนของเดิมที่ท้ายไฟล์ ---
+firebase.auth().onAuthStateChanged((user) => {
+    console.log("สถานะผู้ใช้เปลี่ยนเป็น:", user ? user.uid : "ไม่ได้ Login");
+    loadData(); // บังคับให้โหลดข้อมูลใหม่ทุกครั้งที่สถานะผู้ใช้ชัดเจน
+});
 </script>
 </body>
 </html>

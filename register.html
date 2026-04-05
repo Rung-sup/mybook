@@ -219,6 +219,50 @@ function syncUserProgress(bookId, bookTitle, page, total) {
     } catch (err) {
         console.warn("Progress update failed but app will continue.");
     }
+    function saveReadingProgress() {
+    try {
+        // 1. ตรวจสอบว่า Login อยู่หรือไม่ (อ้างอิง Firebase จาก index.html)
+        const user = firebase.auth().currentUser;
+        if (!user || typeof currentBookId === 'undefined' || !pdfDoc) return;
+
+        const uid = user.uid;
+        const key = `user_progress_${uid}`;
+        
+        // 2. ดึงประวัติเดิมมาดู
+        let allHistory = JSON.parse(localStorage.getItem(key)) || {};
+
+        // 3. เตรียมข้อมูลเล่มปัจจุบัน
+        const title = document.getElementById('book-title-display').innerText;
+        const currentP = pageNum;
+        const totalP = pdfDoc.numPages;
+        
+        // กำหนดสถานะ (ถ้าอ่านเกิน 95% หรือหน้าสุดท้าย ให้ถือว่าจบ)
+        let status = (currentP >= totalP) ? "อ่านจบแล้ว" : "อ่านค้างไว้";
+
+        allHistory[currentBookId] = {
+            title: title,
+            page: currentP,
+            total: totalP,
+            status: status,
+            lastUpdate: new Date().getTime()
+        };
+
+        // 4. บันทึกกลับ
+        localStorage.setItem(key, JSON.stringify(allHistory));
+    } catch (e) {
+        console.error("Progress save error:", e);
+    }
+}
+
+// ดักจับการทำงาน: ทุกครั้งที่เปลี่ยนหน้า (renderPage ทำงาน) ให้เรียกบันทึก
+// โดยการ "แทรก" (Hook) เข้าไปในฟังก์ชันเดิมอย่างปลอดภัย
+if (typeof renderPage !== 'undefined') {
+    const oldRender = renderPage;
+    renderPage = async function(num) {
+        await oldRender(num); // ทำงานเดิมให้เสร็จก่อน (วาดภาพ/จำหน้า)
+        saveReadingProgress(); // แล้วค่อยบันทึกประวัติแยกรายคน
+    };
+}
 }
 
 // การดักจับเหตุการณ์ (Observer) แทนการแก้ไข RenderPage โดยตรง

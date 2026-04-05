@@ -7,8 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background-color: #f4f1ea; color: #333; overflow-x: hidden; }
@@ -23,6 +21,10 @@
         .book-info { padding: 10px; font-size: 12px; text-align: center; height: 55px; display: flex; align-items: center; justify-content: center; line-height: 1.2; font-weight: 500; }
         .count-badge { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.85); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; z-index: 10; }
         
+        /* สไตล์ใหม่สำหรับแถบสถานะบนหน้าปก */
+        .status-badge { position: absolute; top: 8px; left: 8px; background: rgba(212,175,55,0.95); color: #000; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; z-index: 20; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .status-done { background: rgba(40, 167, 69, 0.95); color: #fff; }
+
         #reader-overlay { display: none; position: fixed; inset: 0; background: #1a1a1a; z-index: 4000; flex-direction: column; }
         .reader-header { background: #222; color: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
         #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; justify-content: center; padding: 10px 0; }
@@ -55,7 +57,6 @@
 </div>
 
 <script>
-    // ตั้งค่า Firebase (แอปจะดึง Config จากที่ Login ไว้ใน index.html อัตโนมัติ)
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
     const params = new URLSearchParams(window.location.search);
     const categoryKey = params.get('cat') || '1_PetchPraUma';
@@ -69,37 +70,26 @@
             const response = await fetch(`database.json?v=${Date.now()}`);
             const allData = await response.json();
             const catBooks = allData.filter(item => item.url && item.url.includes(`/${categoryKey}/`));
-
             const groupedData = {};
             const standaloneFiles = [];
 
             catBooks.forEach(item => {
                 const parts = item.url.split('/');
                 const catIndex = parts.indexOf(categoryKey);
-                
                 if (catIndex !== -1 && parts.length > catIndex + 2) {
-                    const folderName = decodeURIComponent(parts[catIndex + 1]); 
+                    const folderName = decodeURIComponent(parts[catIndex + 1]);
                     if (!groupedData[folderName]) groupedData[folderName] = [];
                     groupedData[folderName].push(item);
-                } else {
-                    standaloneFiles.push(item);
-                }
+                } else { standaloneFiles.push(item); }
             });
 
             const displayList = [];
             for (const name in groupedData) {
                 const files = groupedData[name];
                 files.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
-                displayList.push({
-                    title: name,
-                    isFolder: true,
-                    count: files.length,
-                    firstBookUrl: files[0].url,
-                    allFiles: files
-                });
+                displayList.push({ title: name, isFolder: true, count: files.length, firstBookUrl: files[0].url, allFiles: files });
             }
             standaloneFiles.forEach(file => displayList.push(file));
-
             displayList.sort((a, b) => {
                 if (a.isFolder && !b.isFolder) return -1;
                 if (!a.isFolder && b.isFolder) return 1;
@@ -113,12 +103,15 @@
     function renderItems(items) {
         const listDiv = document.getElementById('book-list');
         listDiv.innerHTML = '';
-        const fragment = document.createDocumentFragment();
+        
+        // ดึงประวัติผู้ใช้มาเตรียมไว้สำหรับแสดงผลบนหน้าปก
+        const user = (typeof firebase !== 'undefined') ? firebase.auth().currentUser : null;
+        const history = user ? JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {} : {};
 
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'book-card';
-            if(item.isFolder) card.style.border = "2px solid #d4af37"; 
+            if(item.isFolder) card.style.border = "2px solid #d4af37";
 
             const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
             let relPath = "";
@@ -130,8 +123,19 @@
             const imgId = md5(relPath);
             const coverUrl = `covers/${categoryKey}/${imgId}.jpg`;
 
+            // ตรวจสอบสถานะการอ่านเพื่อสร้าง Badge
+            let statusHtml = "";
+            if (!item.isFolder) {
+                const bId = btoa(item.url);
+                if (history[bId]) {
+                    const isDone = history[bId].s === "อ่านจบแล้ว";
+                    statusHtml = `<div class="status-badge ${isDone ? 'status-done' : ''}">${isDone ? 'จบแล้ว' : 'หน้า ' + history[bId].p}</div>`;
+                }
+            }
+
             card.innerHTML = `
                 <div class="cover-box">
+                    ${statusHtml}
                     ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
                     <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
                 </div>
@@ -139,9 +143,8 @@
             `;
 
             card.onclick = () => item.isFolder ? renderItems(item.allFiles) : openBook(item.url, item.title);
-            fragment.appendChild(card);
+            listDiv.appendChild(card);
         });
-        listDiv.appendChild(fragment);
         setupLazyLoad();
     }
 
@@ -152,7 +155,6 @@
                     const img = entry.target;
                     img.src = img.dataset.src;
                     img.onload = () => img.classList.add('loaded');
-                    img.onerror = () => { img.src = 'https://via.placeholder.com/150x220?text=No+Cover'; img.classList.add('loaded'); };
                     observer.unobserve(img);
                 }
             });
@@ -161,7 +163,7 @@
     }
 
     async function openBook(url, title) {
-        currentBookId = btoa(url); 
+        currentBookId = btoa(url);
         document.getElementById('reader-overlay').style.display = 'flex';
         document.getElementById('book-title-display').innerText = title;
         document.body.style.overflow = 'hidden';
@@ -181,21 +183,18 @@
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
         
-        // --- บันทึกข้อมูลแบบเดิม ---
+        // บันทึกเลขหน้าปกติ
         localStorage.setItem('page_' + currentBookId, num);
 
-        // --- ส่วนที่เพิ่มเพื่อแยกรายชื่อผู้ใช้ (ตรวจสอบแล้วว่าไม่กระทบส่วนอื่น) ---
-        const user = firebase.auth().currentUser;
+        // บันทึกประวัติแยกรายคน (Background)
+        const user = (typeof firebase !== 'undefined') ? firebase.auth().currentUser : null;
         if (user) {
-            const status = (num >= pdfDoc.numPages) ? "อ่านจบแล้ว" : "อ่านค้างไว้";
             const historyKey = `puk_history_${user.uid}`;
             let history = JSON.parse(localStorage.getItem(historyKey)) || {};
-            history[currentBookId] = { 
-                title: document.getElementById('book-title-display').innerText, 
-                p: num, 
-                total: pdfDoc.numPages, 
-                s: status, 
-                time: Date.now() 
+            history[currentBookId] = {
+                p: num,
+                s: (num >= pdfDoc.numPages) ? "อ่านจบแล้ว" : "กำลังอ่าน",
+                time: Date.now()
             };
             localStorage.setItem(historyKey, JSON.stringify(history));
         }
@@ -207,6 +206,7 @@
         document.getElementById('reader-overlay').style.display = 'none'; 
         document.body.style.overflow = 'auto'; 
         if(pdfDoc) { pdfDoc.destroy(); pdfDoc = null; }
+        loadData(); // รีโหลดเพื่ออัปเดต Badge บนหน้าปก
     }
 
     window.onload = loadData;

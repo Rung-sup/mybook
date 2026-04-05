@@ -129,52 +129,58 @@
     }
 
     function renderItems(items) {
-        const listDiv = document.getElementById('book-list');
-        listDiv.innerHTML = '';
+    const listDiv = document.getElementById('book-list');
+    listDiv.innerHTML = '';
+    const fragment = document.createDocumentFragment();
 
-        // ดึงประวัติผู้ใช้มาเตรียมไว้สำหรับแสดงผลบนหน้าปก
-        const user = firebase.auth().currentUser;
-        const history = user ? JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {} : {};
+    // --- ส่วนที่เพิ่ม: ดึงประวัติผู้ใช้มาเตรียมไว้ ---
+    const user = firebase.auth().currentUser;
+    const historyKey = user ? `puk_history_${user.uid}` : null;
+    const history = historyKey ? JSON.parse(localStorage.getItem(historyKey)) || {} : {};
+    // -------------------------------------------
 
-        items.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'book-card';
-            if(item.isFolder) card.style.border = "2px solid #d4af37"; 
+    items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'book-card';
+        if(item.isFolder) card.style.border = "2px solid #d4af37"; 
 
-            const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
-            let relPath = "";
-            try {
-                const u = new URL(targetUrl, window.location.origin);
-                relPath = decodeURIComponent(u.pathname).replace(/^\//, '');
-            } catch(e) { relPath = targetUrl; }
-            
-            const imgId = md5(relPath);
-            const coverUrl = `covers/${categoryKey}/${imgId}.jpg`;
+        const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
+        let relPath = "";
+        try {
+            const u = new URL(targetUrl, window.location.origin);
+            relPath = decodeURIComponent(u.pathname).replace(/^\//, '');
+        } catch(e) { relPath = targetUrl; }
+        
+        const imgId = md5(relPath);
+        const coverUrl = `covers/${categoryKey}/${imgId}.jpg`;
 
-            // ตรวจสอบสถานะการอ่านเพื่อสร้าง Badge
-            let statusHtml = "";
-            if (!item.isFolder) {
-                const bId = btoa(item.url);
-                if (history[bId]) {
-                    const isDone = history[bId].s === "อ่านจบแล้ว";
-                    statusHtml = `<div class="status-badge ${isDone ? 'status-done' : ''}">${isDone ? 'จบแล้ว' : 'หน้า ' + history[bId].p}</div>`;
-                }
+        // --- ส่วนที่เพิ่ม: ตรวจสอบสถานะเพื่อสร้าง Badge บนหน้าปก ---
+        let statusHtml = "";
+        if (!item.isFolder) {
+            const bId = btoa(item.url); // ID ของหนังสือเล่มนี้
+            if (history[bId]) {
+                const isDone = history[bId].s === "อ่านจบแล้ว";
+                // สร้างแถบ Badge สีทอง (ถ้าจบแล้วจะเป็นสีเขียวตาม Style ที่เราคุยกัน)
+                statusHtml = `<div class="status-badge ${isDone ? 'status-done' : ''}">${isDone ? 'จบแล้ว' : 'หน้า ' + history[bId].p}</div>`;
             }
+        }
+        // -------------------------------------------------------
 
-            card.innerHTML = `
-                <div class="cover-box">
-                    ${statusHtml}
-                    ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
-                    <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
-                </div>
-                <div class="book-info"><div>${item.isFolder ? `<b>${item.title}</b>` : item.title}</div></div>
-            `;
+        card.innerHTML = `
+            <div class="cover-box">
+                ${statusHtml} 
+                ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
+                <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
+            </div>
+            <div class="book-info"><div>${item.isFolder ? `<b>${item.title}</b>` : item.title}</div></div>
+        `;
 
-            card.onclick = () => item.isFolder ? renderItems(item.allFiles) : openBook(item.url, item.title);
-            listDiv.appendChild(card);
-        });
-        setupLazyLoad();
-    }
+        card.onclick = () => item.isFolder ? renderItems(item.allFiles) : openBook(item.url, item.title);
+        fragment.appendChild(card);
+    });
+    listDiv.appendChild(fragment);
+    setupLazyLoad();
+}
 
     function setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {

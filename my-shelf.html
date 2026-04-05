@@ -1,0 +1,50 @@
+function renderShelf(uid) {
+        const shelfDiv = document.getElementById('shelf-list');
+        const history = JSON.parse(localStorage.getItem(`puk_history_${uid}`)) || {};
+        const bookIds = Object.keys(history);
+
+        // --- กรณีผู้ใช้ใหม่ (ยังไม่มีประวัติการอ่าน) ---
+        if (bookIds.length === 0) {
+            shelfDiv.innerHTML = `
+                <div class="empty-state" style="grid-column: 1 / -1; background: #fff; padding: 40px 20px; border-radius: 20px; border: 2px dashed #d4af37;">
+                    <div style="font-size: 50px; margin-bottom: 15px;">👋</div>
+                    <h3 style="margin: 0 0 10px 0; color: #333;">ยินดีต้อนรับคุณเข้าสู่คลังหนังสือ</h3>
+                    <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">ดูเหมือนว่าคุณยังไม่ได้เริ่มอ่านเล่มไหนเลย<br>ลองไปเลือกหนังสือที่น่าสนใจในหอสมุดดูไหมครับ?</p>
+                    <a href="categories.html" class="btn-browse" style="margin-top: 0;">สำรวจหอสมุดตอนนี้ ❯</a>
+                </div>
+            `;
+            // ซ่อนหัวข้อ "อ่านค้างไว้" และปุ่มด้านล่างเพื่อไม่ให้ดูรก
+            document.querySelector('.section-title').style.display = 'none';
+            document.querySelector('.container > div:last-child').style.display = 'none';
+            return;
+        }
+
+        // --- กรณีผู้ใช้เดิม (มีประวัติการอ่าน) ---
+        document.querySelector('.section-title').style.display = 'flex';
+        document.querySelector('.container > div:last-child').style.display = 'block';
+        
+        bookIds.sort((a, b) => history[b].time - history[a].time);
+        shelfDiv.innerHTML = '';
+        
+        bookIds.forEach(id => {
+            const data = history[id];
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            
+            card.innerHTML = `
+                <div class="cover-placeholder">📕</div>
+                <div class="status-badge ${data.s === 'อ่านจบแล้ว' ? 'status-done' : ''}">
+                    ${data.s === 'อ่านจบแล้ว' ? 'จบแล้ว' : 'หน้า ' + data.p}
+                </div>
+                <div class="book-info"><div>${data.title}</div></div>
+            `;
+
+            const bookUrl = atob(id);
+            card.onclick = () => {
+                const parts = bookUrl.split('/');
+                const cat = parts[parts.length - 3] || '1_PetchPraUma'; 
+                window.location.href = `register.html?cat=${cat}&name=${encodeURIComponent(data.title)}`;
+            };
+            shelfDiv.appendChild(card);
+        });
+    }

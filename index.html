@@ -52,19 +52,32 @@
     </div>
 
     <script>
-        // --- 1. การตั้งค่า Firebase (พี่รันนราเอาข้อมูลจาก Firebase Console มาวางตรงนี้ครับ) ---
+        // --- 1. การตั้งค่า Firebase ---
         const firebaseConfig = {
-  apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
-  authDomain: "myreaderapp-89e75.firebaseapp.com",
-  projectId: "myreaderapp-89e75",
-  storageBucket: "myreaderapp-89e75.firebasestorage.app",
-  messagingSenderId: "1016151043482",
-  appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
-};
+            apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+            authDomain: "myreaderapp-89e75.firebaseapp.com",
+            projectId: "myreaderapp-89e75",
+            storageBucket: "myreaderapp-89e75.firebasestorage.app",
+            messagingSenderId: "1016151043482",
+            appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+        };
 
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
 
         const auth = firebase.auth();
+
+        // ฟังก์ชันออกจากระบบ (เตรียมไว้สำหรับใช้ในทุกหน้า)
+        function handleLogout() {
+            if(confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
+                auth.signOut().then(() => {
+                    window.location.href = 'index.html';
+                }).catch((error) => {
+                    console.error("Logout Error:", error);
+                });
+            }
+        }
 
         // สลับฟอร์ม
         function toggleForms() {
@@ -87,13 +100,11 @@
 
             auth.createUserWithEmailAndPassword(email, pass)
                 .then((userCredential) => {
-                    // เมื่อสร้างบัญชีสำเร็จ -> ส่งอีเมลยืนยันทันที
                     const user = userCredential.user;
                     return user.sendEmailVerification();
                 })
                 .then(() => {
                     alert("ลงทะเบียนสำเร็จ! ระบบได้ส่งอีเมลยืนยันไปที่ " + email + " แล้ว กรุณาตรวจสอบในกล่องข้อความ (หรือถังขยะ) ก่อนเข้าใช้งานครับ");
-                    // ดีดไปหน้ายอมรับเงื่อนไขตามลำดับที่คุณรันนราต้องการ
                     window.location.href = 'terms.html';
                 })
                 .catch((error) => {
@@ -112,9 +123,7 @@
                 .then((userCredential) => {
                     const user = userCredential.user;
 
-                    // ตรวจสอบว่ายืนยันอีเมลหรือยัง
                     if (user.emailVerified) {
-                        // เช็คว่ายอมรับเงื่อนไขหรือยัง
                         if (localStorage.getItem('terms_accepted') === 'true') {
                             window.location.href = 'my-shelf.html';
                         } else {
@@ -122,7 +131,7 @@
                         }
                     } else {
                         alert("กรุณายืนยันอีเมลของคุณก่อนเข้าใช้งานครับ ระบบได้ส่งลิงก์ไปให้แล้ว");
-                        auth.signOut(); // บังคับออกเพื่อให้ไปยืนยันตัวตนก่อน
+                        auth.signOut();
                     }
                 })
                 .catch((error) => {

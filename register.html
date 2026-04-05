@@ -19,7 +19,6 @@
         .book-cover-img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; }
         .book-cover-img.loaded { opacity: 1; }
         .book-info { padding: 10px; font-size: 12px; text-align: center; height: 55px; display: flex; align-items: center; justify-content: center; line-height: 1.2; font-weight: 500; }
-        .folder-badge { position: absolute; top: 8px; left: 8px; background: #d4af37; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; z-index: 10; }
         .count-badge { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.85); color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 10px; z-index: 10; }
         
         #reader-overlay { display: none; position: fixed; inset: 0; background: #1a1a1a; z-index: 4000; flex-direction: column; }
@@ -66,11 +65,8 @@
         try {
             const response = await fetch(`database.json?v=${Date.now()}`);
             const allData = await response.json();
-            
-            // กรองไฟล์ที่อยู่ในหมวดปัจจุบัน
             const catBooks = allData.filter(item => item.url && item.url.includes(`/${categoryKey}/`));
 
-            // ระบบจัดกลุ่มโฟลเดอร์อัตโนมัติ
             const groupedData = {};
             const standaloneFiles = [];
 
@@ -78,38 +74,29 @@
                 const parts = item.url.split('/');
                 const catIndex = parts.indexOf(categoryKey);
                 
-                // ถ้าไฟล์อยู่ในโฟลเดอร์ย่อย (เช่น /2_Thai_Novel/ล่องไพร/เล่ม1.pdf)
                 if (catIndex !== -1 && parts.length > catIndex + 2) {
-                    const folderName = parts[catIndex + 1];
-                    if (!groupedData[folderName]) {
-                        groupedData[folderName] = [];
-                    }
+                    const folderName = decodeURIComponent(parts[catIndex + 1]); // แก้ปัญหาชื่อ ID เป็นชื่อภาษาไทย
+                    if (!groupedData[folderName]) groupedData[folderName] = [];
                     groupedData[folderName].push(item);
                 } else {
-                    // ถ้าเป็นไฟล์เดี่ยว (เช่น /2_Thai_Novel/เล่มเดี่ยว.pdf)
                     standaloneFiles.push(item);
                 }
             });
 
             const displayList = [];
-            
-            // เพิ่มกลุ่มโฟลเดอร์เข้าไปในรายการแสดงผล
-            for (const folderName in groupedData) {
-                const filesInFolder = groupedData[folderName];
-                filesInFolder.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
+            for (const name in groupedData) {
+                const files = groupedData[name];
+                files.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
                 displayList.push({
-                    title: folderName,
+                    title: name,
                     isFolder: true,
-                    count: filesInFolder.length,
-                    firstBookUrl: filesInFolder[0].url,
-                    allFiles: filesInFolder
+                    count: files.length,
+                    firstBookUrl: files[0].url,
+                    allFiles: files
                 });
             }
-
-            // เพิ่มไฟล์เดี่ยว
             standaloneFiles.forEach(file => displayList.push(file));
 
-            // เรียงลำดับรายการทั้งหมด (โฟลเดอร์ขึ้นก่อน หรือเรียงตามชื่อ)
             displayList.sort((a, b) => {
                 if (a.isFolder && !b.isFolder) return -1;
                 if (!a.isFolder && b.isFolder) return 1;
@@ -117,7 +104,7 @@
             });
 
             renderItems(displayList);
-        } catch (err) { console.error("Load Error:", err); }
+        } catch (err) { console.error(err); }
     }
 
     function renderItems(items) {
@@ -128,9 +115,8 @@
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'book-card';
-            if(item.isFolder) card.style.border = "1.5px solid #d4af37";
+            if(item.isFolder) card.style.border = "2px solid #d4af37"; // ขอบทองแทนสัญลักษณ์ Folder
 
-            // การหา Path รูปปก (ใช้ Logic เดียวกับที่คุณบอกว่าโหลดไว)
             const targetUrl = item.isFolder ? item.firstBookUrl : item.url;
             let relPath = "";
             try {
@@ -143,7 +129,7 @@
 
             card.innerHTML = `
                 <div class="cover-box">
-                    ${item.isFolder ? `<div class="folder-badge">📂 FOLDER</div><div class="count-badge">${item.count} เล่ม</div>` : ''}
+                    ${item.isFolder ? `<div class="count-badge">${item.count} เล่ม</div>` : ''}
                     <img data-src="${coverUrl}" class="book-cover-img" loading="lazy">
                 </div>
                 <div class="book-info"><div>${item.isFolder ? `<b>${item.title}</b>` : item.title}</div></div>
@@ -172,12 +158,13 @@
     }
 
     async function openBook(url, title) {
-        currentBookId = btoa(url);
+        currentBookId = btoa(url); // ใช้ Base64 URL เป็น Key ของชั้นหนังสือ
         document.getElementById('reader-overlay').style.display = 'flex';
         document.getElementById('book-title-display').innerText = title;
         document.body.style.overflow = 'hidden';
         try {
             pdfDoc = await pdfjsLib.getDocument(url).promise;
+            // ดึงเลขหน้าจาก localStorage (ฟังก์ชันชั้นหนังสือ)
             pageNum = parseInt(localStorage.getItem('page_' + currentBookId)) || 1;
             renderPage(pageNum);
         } catch (err) { alert("โหลดไฟล์ไม่สำเร็จ"); closeBook(); }
@@ -191,6 +178,7 @@
         canvas.height = vp.height; canvas.width = vp.width;
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+        // บันทึกเลขหน้าปัจจุบันลงชั้นหนังสือ
         localStorage.setItem('page_' + currentBookId, num);
     }
 

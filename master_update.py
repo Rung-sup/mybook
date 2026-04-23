@@ -33,7 +33,7 @@ def main():
         return
 
     categories = [d for d in os.listdir(library_path) if os.path.isdir(os.path.join(library_path, d))]
-    
+    print(f"DEBUG: พบโฟลเดอร์ใน Library ทั้งหมด: {categories}")
     for cat in categories:
         if cat in ['covers', '.git', '.github', 'metadata', 'scripts']: continue
         cat_path = os.path.join(library_path, cat)

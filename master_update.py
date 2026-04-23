@@ -12,8 +12,10 @@ from pdf2image import convert_from_path
 library_path = r'C:\MyLibrary' 
 db_path = 'database.json'
 output_root = 'covers'
-base_domain = "https://rung-sup.github.io"
 poppler_path = r'C:\MyBook_Test\poppler-25.12.0\Library\bin'
+
+# ตั้งค่าชื่อผู้ใช้งาน GitHub ของอาจารย์ สำหรับสร้าง Raw Link
+github_user = "rung-sup"
 
 # --- ฟังก์ชันดึงและอัปเดตข้อมูลเพลงอัตโนมัติ (7_music) ---
 def get_external_music():
@@ -28,40 +30,34 @@ def get_external_music():
 
     print("🎵 [Music] กำลังสแกนไฟล์เพลงและอัปเดตฐานข้อมูลเพลง...")
     
-    # สแกนหาไฟล์เพลงจริง (.mp3, .m4a, .flac)
     for root, dirs, files in os.walk(music_dir):
-        # ข้ามโฟลเดอร์ที่ไม่เกี่ยวข้อง
         dirs[:] = [d for d in dirs if d not in ['metadata', '.git', '.github']]
         
         for file_name in files:
             if file_name.lower().endswith(('.mp3', '.m4a', '.flac')):
                 full_path = os.path.join(root, file_name)
-                # หา path สัมพัทธ์จาก 7_music
                 rel_path_from_music = os.path.relpath(full_path, music_dir)
                 
-                # สร้าง ID สำหรับปก (ใช้ path สัมพัทธ์จาก MyLibrary เพื่อให้ตรงระบบปก)
                 rel_path_from_library = os.path.join("7_music", rel_path_from_music)
                 cover_id = generate_cover_id(rel_path_from_library)
                 
-                # เตรียม URL
                 url_path_fixed = rel_path_from_music.replace('\\', '/')
                 safe_music_path = urllib.parse.quote(url_path_fixed)
                 
-                # แยกโฟลเดอร์ (ชื่อนักร้อง/อัลบั้ม)
                 path_parts = rel_path_from_music.split(os.sep)
                 folder_name = path_parts[0] if len(path_parts) > 1 else "ทั่วไป"
 
+                # 💡 [อัปเกรด]: เปลี่ยนเป็น Raw Link ของ GitHub สำหรับไฟล์เพลง
                 music_list.append({
                     "title": os.path.splitext(file_name)[0],
-                    "url": f"{base_domain}/7_music/{safe_music_path}",
+                    "url": f"https://raw.githubusercontent.com/{github_user}/7_music/main/{safe_music_path}",
                     "category": "7_music",
                     "folder": folder_name,
                     "cover_id": cover_id,
                     "is_music": True,
-                    "path": rel_path_from_music # เก็บไว้ใช้ใน music_db.json เดิม
+                    "path": rel_path_from_music
                 })
 
-    # บันทึกอัปเดตลง music_db.json เพื่อให้ Music Room ใช้งานได้
     try:
         os.makedirs(os.path.dirname(music_json_path), exist_ok=True)
         with open(music_json_path, 'w', encoding='utf-8') as f:
@@ -88,7 +84,6 @@ def main():
 
     # --- ส่วนการจัดการหนังสือ ---
     for root, dirs, files in os.walk(library_path):
-        # ข้ามโฟลเดอร์ที่ไม่เกี่ยวข้อง
         dirs[:] = [d for d in dirs if d not in ['covers', '.git', '.github', '7_music']]
         
         for file_name in files:
@@ -102,7 +97,7 @@ def main():
                 rel_path = os.path.relpath(full_path, library_path)
                 parts = rel_path.split(os.sep)
                 
-                category = parts[0] 
+                category = parts[0] # ดึงชื่อโฟลเดอร์แรกมาเป็นชื่อโกดัง (เช่น 4_Chinese_Novel_Vol2)
                 folder_name = parts[1] if len(parts) > 2 else ""
                 
                 file_in_repo_path = os.path.relpath(full_path, os.path.join(library_path, category))
@@ -110,7 +105,9 @@ def main():
                 
                 normalized_url = unicodedata.normalize('NFC', url_path_fixed).replace('\u0e4d\u0e32', '\u0e33')
                 safe_path = urllib.parse.quote(normalized_url)
-                final_url = f"{base_domain}/{category}/{safe_path}"
+                
+                # 💡 [อัปเกรด]: เปลี่ยนเป็น Raw Link ของ GitHub เพื่อดึงไฟล์ข้ามโกดัง
+                final_url = f"https://raw.githubusercontent.com/{github_user}/{category}/main/{safe_path}"
 
                 cover_id = generate_cover_id(rel_path)
                 valid_cover_ids.add(cover_id)
@@ -132,20 +129,17 @@ def main():
 
                 new_db.append({
                     "title": os.path.splitext(file_name)[0],
-                    "url": final_url,
+                    "url": final_url, # URL ใหม่ที่ส่องไปโกดังย่อย
                     "category": category,
                     "folder": folder_name,
                     "cover_id": cover_id,
                     "file_size": f_size
                 })
 
-    # --- ส่วนการจัดการเพลง (เรียกใช้ฟังก์ชันอัปเดต) ---
     music_list = get_external_music()
-    # เก็บ cover_id ของเพลงไว้ด้วยไม่ให้โดนระบบ Clean ลบทิ้ง
     for m in music_list:
         valid_cover_ids.add(m['cover_id'])
 
-    # --- ทำความสะอาดรูปปกที่ไม่ได้ใช้ ---
     for root_dir, _, files in os.walk(output_root):
         for f in files:
             if f.endswith('.jpg'):
@@ -153,7 +147,6 @@ def main():
                     try: os.remove(os.path.join(root_dir, f))
                     except: pass
 
-    # --- มัดรวมข้อมูลลงฐานข้อมูลหลัก ---
     final_database = {
         "books": new_db,
         "music": music_list,

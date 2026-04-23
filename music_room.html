@@ -193,6 +193,10 @@
                 
                 // === ส่วนที่เพิ่มเข้ามาเพื่อจัดการ audio_files ===
                 // ถ้าโฟลเดอร์แรกชื่อ audio_files ให้ตัดมันทิ้งไปเลย
+                if (parts.length > 0 && parts[0] === 'main') {
+                    parts.shift(); 
+                }
+                // ข้ามคำว่า audio_files
                 if (parts.length > 0 && parts[0] === 'audio_files') {
                     parts.shift(); 
                 }

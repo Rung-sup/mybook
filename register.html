@@ -128,7 +128,7 @@
             document.getElementById('queue-panel').style.display = 'block';
             initMusicPlayer();
         } else {
-            allBooksRaw = data.books ? data.books.filter(b => b.category.trim() === currentCategory.trim()) : [];
+            allBooksRaw = data.books ? data.books.filter(b => b.category.trim().startsWith(currentCategory.trim())) : [];
         }
         processFolders(allBooksRaw);
     }

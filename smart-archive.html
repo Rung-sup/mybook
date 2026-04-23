@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชั้นหนังสือของฉัน - Runnara Reader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: #f4f1ea; color: #333; }
+        .header { padding: 10px 20px; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; display: flex; flex-direction: column; gap: 10px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .search-box { width: 100%; padding: 8px 15px; border: 1px solid #ddd; border-radius: 20px; font-size: 14px; outline: none; transition: 0.3s; }
+        .search-box:focus { border-color: #764ba2; box-shadow: 0 0 5px rgba(118, 75, 162, 0.2); }
+        .container { padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+        .book-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); cursor: pointer; border: 1px solid #eee; position: relative; transition: transform 0.2s; }
+        .book-card:active { transform: scale(0.96); }
+        .cover-box { width: 100%; padding-bottom: 150%; background: #e0ded7; overflow: hidden; position: relative; }
+        
+        /* ❌ ลบ opacity ออก */
+        .book-cover-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        
+        .status-badge { position: absolute; top: 8px; left: 8px; background: rgba(212,175,55,0.95); color: #000; padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; z-index: 20; }
+        .status-done { background: rgba(40, 167, 69, 0.95); color: #fff; }
+        .book-info { padding: 10px; font-size: 12px; text-align: center; height: 55px; display: flex; align-items: center; justify-content: center; font-weight: 500; }
+        .btn-browse { background: #764ba2; color: #fff; padding: 12px 25px; border-radius: 30px; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: 500; }
+        .btn-logout { background: none; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 4px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; }
+        .empty-state { text-align: center; padding: 50px 20px; color: #888; grid-column: 1/-1; }
+        
+        #reader-overlay { display: none; position: fixed; inset: 0; background: #1a1a1a; z-index: 4000; flex-direction: column; }
+        .reader-header { background: #222; color: #fff; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        #pdf-render-container { flex-grow: 1; overflow: auto; display: flex; justify-content: center; padding: 10px 0; }
+        #pdf-canvas { max-width: 100%; height: auto !important; }
+        .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; pointer-events: none; }
+        .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.85); color: #d4af37; border: 1.5px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="header-top">
+        <b style="font-size: 20px; color: #d4af37;">ชั้นหนังสือของคุณ</b>
+        <button class="btn-logout" onclick="handleLogout()">ออกจากระบบ</button>
+    </div>
+    <input type="text" id="global-search" class="search-box" placeholder="🔍 ค้นหาชื่อหนังสือจากทุกหมวด..." oninput="searchBooks()">
+</div>
+
+<div class="container">
+    <div id="shelf-title-area" class="section-title"><span id="title-text">📖 อ่านค้างไว้</span></div>
+    <div id="shelf-list" class="shelf-grid"></div>
+    <div id="browse-more-area" style="text-align: center; margin-top: 40px;">
+        <p style="color: #666;">ต้องการอ่านเล่มใหม่หรือไม่?</p>
+        <a href="categories.html" class="btn-browse">ไปที่หมวดหนังสือทั้งหมด ❯</a>
+    </div>
+</div>
+
+<div id="reader-overlay">
+    <div class="reader-header">
+        <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:7px 15px; border-radius:6px; font-weight:600; cursor:pointer;">ปิด</button>
+        <div id="book-title-display" style="font-size:13px; color:#d4af37; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:45%;"></div>
+        <span id="page-info" style="font-size:12px;"></span>
+    </div>
+    <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevPage()">❮</button>
+        <button class="nav-btn" onclick="nextPage()">❯</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+        authDomain: "myreaderapp-89e75.firebaseapp.com",
+        projectId: "myreaderapp-89e75",
+        storageBucket: "myreaderapp-89e75.firebasestorage.app",
+        messagingSenderId: "1016151043482",
+        appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+    let currentUser = null;
+    let pdfDoc = null, pageNum = 1, currentBookId = "";
+    const canvas = document.getElementById('pdf-canvas');
+    const ctx = canvas ? canvas.getContext('2d') : null;
+
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            currentUser = user;
+            renderShelf(user.uid);
+        } else {
+            window.location.href = 'index.html';
+        }
+    });
+
+    function handleLogout() {
+        if(confirm("คุณต้องการออกจากระบบใช่หรือไม่?")) {
+            firebase.auth().signOut().then(() => { window.location.href = 'index.html'; });
+        }
+    }
+
+    async function searchBooks() {
+        const query = document.getElementById('global-search').value.trim().toLowerCase();
+        const shelfDiv = document.getElementById('shelf-list');
+        const titleText = document.getElementById('title-text');
+        const browseArea = document.getElementById('browse-more-area');
+
+        if (query === "") {
+            titleText.innerText = "📖 อ่านค้างไว้";
+            browseArea.style.display = "block";
+            renderShelf(currentUser.uid);
+            return;
+        }
+
+        titleText.innerText = "🔍 ผลการค้นหา";
+        browseArea.style.display = "none";
+        
+        try {
+            const response = await fetch(`database.json?v=${Date.now()}`);
+            const allData = await response.json();
+            
+            const filtered = allData.filter(item => item.title.toLowerCase().includes(query));
+            
+            if (filtered.length === 0) {
+                shelfDiv.innerHTML = `<div class="empty-state">ไม่พบหนังสือที่ตรงกับการค้นหา</div>`;
+                return;
+            }
+
+            shelfDiv.innerHTML = '';
+            filtered.forEach(item => {
+                const cat = item.category || "1_PetchPraUma";
+                const coverUrl = item.cover_id ? `covers/${cat}/${item.cover_id}.jpg` : 'https://via.placeholder.com/150x220?text=No+Cover';
+
+                const card = document.createElement('div');
+                card.className = 'book-card';
+                card.innerHTML = `
+                    <div class="cover-box">
+                        <img src="${coverUrl}" class="book-cover-img" loading="lazy" onerror="this.src='https://via.placeholder.com/150x220?text=No+Cover'">
+                    </div>
+                    <div class="book-info"><div>${item.title}</div></div>
+                `;
+                card.onclick = () => window.location.href = `register.html?cat=${cat}&name=${encodeURIComponent(item.title)}`;
+                shelfDiv.appendChild(card);
+            });
+        } catch (err) { console.error("Search error:", err); }
+    }
+
+    function renderShelf(uid) {
+        const shelfDiv = document.getElementById('shelf-list');
+        const history = JSON.parse(localStorage.getItem(`puk_history_${uid}`)) || {};
+        const bookIds = Object.keys(history);
+
+        if (bookIds.length === 0) {
+            shelfDiv.innerHTML = `<div class="empty-state" style="border: 2px dashed #d4af37; border-radius:20px; padding:40px;"><h3>ยินดีต้อนรับครับ</h3><p>คุณยังไม่มีหนังสือที่อ่านค้างไว้</p><a href="categories.html" class="btn-browse">ไปเลือกหนังสือกัน ❯</a></div>`;
+            document.getElementById('shelf-title-area').style.display = 'none';
+            document.getElementById('browse-more-area').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('shelf-title-area').style.display = 'flex';
+        document.getElementById('browse-more-area').style.display = 'block';
+
+        bookIds.sort((a, b) => history[b].time - history[a].time);
+        shelfDiv.innerHTML = '';
+        bookIds.forEach(id => {
+            const data = history[id];
+            
+            const cat = data.category || "1_PetchPraUma";
+            const coverUrl = data.cover_id ? `covers/${cat}/${data.cover_id}.jpg` : 'https://via.placeholder.com/150x220?text=No+Cover';
+
+            let bookUrl = "";
+            try { bookUrl = decodeURIComponent(atob(id)); } catch(e) { bookUrl = atob(id); }
+
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.innerHTML = `
+                <div class="cover-box">
+                    <div class="status-badge ${data.s === 'อ่านจบแล้ว' ? 'status-done' : ''}">${data.s === 'อ่านจบแล้ว' ? 'จบแล้ว' : 'หน้า ' + data.p}</div>
+                    <img src="${coverUrl}" class="book-cover-img" loading="lazy" onerror="this.src='https://via.placeholder.com/150x220?text=No+Cover'">
+                </div>
+                <div class="book-info"><div>${data.title}</div></div>
+            `;
+            card.onclick = () => { openBook(bookUrl, data.title, data.cover_id, cat, id); };
+            shelfDiv.appendChild(card);
+        });
+    }
+
+    async function openBook(url, title, cover_id, category, encodedId) {
+        currentBookId = encodedId || btoa(encodeURIComponent(url));
+        document.getElementById('reader-overlay').style.display = 'flex';
+        document.getElementById('book-title-display').innerText = title;
+        document.body.style.overflow = 'hidden';
+        try {
+            pdfDoc = await pdfjsLib.getDocument(url).promise;
+            pageNum = parseInt(localStorage.getItem('page_' + currentBookId)) || 1;
+            renderPage(pageNum);
+        } catch (err) { alert("โหลดไฟล์ไม่สำเร็จ"); closeBook(); }
+    }
+
+    async function renderPage(num) {
+        if(!pdfDoc) return;
+        const page = await pdfDoc.getPage(num);
+        const sw = window.innerWidth > 600 ? 580 : window.innerWidth;
+        const vp = page.getViewport({ scale: (sw * 1.5) / page.getViewport({ scale: 1 }).width });
+        
+        if(canvas && ctx) {
+            canvas.height = vp.height; 
+            canvas.width = vp.width;
+            await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        }
+        
+        document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+        localStorage.setItem('page_' + currentBookId, num);
+    }
+
+    function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
+    function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
+    
+    function closeBook() { 
+        document.getElementById('reader-overlay').style.display = 'none'; 
+        document.body.style.overflow = 'auto'; 
+        if(pdfDoc) { 
+            pdfDoc.destroy().then(() => {
+                pdfDoc = null;
+            });
+        }
+    }
+</script>
+</body>
+</html>

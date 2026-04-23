@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🎵 ห้องฟังเพลงของรันนรา</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.js"></script>
+    <style>
+        :root { --gold: #d4af37; --dark-bg: #0f0f0f; --card: #1c1c1c; --card-hover: #262626; }
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--dark-bg); color: white; margin: 0; padding: 15px; padding-bottom: 120px; }
+        
+        /* Header & Search */
+        .header-container { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px; }
+        .page-title { color: var(--gold); margin: 0; font-size: 1.5em; text-align: center; width: 100%; }
+        .search-box { width: 100%; padding: 14px 20px; border-radius: 30px; border: 1px solid #333; background: #1a1a1a; color: #fff; margin-bottom: 15px; outline: none; font-size: 15px; transition: border 0.3s; }
+        .search-box:focus { border-color: var(--gold); }
+
+        /* แถบเมนูด่วน (Quick Actions) */
+        .quick-actions { display: flex; gap: 8px; margin-bottom: 25px; }
+        .btn-quick { flex: 1; padding: 10px 5px; border: none; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: transform 0.2s; }
+        .btn-quick:active { transform: scale(0.95); }
+        .btn-quick-save { background: rgba(40, 167, 69, 0.15); color: #4ade80; border: 1px solid rgba(40, 167, 69, 0.4); }
+        .btn-quick-clear { background: rgba(220, 53, 69, 0.15); color: #f87171; border: 1px solid rgba(220, 53, 69, 0.4); }
+        .btn-quick-vault { background: rgba(212, 175, 55, 0.15); color: var(--gold); border: 1px solid rgba(212, 175, 55, 0.4); }
+
+        /* Folders (Main) */
+        .folder-card { background: var(--card); border-radius: 12px; margin-bottom: 15px; border: 1px solid #2a2a2a; overflow: hidden; transition: all 0.3s; }
+        .folder-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #222; }
+        .folder-title { color: var(--gold); font-size: 1.1em; font-weight: 600; }
+        .folder-icon { transition: transform 0.3s ease; color: #888; }
+        .folder-content { padding: 5px 15px; display: none; background: var(--card); }
+
+        /* Sub Folders (New Style) */
+        .subfolder-card { margin: 8px 0 8px 10px; border-left: 2px solid #333; border-radius: 8px; background: #151515; overflow: hidden; }
+        .subfolder-header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #1e1e1e; font-size: 0.95em; color: #ddd; border-bottom: 1px solid #222; }
+        .subfolder-content { padding: 0 10px; display: none; }
+
+        /* Song List */
+        .music-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2a2a2a; }
+        .music-item:last-child { border-bottom: none; }
+        .song-info { font-size: 14px; color: #eee; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+        .action-group { display: flex; gap: 8px; }
+        .btn-icon { width: 36px; height: 36px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; transition: transform 0.2s; }
+        .btn-icon:active { transform: scale(0.9); }
+        .btn-play-now { background: rgba(212, 175, 55, 0.15); color: var(--gold); }
+        .btn-add-q { background: transparent; color: #888; border: 1px solid #444; }
+
+        /* Modal (คลังคิวที่บันทึกไว้) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content { background: var(--card); width: 90%; max-width: 400px; border-radius: 16px; padding: 20px; border: 1px solid #333; position: relative; }
+        .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #888; font-size: 20px; cursor: pointer; }
+        
+        .storage-item { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; border: 1px solid #333; }
+        .btn-small { border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .btn-load { background: var(--gold); color: black; margin-right: 5px; }
+        .btn-del { background: transparent; border: 1px solid #dc3545; color: #dc3545; }
+
+        /* APlayer Customization */
+        #aplayer-container { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; padding: 10px; background: linear-gradient(transparent, rgba(15,15,15,0.95) 30%); pointer-events: none; }
+        .aplayer { margin: 0 !important; border-radius: 16px !important; background: rgba(30, 30, 30, 0.8) !important; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important; }
+        .aplayer .aplayer-info { padding: 10px 10px 10px 15px !important; }
+        .aplayer .aplayer-title { color: #fff !important; font-size: 14px !important; font-family: 'Prompt', sans-serif !important; }
+        .aplayer .aplayer-author { color: #aaa !important; }
+        .aplayer .aplayer-list { background: rgba(20, 20, 20, 0.95) !important; }
+        .aplayer .aplayer-list li { border-top: 1px solid #333 !important; }
+        .aplayer .aplayer-list li:hover { background: #333 !important; }
+        .aplayer .aplayer-list li.aplayer-list-light { background: rgba(212, 175, 55, 0.1) !important; }
+        .aplayer .aplayer-list li .aplayer-list-title { color: #eee !important; }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h2 class="page-title">🎵 Music Collections</h2>
+    </div>
+
+    <input type="text" id="search" class="search-box" placeholder="🔍 ค้นหาชื่อเพลง หรือ โฟลเดอร์..." oninput="filterMusic()">
+
+    <div class="quick-actions">
+        <button class="btn-quick btn-quick-save" onclick="saveQueueToStorage()">💾 เซฟคิว</button>
+        <button class="btn-quick btn-quick-clear" onclick="clearCurrentQueue()">🗑️ ล้างคิว</button>
+        <button class="btn-quick btn-quick-vault" onclick="toggleModal('queue-modal')">📂 คลังคิว</button>
+    </div>
+
+    <div id="content-area" style="text-align: center; color: #666;">กำลังเตรียมคลังเพลง...</div>
+
+    <div id="queue-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-modal" onclick="toggleModal('queue-modal')">✖</button>
+            <h3 style="margin-top: 0; color: var(--gold); margin-bottom: 20px;">📂 คลังคิวที่บันทึกไว้</h3>
+            <div id="saved-queues-area" style="max-height: 300px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <div id="aplayer-container">
+        <div id="aplayer"></div>
+    </div>
+
+    <script>
+        let allMusic = [];
+        let ap = null;
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.innerText = message;
+            toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--gold); color:#000; padding:10px 20px; border-radius:20px; z-index:3000; font-size:14px; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.5); transition: opacity 0.5s;';
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 2000);
+        }
+
+        async function loadMusic() {
+            try {
+                const res = await fetch(`database.json?v=${Date.now()}`);
+                const data = await res.json();
+                allMusic = data.music || [];
+                initAPlayer();
+                renderMusic(allMusic);
+                renderSavedQueues();
+            } catch (e) { 
+                console.error("Load failed", e);
+                document.getElementById('content-area').innerHTML = "ไม่สามารถโหลดคลังเพลงได้ หรือยังไม่มีข้อมูล";
+            }
+        }
+
+        function initAPlayer() {
+            ap = new APlayer({
+                container: document.getElementById('aplayer'),
+                listFolded: true,
+                listMaxHeight: '250px',
+                theme: '#d4af37',
+                audio: []
+            });
+        }
+
+        function toggleFolder(folderId) {
+            const content = document.getElementById(`content-${folderId}`);
+            const icon = document.getElementById(`icon-${folderId}`);
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                icon.style.transform = "rotate(0deg)";
+            } else {
+                content.style.display = "block";
+                icon.style.transform = "rotate(180deg)";
+            }
+        }
+
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal.classList.contains('active')) {
+                modal.classList.remove('active');
+                setTimeout(() => modal.style.display = 'none', 300);
+            } else {
+                modal.style.display = 'flex';
+                void modal.offsetWidth;
+                modal.classList.add('active');
+                renderSavedQueues();
+            }
+        }
+
+        // ฟังก์ชันช่วยสร้าง HTML รายชื่อเพลง
+        function createSongListHTML(songs, artistName) {
+            return songs.map(song => `
+                <div class="music-item">
+                    <div class="song-info">${song.title}</div>
+                    <div class="action-group">
+                        <button class="btn-icon btn-add-q" onclick="addToQueueOnly('${song.url}', '${song.title.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')" title="เพิ่มลงคิว">➕</button>
+                        <button class="btn-icon btn-play-now" onclick="playNow('${song.url}', '${song.title.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')" title="เล่นทันที">▶</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderMusic(songs) {
+            const area = document.getElementById('content-area');
+            const groups = {};
+            
+            // 1. จัดกลุ่มข้อมูลแบบ Nested
+            songs.forEach(s => {
+                let relPath = "";
+                try {
+                    const decodedUrl = decodeURIComponent(s.url);
+                    const match = decodedUrl.split('/7_music/');
+                    relPath = match.length > 1 ? match[1] : decodedUrl.split('/').pop();
+                } catch(e) {
+                    relPath = s.url.split('/').pop();
+                }
+
+                const parts = relPath.split('/');
+                
+                // === ส่วนที่เพิ่มเข้ามาเพื่อจัดการ audio_files ===
+                // ถ้าโฟลเดอร์แรกชื่อ audio_files ให้ตัดมันทิ้งไปเลย
+                if (parts.length > 0 && parts[0] === 'audio_files') {
+                    parts.shift(); 
+                }
+                // ===========================================
+
+                parts.pop(); // เอาชื่อไฟล์เพลงออก เหลือแต่ path โฟลเดอร์
+
+                let mainFolder = "ทั่วไป";
+                let subFolder = null;
+
+                if (parts.length === 1) {
+                    mainFolder = parts[0];
+                } else if (parts.length > 1) {
+                    mainFolder = parts[0];
+                    subFolder = parts[1];
+                }
+
+                if (!groups[mainFolder]) groups[mainFolder] = { __songs__: [] };
+                
+                if (subFolder) {
+                    if (!groups[mainFolder][subFolder]) groups[mainFolder][subFolder] = [];
+                    groups[mainFolder][subFolder].push(s);
+                } else {
+                    groups[mainFolder].__songs__.push(s);
+                }
+            });
+
+            if (Object.keys(groups).length === 0) {
+                area.innerHTML = "<div style='text-align:center; color:#666;'>ไม่พบข้อมูลเพลง</div>";
+                return;
+            }
+
+            // 2. สร้าง HTML โครงสร้างแบบชั้นๆ
+            let html = "";
+            let mainIdx = 0;
+
+            Object.keys(groups).sort().forEach(main => {
+                const folderData = groups[main];
+                
+                // นับจำนวนเพลงทั้งหมดในโฟลเดอร์หลัก (รวมซับโฟลเดอร์)
+                let totalSongs = folderData.__songs__.length;
+                Object.keys(folderData).forEach(k => {
+                    if (k !== '__songs__') totalSongs += folderData[k].length;
+                });
+
+                html += `
+                    <div class="folder-card">
+                        <div class="folder-header" onclick="toggleFolder('main-${mainIdx}')">
+                            <div class="folder-title">📁 ${main} <span style="font-size: 12px; color: #666; font-weight: normal;">(${totalSongs})</span></div>
+                            <div class="folder-icon" id="icon-main-${mainIdx}">▼</div>
+                        </div>
+                        <div class="folder-content" id="content-main-${mainIdx}">
+                `;
+
+                // Render ซับโฟลเดอร์ (ถ้ามี)
+                let subIdx = 0;
+                Object.keys(folderData).sort().forEach(sub => {
+                    if (sub === '__songs__') return;
+                    
+                    html += `
+                        <div class="subfolder-card">
+                            <div class="subfolder-header" onclick="toggleFolder('sub-${mainIdx}-${subIdx}')">
+                                <div>📂 ${sub} <span style="font-size: 11px; color: #888;">(${folderData[sub].length})</span></div>
+                                <div class="folder-icon" id="icon-sub-${mainIdx}-${subIdx}">▼</div>
+                            </div>
+                            <div class="subfolder-content" id="content-sub-${mainIdx}-${subIdx}">
+                                ${createSongListHTML(folderData[sub], main)}
+                            </div>
+                        </div>
+                    `;
+                    subIdx++;
+                });
+
+                // Render เพลงที่อยู่ตรงๆ ในโฟลเดอร์หลัก
+                if (folderData.__songs__.length > 0) {
+                    html += createSongListHTML(folderData.__songs__, main);
+                }
+
+                html += `</div></div>`;
+                mainIdx++;
+            });
+
+            area.innerHTML = html;
+        }
+
+        function playNow(url, title, artist) {
+            const song = { name: title, artist: artist, url: url, theme: '#d4af37' };
+            ap.list.add([song]);
+            ap.list.switch(ap.list.audios.length - 1);
+            ap.play();
+        }
+
+        function addToQueueOnly(url, title, artist) {
+            ap.list.add([{ name: title, artist: artist, url: url, theme: '#d4af37' }]);
+            showToast('เพิ่มลงคิวแล้ว');
+        }
+
+        function saveQueueToStorage() {
+            if (ap.list.audios.length === 0) {
+                showToast("ไม่มีเพลงในคิวให้เซฟครับ");
+                return;
+            }
+            const name = prompt("กรุณาตั้งชื่อคลังคิวเพลงนี้:", "คิวของรันนรา " + new Date().toLocaleTimeString('th-TH'));
+            if (name) {
+                const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
+                collections[name] = ap.list.audios;
+                localStorage.setItem('my_music_vault', JSON.stringify(collections));
+                showToast("บันทึกคิวเรียบร้อย");
+            }
+        }
+
+        function clearCurrentQueue() {
+            if (ap.list.audios.length === 0) {
+                showToast("รายการคิวว่างเปล่าอยู่แล้วครับ");
+                return;
+            }
+            if (confirm("ล้างรายการคิวที่กำลังเล่นอยู่ทั้งหมด?")) {
+                ap.list.clear();
+                showToast("ล้างคิวเรียบร้อย");
+            }
+        }
+
+        function renderSavedQueues() {
+            const container = document.getElementById('saved-queues-area');
+            const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
+            const keys = Object.keys(collections);
+
+            if (keys.length === 0) {
+                container.innerHTML = "<div style='color:#666; font-size:13px; text-align:center; padding: 20px 0;'>ยังไม่มีคลังคิวที่บันทึกไว้</div>";
+                return;
+            }
+
+            container.innerHTML = keys.map(k => `
+                <div class="storage-item">
+                    <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 10px;">💽 ${k} <br><span style="font-size: 11px; color: #888;">${collections[k].length} เพลง</span></span>
+                    <div style="display:flex; gap: 5px;">
+                        <button class="btn-small btn-load" onclick="loadVaultQueue('${k}')">โหลด</button>
+                        <button class="btn-small btn-del" onclick="deleteVaultQueue('${k}')">ลบ</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadVaultQueue(name) {
+            const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
+            if (collections[name]) {
+                ap.list.clear();
+                ap.list.add(collections[name]);
+                toggleModal('queue-modal'); 
+                if(ap.list.audios.length > 0) ap.play();
+                showToast("โหลดคิวเรียบร้อย");
+            }
+        }
+
+        function deleteVaultQueue(name) {
+            if (confirm(`ต้องการลบคลังคิว "${name}" ใช่หรือไม่?`)) {
+                const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
+                delete collections[name];
+                localStorage.setItem('my_music_vault', JSON.stringify(collections));
+                renderSavedQueues();
+            }
+        }
+
+        function filterMusic() {
+            const term = document.getElementById('search').value.toLowerCase();
+            const filtered = allMusic.filter(s => 
+                s.title.toLowerCase().includes(term) || s.url.toLowerCase().includes(term)
+            );
+            renderMusic(filtered);
+            
+            // เปิดโฟลเดอร์ทั้งหมดเวลาค้นหาเจอ
+            if (term.trim() !== '') {
+                document.querySelectorAll('.folder-content, .subfolder-content').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.folder-icon').forEach(el => el.style.transform = 'rotate(180deg)');
+            }
+        }
+
+        loadMusic();
+    </script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ข้อตกลงการใช้งาน - Reader App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .terms-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+        }
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        /* กล่องข้อความที่เลื่อนอ่านได้ */
+        .terms-box {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 15px;
+            height: 250px;
+            overflow-y: auto; /* ทำให้เลื่อนขึ้นลงได้ */
+            font-size: 14px;
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .terms-box h4 {
+            margin-top: 0;
+            color: #333;
+        }
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #333;
+        }
+        .checkbox-container input {
+            margin-top: 4px;
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        .btn-accept {
+            width: 100%;
+            padding: 12px;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-accept:hover {
+            background: #667eea;
+        }
+        /* สไตล์สำหรับปุ่มตอนที่ยังไม่ได้ติ๊กยอมรับ */
+        .btn-accept:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="terms-container">
+        <div class="title">📄 ข้อตกลงการใช้งาน</div>
+        
+        <div class="terms-box">
+            <h4>เงื่อนไขและข้อตกลง (Terms of Service)</h4>
+            <p>ยินดีต้อนรับสู่ My Reader App โปรดอ่านข้อตกลงนี้อย่างละเอียดก่อนเข้าใช้งาน</p>
+            <p><strong>1. การยอมรับเงื่อนไข:</strong> การที่คุณเข้าใช้งานแอปพลิเคชันนี้ ถือว่าคุณได้ยอมรับเงื่อนไขและข้อตกลงทั้งหมดที่ระบุไว้</p>
+            <p><strong>2. ลิขสิทธิ์เนื้อหา:</strong> นิยายและผลงานเขียนทั้งหมดในแอปพลิเคชันนี้ เป็นลิขสิทธิ์ของผู้เขียนหรือผู้แปล ห้ามมิให้ผู้ใดคัดลอก ดัดแปลง ทำซ้ำ หรือนำไปเผยแพร่ที่อื่นโดยไม่ได้รับอนุญาต</p>
+            <p><strong>3. การใช้งานที่เหมาะสม:</strong> ผู้ใช้ตกลงที่จะใช้แอปพลิเคชันนี้เพื่อความบันเทิงส่วนตัวเท่านั้น และจะไม่กระทำการใดๆ ที่ก่อให้เกิดความเสียหายต่อระบบ</p>
+            <p><strong>4. ข้อมูลส่วนบุคคล:</strong> แอปพลิเคชันจะจัดเก็บข้อมูลอีเมลของคุณเพื่อใช้ในการเข้าสู่ระบบและดูแลบัญชีผู้ใช้เท่านั้น เราจะไม่เปิดเผยข้อมูลของคุณให้แก่บุคคลที่สาม</p>
+        </div>
+
+        <label class="checkbox-container">
+            <input type="checkbox" id="acceptCheckbox" onchange="toggleButton()">
+            <span>ฉันได้อ่านและยอมรับเงื่อนไขข้อตกลงการใช้งานทั้งหมด รวมถึงนโยบายความเป็นส่วนตัว</span>
+        </label>
+
+        <button class="btn-accept" id="continueBtn" disabled onclick="goToWelcome()">ยอมรับและเข้าสู่แอปพลิเคชัน</button>
+    </div>
+
+    <script>
+    // ฟังก์ชันสำหรับเปิด-ปิดปุ่ม
+    function toggleButton() {
+        const checkbox = document.getElementById('acceptCheckbox');
+        const button = document.getElementById('continueBtn');
+        button.disabled = !checkbox.checked;
+    }
+
+    // ฟังก์ชันเมื่อกดปุ่ม "ยอมรับและเข้าสู่แอป"
+    function goToWelcome() {
+        // บันทึกสถานะว่ายอมรับเงื่อนไขแล้วลงในเครื่อง
+        localStorage.setItem('terms_accepted', 'true');
+        
+        // ส่งผู้ใช้ไปที่หน้าเลือกหมวดหมู่หนังสือ (categories.html)
+        // หรือถ้าคุณรันนรามีหน้า welcome.html ก็เปลี่ยนกลับได้ครับ
+        window.location.href = 'categories.html';
+    }
+
+    // ตรวจสอบเบื้องต้น: ถ้าเคยยอมรับแล้ว ให้ข้ามหน้านี้ไปเลยก็ได้ (Optional)
+    window.onload = function() {
+        if (localStorage.getItem('terms_accepted') === 'true') {
+            // window.location.href = 'categories.html'; // เปิดใช้หากต้องการให้ข้ามหน้านี้อัตโนมัติ
+        }
+    };
+</script>
+</body>
+</html>

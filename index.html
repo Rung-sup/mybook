@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <link rel="apple-touch-icon" href="https://rung-sup.github.io/mybook/app-icon.png">
+
+<link rel="icon" type="image/png" href="https://rung-sup.github.io/mybook/app-icon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - Reader App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body {
+            margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .auth-container {
+            background-color: rgba(255, 255, 255, 0.95); padding: 35px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 400px; text-align: center;
+        }
+        .title { font-size: 26px; font-weight: 600; color: #333; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; outline: none; }
+        input:focus { border-color: #764ba2; }
+        .btn-main {
+            width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px;
+            font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 15px; font-weight: 500;
+        }
+        .btn-main:hover { background: #667eea; }
+        .btn-main:disabled { background: #ccc; cursor: not-allowed; }
+        .toggle-link { margin-top: 20px; font-size: 14px; color: #555; cursor: pointer; text-decoration: underline; transition: 0.3s; }
+        .toggle-link:hover { color: #764ba2; }
+        
+        #register-card { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <div id="login-card">
+            <div class="title">🔑 เข้าสู่ระบบ</div>
+            <input type="email" id="login-email" placeholder="อีเมลของคุณ">
+            <input type="password" id="login-pass" placeholder="รหัสผ่าน">
+            <button class="btn-main" id="btn-login" onclick="handleLogin()">เข้าใช้งาน</button>
+            <div class="toggle-link" onclick="toggleAuth('register')">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</div>
+        </div>
+
+        <div id="register-card">
+            <div class="title">📝 ลงทะเบียนใหม่</div>
+            <input type="text" id="reg-name" placeholder="ชื่อ-นามสกุล">
+            <input type="email" id="reg-email" placeholder="อีเมล">
+            <input type="password" id="reg-pass" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)">
+            <button class="btn-main" id="btn-reg" onclick="handleRegister()">สมัครสมาชิก</button>
+            <div class="toggle-link" onclick="toggleAuth('login')">มีบัญชีแล้ว? เข้าสู่ระบบที่นี่</div>
+        </div>
+    </div>
+
+    <script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+        authDomain: "myreaderapp-89e75.firebaseapp.com",
+        projectId: "myreaderapp-89e75",
+        storageBucket: "myreaderapp-89e75.firebasestorage.app",
+        messagingSenderId: "1016151043482",
+        appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+    };
+    
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+
+    // --- ฟังก์ชันหลักในการควบคุมเส้นทาง ---
+    function checkTermsAndRedirect() {
+        const hasAccepted = localStorage.getItem('terms_accepted');
+        if (hasAccepted === 'true') {
+            window.location.href = 'categories.html';
+        } else {
+            window.location.href = 'terms.html';
+        }
+    }
+
+    // 1. ตรวจสอบสถานะเมื่อเปิดหน้าเว็บ (กรณีล็อกอินค้างไว้)
+    auth.onAuthStateChanged((user) => {
+        if (user && user.emailVerified) {
+            checkTermsAndRedirect();
+        }
+    });
+
+    function toggleAuth(mode) {
+        const loginCard = document.getElementById('login-card');
+        const registerCard = document.getElementById('register-card');
+        if (mode === 'register') {
+            loginCard.style.display = 'none';
+            registerCard.style.display = 'block';
+        } else {
+            loginCard.style.display = 'block';
+            registerCard.style.display = 'none';
+        }
+    }
+
+    // 2. ฟังก์ชันสมัครสมาชิก (เพิ่มการรีเซ็ตค่ายอมรับเงื่อนไข)
+    function handleRegister() {
+        const email = document.getElementById('reg-email').value;
+        const pass = document.getElementById('reg-pass').value;
+        const btn = document.getElementById('btn-reg');
+
+        if (!email || !pass) {
+            alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "กำลังลงทะเบียน...";
+
+        auth.createUserWithEmailAndPassword(email, pass)
+            .then((userCredential) => {
+                // *** จุดสำคัญ: เมื่อสมัครใหม่ ให้ล้างค่าการยอมรับเงื่อนไขเก่าทิ้งทันที ***
+                localStorage.removeItem('terms_accepted');
+                
+                return userCredential.user.sendEmailVerification().then(() => {
+                    auth.signOut();
+                    alert("ลงทะเบียนสำเร็จ! กรุณากดยืนยันในอีเมลก่อนเข้าใช้งานครับ");
+                    toggleAuth('login');
+                });
+            })
+            .catch((error) => {
+                alert("เกิดข้อผิดพลาด: " + error.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerText = "สมัครสมาชิก";
+            });
+    }
+
+    // 3. ฟังก์ชันเข้าสู่ระบบ
+    function handleLogin() {
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-pass').value;
+        const btn = document.getElementById('btn-login');
+
+        if (!email || !pass) {
+            alert("กรุณากรอกอีเมลและรหัสผ่าน");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = "กำลังตรวจสอบ...";
+
+        auth.signInWithEmailAndPassword(email, pass)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                if (user.emailVerified) {
+                    checkTermsAndRedirect();
+                } else {
+                    alert("คุณยังไม่ได้ยืนยันอีเมลครับ");
+                    auth.signOut();
+                    btn.disabled = false;
+                    btn.innerText = "เข้าใช้งาน";
+                }
+            })
+            .catch((error) => {
+                alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+                btn.disabled = false;
+                btn.innerText = "เข้าใช้งาน";
+            });
+    }
+    </script>
+</body>
+</html>

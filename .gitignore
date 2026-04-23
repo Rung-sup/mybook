@@ -1,0 +1,4 @@
+node_modules/
+_damaged_files/
+.DS_Store
+Thumbs.db

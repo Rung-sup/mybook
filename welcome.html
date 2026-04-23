@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ยินดีต้อนรับ - Reader App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            /* พื้นหลังสีเข้มขึ้นนิดนึงให้ดูพรีเมียม */
+            background: linear-gradient(135deg, #1a2a6c 0%, #b21f1f 50%, #fdbb2d 100%);
+        }
+        .welcome-container {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 50px 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 450px;
+            text-align: center;
+        }
+        .icon-party {
+            font-size: 60px;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #555;
+            font-size: 16px;
+            margin-bottom: 40px;
+            line-height: 1.5;
+        }
+        .btn-enter {
+            display: inline-block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+            color: white;
+            border: none;
+            border-radius: 30px; /* ปุ่มโค้งมนแบบแคปซูล */
+            font-size: 18px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-enter:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(255, 75, 43, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="welcome-container">
+        <div class="icon-party">🎉</div>
+        <div class="title">ยินดีต้อนรับเข้าสู่แอป!</div>
+        <div class="description">
+            สมัครสมาชิกเสร็จสมบูรณ์ เตรียมพบกับคลังนิยายมากมายที่รอให้คุณไปสัมผัส
+        </div>
+
+        <a href="categories.html" class="btn-enter">เข้าสู่ความบันเทิง 🚀</a>
+    </div>
+
+</body>
+</html>

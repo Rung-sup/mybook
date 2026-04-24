@@ -32,9 +32,9 @@ def main():
         if cat in ['covers', '.git', '.github', 'metadata', 'scripts']: continue
         cat_path = os.path.join(library_path, cat)
         
-        # 🎵 หมวดเพลง
+        # 🎵 หมวดเพลง (รองรับ 7_ ทุกรูปแบบ)
         if cat.startswith("7"):
-            print(f"🔗 กำลังสแกนห้องเพลง: {cat}")
+            print(f"🔗 สแกนห้องเพลง: {cat}")
             for root, dirs, files in os.walk(cat_path):
                 for file_name in files:
                     allowed_ext = ('.mp3', '.m4a', '.flac', '.wav', '.aac', '.wma')
@@ -43,7 +43,6 @@ def main():
                         f_size_mb = os.path.getsize(full_path) / (1024 * 1024)
                         
                         if f_size_mb > MAX_FILE_SIZE_MB:
-                            large_files_warning.append(f"[MUSIC] {file_name} ({f_size_mb:.2f} MB)")
                             continue
                         
                         rel_path = os.path.relpath(full_path, cat_path)
@@ -51,10 +50,17 @@ def main():
                         safe_url = urllib.parse.quote(clean_path)
                         cover_id = generate_cover_id(os.path.join(cat, rel_path))
                         
+                        # ✅ แก้ไขจุดนี้: ดึงชื่อโฟลเดอร์ย่อยมาเป็นชื่อ "Album" หรือ "Folder"
+                        # ถ้าเพลงอยู่ใน 7_music_Vol2/audio_files/สามก๊ก/01.mp3
+                        # path_parts จะช่วยแยกชื่อ "สามก๊ก" ออกมาครับ
+                        path_parts = rel_path.split(os.sep)
+                        folder_name = path_parts[-2] if len(path_parts) > 1 else "ทั่วไป"
+
                         all_music.append({
                             "title": os.path.splitext(file_name)[0],
                             "url": f"https://raw.githubusercontent.com/{github_user}/{cat}/main/{safe_url}",
-                            "category": cat, 
+                            "category": cat,
+                            "folder": folder_name, # ✅ ส่งชื่อโฟลเดอร์ (เช่น สามก๊ก) ไปให้แอป
                             "cover_id": cover_id, 
                             "is_music": True
                         })

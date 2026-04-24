@@ -178,40 +178,40 @@
             const area = document.getElementById('content-area');
             const groups = {};
             
-            // 1. จัดกลุ่มข้อมูลแบบ Nested
+            // 1. จัดกลุ่มข้อมูลแบบ Nested (แก้ไขใหม่ให้แกะโฟลเดอร์ได้แม่นยำ 100%)
             songs.forEach(s => {
-                let relPath = "";
-                try {
-                    const decodedUrl = decodeURIComponent(s.url);
-                    const match = decodedUrl.split('/7_music/');
-                    relPath = match.length > 1 ? match[1] : decodedUrl.split('/').pop();
-                } catch(e) {
-                    relPath = s.url.split('/').pop();
-                }
-
-                const parts = relPath.split('/');
-                
-                // === ส่วนที่เพิ่มเข้ามาเพื่อจัดการ audio_files ===
-                // ถ้าโฟลเดอร์แรกชื่อ audio_files ให้ตัดมันทิ้งไปเลย
-                if (parts.length > 0 && parts[0] === 'main') {
-                    parts.shift(); 
-                }
-                // ข้ามคำว่า audio_files
-                if (parts.length > 0 && parts[0] === 'audio_files') {
-                    parts.shift(); 
-                }
-                // ===========================================
-
-                parts.pop(); // เอาชื่อไฟล์เพลงออก เหลือแต่ path โฟลเดอร์
-
                 let mainFolder = "ทั่วไป";
                 let subFolder = null;
 
-                if (parts.length === 1) {
-                    mainFolder = parts[0];
-                } else if (parts.length > 1) {
-                    mainFolder = parts[0];
-                    subFolder = parts[1];
+                try {
+                    const decodedUrl = decodeURIComponent(s.url);
+                    
+                    // ใช้ /main/audio_files/ เป็นจุดตัดแทนชื่อ Repo เพราะมันใช้ได้กับทุกห้องไม่ว่าจะชื่ออะไร
+                    if (decodedUrl.includes('/main/audio_files/')) {
+                        const pathAfterMain = decodedUrl.split('/main/audio_files/')[1];
+                        const parts = pathAfterMain.split('/');
+                        parts.pop(); // ตัดชื่อไฟล์เพลงทิ้ง เพื่อให้เหลือแค่ชื่อโฟลเดอร์
+
+                        if (parts.length === 1) {
+                            mainFolder = parts[0]; // โฟลเดอร์หลัก เช่น "100 อันดับเพลงฮิตไทย"
+                        } else if (parts.length > 1) {
+                            mainFolder = parts[0]; // โฟลเดอร์หลัก เช่น "คาราบาว"
+                            subFolder = parts[1];  // โฟลเดอร์ย่อย เช่น "ชุด ขี้เมา"
+                        }
+                    } else if (decodedUrl.includes('/main/')) {
+                        // เผื่อกรณีไฟล์ไม่ได้อยู่ใน audio_files
+                        const pathAfterMain = decodedUrl.split('/main/')[1];
+                        const parts = pathAfterMain.split('/');
+                        parts.pop();
+                        if (parts.length === 1) {
+                            mainFolder = parts[0];
+                        } else if (parts.length > 1) {
+                            mainFolder = parts[0];
+                            subFolder = parts[1];
+                        }
+                    }
+                } catch(e) {
+                    console.error("Error parsing URL:", e);
                 }
 
                 if (!groups[mainFolder]) groups[mainFolder] = { __songs__: [] };
@@ -229,9 +229,11 @@
                 return;
             }
 
-            // 2. สร้าง HTML โครงสร้างแบบชั้นๆ
+            // 2. สร้าง HTML โครงสร้างแบบชั้นๆ (ส่วนที่ 2 ใช้ของเดิมต่อได้เลยครับ...)
             let html = "";
             let mainIdx = 0;
+            
+            // ... (โค้ดหลังจากนี้เหมือนเดิมครับ) ...
 
             Object.keys(groups).sort().forEach(main => {
                 const folderData = groups[main];

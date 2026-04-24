@@ -87,10 +87,18 @@ def main():
                         safe_url = urllib.parse.quote(clean_path)
                         cover_id = generate_cover_id(os.path.join(cat, rel_path))
                         
+                        # ✅ 1. เพิ่มการดึงชื่อโฟลเดอร์ให้หนังสือแบบเดียวกับเพลง
+                        current_folder = os.path.basename(root)
+                        if current_folder == cat:
+                            display_folder = "ทั่วไป"
+                        else:
+                            display_folder = current_folder
+                        
                         all_books.append({
                             "title": os.path.splitext(file_name)[0], 
                             "url": f"https://raw.githubusercontent.com/{github_user}/{cat}/main/{safe_url}", 
                             "category": cat, 
+                            "folder": display_folder, # ✅ 2. เพิ่มคีย์ "folder" เข้าไปในฐานข้อมูล
                             "cover_id": cover_id, 
                             "file_size": f_size_bytes
                         })

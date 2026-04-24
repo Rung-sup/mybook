@@ -1,58 +1,65 @@
 import os
 import subprocess
+import time
 
 def run_git_command(command):
     try:
-        # ใช้ encoding utf-8 เพื่อรองรับชื่อไฟล์ภาษาไทย
-        result = subprocess.run(command, check=True, capture_output=True, text=True, encoding='utf-8')
+        # ใช้ shell=True และระบุ encoding เพื่อดึงชื่อไฟล์ภาษาไทยที่ GHD อ่านอยู่
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8')
         return result.stdout
-    except subprocess.CalledProcessError as e:
-        # ถ้าไม่มีอะไรให้ commit หรือ push git อาจจะ return error code มา เราจะดึงข้อความมาเช็ก
+    except Exception as e:
         return None
 
-def batch_push_all(batch_size=10):
-    print("🔍 กำลังสแกนหาไฟล์ที่มีการเปลี่ยนแปลงในทุกโฟลเดอร์...")
+def push_from_ghd_list(batch_size=10):
+    print("🔍 กำลังดึงรายการไฟล์ที่ค้างอยู่ใน GitHub Desktop...")
     
-    # ดึงไฟล์ที่แก้ไข (Modified) และ ไฟล์ใหม่ (Untracked) ทั้งหมด
-    # -o คือ others (ไฟล์ใหม่), -m คือ modified (ไฟล์แก้ไข), --exclude-standard คือข้ามไฟล์ใน .gitignore
-    cmd = ['git', 'ls-files', '-o', '-m', '--exclude-standard']
-    raw_files = run_git_command(cmd)
+    # ดึงรายชื่อไฟล์ที่ GHD เห็นว่ามีการเปลี่ยนแปลง (ทั้ง Untracked และ Modified)
+    # คำสั่งนี้จะลิสต์ไฟล์เหมือนที่ปรากฏในหน้า Changes ของ GHD
+    raw_untracked = run_git_command("git ls-files --others --exclude-standard")
+    raw_modified = run_git_command("git ls-files -m")
     
-    if not raw_files:
-        print("✅ ทุกอย่างเป็นปัจจุบันแล้ว ไม่พบไฟล์ที่ต้อง Push ครับ")
+    all_files = []
+    if raw_untracked: all_files.extend(raw_untracked.splitlines())
+    if raw_modified: all_files.extend(raw_modified.splitlines())
+    
+    # ลบช่องว่างและเครื่องหมายอัญประกาศ
+    files = [f.strip().strip('"') for f in all_files if f.strip()]
+    total_files = len(files)
+    
+    if total_files == 0:
+        print("✅ ไม่พบไฟล์ค้างในรายการ (หรืออาจจะต้องลองกด Refresh ใน GHD อีกครั้ง)")
         return
 
-    # จัดการรายชื่อไฟล์: ตัดช่องว่าง และลบเครื่องหมาย " ออก (สำคัญสำหรับไฟล์ภาษาไทย/มีเว้นวรรค)
-    files = [line.strip().strip('"').strip("'") for line in raw_files.split('\n') if line.strip()]
-    
-    total_files = len(files)
-    print(f"📦 พบไฟล์ที่ต้องดำเนินการทั้งหมด: {total_files} ไฟล์")
+    print(f"📦 พบไฟล์ที่ยังไม่ได้ Push ทั้งหมด {total_files} ไฟล์")
+    print(f"🚀 จะเริ่มทยอยส่งทีละ {batch_size} ไฟล์...")
 
     for i in range(0, total_files, batch_size):
-        current_batch = files[i:i + batch_size]
-        print(f"\n🚀 [กลุ่มที่ {i//batch_size + 1}] เริ่มจัดการไฟล์ที่ {i+1} ถึง {min(i+batch_size, total_files)}...")
+        batch = files[i:i + batch_size]
+        print(f"\n[กลุ่มที่ {i//batch_size + 1}] กำลังเตรียม {len(batch)} ไฟล์...")
         
-        # 1. Add ไฟล์ใน Batch
-        for file in current_batch:
-            run_git_command(['git', 'add', file])
+        # Add ไฟล์ในกลุ่มนี้
+        for file in batch:
+            # ใช้เครื่องหมายคำพูดครอบชื่อไฟล์เผื่อมีเว้นวรรค
+            run_git_command(f'git add "{file}"')
         
-        # 2. Commit
-        commit_msg = f"Auto-sync: Batch {i//batch_size + 1} ({len(current_batch)} files)"
-        run_git_command(['git', 'commit', '-m', commit_msg])
+        # Commit
+        commit_msg = f"Batch push from GHD list: group {i//batch_size + 1}"
+        run_git_command(f'git commit -m "{commit_msg}"')
         
-        # 3. Push
+        # Push
         print(f"📤 กำลัง Push ขึ้น GitHub...")
-        push_status = run_git_command(['git', 'push'])
+        push_output = run_git_command("git push")
         
-        if push_status is not None:
-            print(f"✅ สำเร็จ!")
+        if push_output is not None:
+            print(f"✅ กลุ่มที่ {i//batch_size + 1} สำเร็จ!")
         else:
-            # ถ้า Push ไม่ผ่าน อาจเกิดจากเน็ตหลุด หรือไฟล์ใหญ่เกินไป ให้หยุดเช็กก่อน
-            print(f"❌ การ Push ขัดข้อง (อาจจะติดที่ไฟล์ขนาดใหญ่หรือสัญญาณเน็ต)")
-            print("สคริปต์จะหยุดทำงานเพื่อความปลอดภัย โปรดตรวจสอบ Error ใน Terminal ครับ")
+            print(f"❌ กลุ่มนี้ติดปัญหา (อาจเพราะไฟล์ใหญ่เกินไป)")
             break
+            
+        # พักสั้นๆ เพื่อให้ Git เคลียร์ Buffer
+        time.sleep(0.5)
 
-    print("\n✨ --- ดำเนินการเสร็จสิ้นทุกรายการ --- ✨")
+    print("\n✨ --- จัดการไฟล์ที่ค้างอยู่เสร็จสิ้นครับ! ---")
 
 if __name__ == "__main__":
-    batch_push_all(batch_size=10)
+    push_from_ghd_list(10)

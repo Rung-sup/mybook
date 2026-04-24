@@ -7,6 +7,7 @@ import urllib.parse
 # --- Settings ---
 library_path = r'C:\MyLibrary'
 db_path = 'database.json'
+# ✅ อัปเดต Path ให้ตรงตามที่คุณใช้งานจริง
 music_db_path = r'C:\MyLibrary\7_music\metadata\music_db.json'
 github_user = "rung-sup"
 MAX_FILE_SIZE_MB = 95
@@ -21,7 +22,7 @@ def main():
     all_books, all_music = [], []
     large_files_warning = []
 
-    print(f"🚀 [System] กำลังอัปเดตฐานข้อมูล (รองรับ .wma)...")
+    print(f"🚀 [System] กำลังอัปเดตฐานข้อมูลและเชื่อมต่อสายไฟ...")
 
     if not os.path.exists(library_path):
         print(f"❌ ไม่พบ Library: {library_path}"); return
@@ -43,6 +44,7 @@ def main():
                         f_size_mb = os.path.getsize(full_path) / (1024 * 1024)
                         
                         if f_size_mb > MAX_FILE_SIZE_MB:
+                            large_files_warning.append(f"[MUSIC] {file_name} ({f_size_mb:.2f} MB)")
                             continue
                         
                         rel_path = os.path.relpath(full_path, cat_path)
@@ -50,17 +52,22 @@ def main():
                         safe_url = urllib.parse.quote(clean_path)
                         cover_id = generate_cover_id(os.path.join(cat, rel_path))
                         
-                        # ✅ แก้ไขจุดนี้: ดึงชื่อโฟลเดอร์ย่อยมาเป็นชื่อ "Album" หรือ "Folder"
-                        # ถ้าเพลงอยู่ใน 7_music_Vol2/audio_files/สามก๊ก/01.mp3
-                        # path_parts จะช่วยแยกชื่อ "สามก๊ก" ออกมาครับ
-                        path_parts = rel_path.split(os.sep)
-                        folder_name = path_parts[-2] if len(path_parts) > 1 else "ทั่วไป"
+                        # ✅ แก้ไขการดึงชื่อโฟลเดอร์: ใช้โฟลเดอร์ที่ไฟล์นั้นอยู่จริงๆ (Parent Folder)
+                        # หากไฟล์อยู่ใน audio_files โดยตรง จะให้ชื่อว่า "ทั่วไป" 
+                        # แต่ถ้าอยู่ในโฟลเดอร์ย่อย เช่น "สามก๊ก" จะดึงชื่อนั้นมาทันที
+                        current_folder = os.path.basename(root)
+                        if current_folder == cat or current_folder == "audio_files":
+                            display_folder = "ทั่วไป"
+                        else:
+                            display_folder = current_folder
 
                         all_music.append({
                             "title": os.path.splitext(file_name)[0],
                             "url": f"https://raw.githubusercontent.com/{github_user}/{cat}/main/{safe_url}",
                             "category": cat,
-                            "folder": folder_name, # ✅ ส่งชื่อโฟลเดอร์ (เช่น สามก๊ก) ไปให้แอป
+                            "folder": display_folder, # สำหรับแอปที่มองหา folder
+                            "album": display_folder,  # สำหรับแอปที่มองหา album
+                            "artist": display_folder, # สำหรับแอปที่มองหา artist
                             "cover_id": cover_id, 
                             "is_music": True
                         })
@@ -99,7 +106,7 @@ def main():
         json.dump(music_content, f, ensure_ascii=False, indent=4)
 
     if large_files_warning:
-        print(f"\n⚠️ ไฟล์เพลงใหญ่เกิน 95MB และถูกข้ามไป {len(large_files_warning)} ไฟล์")
+        print(f"\n⚠️ พบไฟล์ใหญ่เกิน {MAX_FILE_SIZE_MB}MB จำนวน {len(large_files_warning)} ไฟล์")
 
     print(f"\n✨ [Summary] อัปเดตเสร็จสิ้น!")
     print(f"📊 รวมหนังสือ: {len(all_books)} | รวมเพลง: {len(all_music)}")

@@ -12,7 +12,7 @@ def run_git_command(command):
 def batch_push(batch_size=10):
     # 1. ตรวจสอบสถานะไฟล์ที่เปลี่ยนแปลง
     # s = short format, --untracked-files=all เพื่อหาไฟล์ใหม่ในโฟลเดอร์ย่อยด้วย
-    status = run_git_command(['git', 'status', '-s', '--untracked-files=all'])
+    status = run_git_command(['git', 'status', '-s', '-uall'])
     
     if not status:
         print("ไม่มีไฟล์ที่เปลี่ยนแปลงครับ ทุกอย่างเป็นปัจจุบันแล้ว")

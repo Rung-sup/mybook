@@ -7,7 +7,7 @@ import urllib.parse
 # --- Settings ---
 library_path = r'C:\MyLibrary'
 db_path = 'database.json'
-music_db_path = 'music_db.json'
+music_db_path = r'C:\MyLibrary\7_music\metadata\music_db.json'
 github_user = "rung-sup"
 MAX_FILE_SIZE_MB = 95
 

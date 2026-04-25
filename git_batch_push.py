@@ -1,65 +1,59 @@
-import os
 import subprocess
 import time
+import os
 
-def run_git_command(command):
+def run_git(command, cwd):
     try:
-        # ใช้ shell=True และระบุ encoding เพื่อดึงชื่อไฟล์ภาษาไทยที่ GHD อ่านอยู่
-        result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8')
-        return result.stdout
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore', cwd=cwd)
+        return result.stdout.strip()
     except Exception as e:
+        print(f"Error: {e}")
         return None
 
-def push_from_ghd_list(batch_size=10):
-    print("🔍 กำลังดึงรายการไฟล์ที่ค้างอยู่ใน GitHub Desktop...")
+def push_music_batches(batch_size=10):
+    # กำหนดตำแหน่งที่ตั้งของ Library คุณ
+    target_path = r"C:\MyLibrary"
     
-    # ดึงรายชื่อไฟล์ที่ GHD เห็นว่ามีการเปลี่ยนแปลง (ทั้ง Untracked และ Modified)
-    # คำสั่งนี้จะลิสต์ไฟล์เหมือนที่ปรากฏในหน้า Changes ของ GHD
-    raw_untracked = run_git_command("git ls-files --others --exclude-standard")
-    raw_modified = run_git_command("git ls-files -m")
-    
-    all_files = []
-    if raw_untracked: all_files.extend(raw_untracked.splitlines())
-    if raw_modified: all_files.extend(raw_modified.splitlines())
-    
-    # ลบช่องว่างและเครื่องหมายอัญประกาศ
-    files = [f.strip().strip('"') for f in all_files if f.strip()]
-    total_files = len(files)
-    
-    if total_files == 0:
-        print("✅ ไม่พบไฟล์ค้างในรายการ (หรืออาจจะต้องลองกด Refresh ใน GHD อีกครั้ง)")
+    if not os.path.exists(target_path):
+        print(f"❌ ไม่พบโฟลเดอร์ {target_path} กรุณาเช็กชื่อโฟลเดอร์อีกครั้งครับ")
         return
 
-    print(f"📦 พบไฟล์ที่ยังไม่ได้ Push ทั้งหมด {total_files} ไฟล์")
-    print(f"🚀 จะเริ่มทยอยส่งทีละ {batch_size} ไฟล์...")
+    print(f"📍 กำลังทำงานที่: {target_path}")
 
+    # 1. กวาดไฟล์ทั้งหมดใน MyLibrary (รวมถึง 7_music_Vol2)
+    print("📂 กำลังสแกนหาไฟล์ใหม่และไฟล์ที่เปลี่ยนแปลง...")
+    run_git("git add .", target_path)
+    
+    # 2. ดึงรายชื่อไฟล์ที่รอ Push
+    status = run_git("git diff --name-only --cached", target_path)
+    
+    if not status:
+        print("✅ ไม่พบไฟล์ที่ต้องดำเนินการ (อาจจะ Push ไปหมดแล้ว หรือ Path ไม่ใช่ Git Repo)")
+        return
+
+    files = status.split('\n')
+    total_files = len(files)
+    print(f"📦 พบไฟล์ในคิวทั้งหมด: {total_files} ไฟล์")
+
+    # 3. ถอยกลับมาเพื่อทยอย Push ทีละกลุ่ม
+    run_git("git reset", target_path)
+
+    # 4. เริ่ม Loop ทยอยส่ง
     for i in range(0, total_files, batch_size):
         batch = files[i:i + batch_size]
-        print(f"\n[กลุ่มที่ {i//batch_size + 1}] กำลังเตรียม {len(batch)} ไฟล์...")
+        print(f"\n🚀 [กลุ่มที่ {i//batch_size + 1}] กำลังจัดการไฟล์ที่ {i+1} ถึง {min(i+batch_size, total_files)}...")
         
-        # Add ไฟล์ในกลุ่มนี้
         for file in batch:
-            # ใช้เครื่องหมายคำพูดครอบชื่อไฟล์เผื่อมีเว้นวรรค
-            run_git_command(f'git add "{file}"')
+            run_git(f'git add "{file}"', target_path)
         
-        # Commit
-        commit_msg = f"Batch push from GHD list: group {i//batch_size + 1}"
-        run_git_command(f'git commit -m "{commit_msg}"')
+        commit_msg = f"Sync Music Vol2 - Batch {i//batch_size + 1}"
+        run_git(f'git commit -m "{commit_msg}"', target_path)
         
-        # Push
         print(f"📤 กำลัง Push ขึ้น GitHub...")
-        push_output = run_git_command("git push")
+        run_git("git push", target_path)
+        print(f"✅ สำเร็จ!")
         
-        if push_output is not None:
-            print(f"✅ กลุ่มที่ {i//batch_size + 1} สำเร็จ!")
-        else:
-            print(f"❌ กลุ่มนี้ติดปัญหา (อาจเพราะไฟล์ใหญ่เกินไป)")
-            break
-            
-        # พักสั้นๆ เพื่อให้ Git เคลียร์ Buffer
-        time.sleep(0.5)
-
-    print("\n✨ --- จัดการไฟล์ที่ค้างอยู่เสร็จสิ้นครับ! ---")
+        time.sleep(1) # ป้องกัน Server ตัดการเชื่อมต่อ
 
 if __name__ == "__main__":
-    push_from_ghd_list(10)
+    push_music_batches(10)

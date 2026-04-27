@@ -237,7 +237,6 @@
         currentBookId = btoa(encodeURIComponent(url));
         document.getElementById('reader-overlay').style.display = 'flex';
         
-        // ล้าง Canvas ก่อนเปิดเล่มใหม่
         const canvas = document.getElementById('pdf-canvas');
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -251,11 +250,28 @@
     }
 
     async function renderPage(num) {
+        if (!pdfDoc || num < 1 || num > pdfDoc.numPages) return;
+        
+        currentPage = num; // 🟢 อัปเดตหน้าปัจจุบัน (ที่ลืมใส่ไปในรอบที่แล้วครับ!)
+        
         const page = await pdfDoc.getPage(num);
         const canvas = document.getElementById('pdf-canvas');
         const ctx = canvas.getContext('2d');
-        const viewport = page.getViewport({ scale: window.innerWidth / page.getViewport({scale:1}).width });
-        canvas.width = viewport.width; canvas.height = viewport.height;
+        
+        // เรนเดอร์แบบความคมชัดสูง (HD) 
+        const outputScale = window.devicePixelRatio || 1;
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = window.innerWidth / unscaledViewport.width;
+        const viewport = page.getViewport({ scale: scale });
+        
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.style.width = viewport.width + "px";
+        canvas.style.height = viewport.height + "px";
+        ctx.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+        
+        document.getElementById('pdf-render-container').scrollTop = 0;
+        
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
         
@@ -267,10 +283,13 @@
         }
     }
 
-    // ควบคุมการเปลี่ยนหน้าไม่ให้ทะลุหน้าแรกและหน้าสุดท้าย
+    // 🟢 แก้ไขปุ่มเปลี่ยนหน้าให้อ่านค่า currentPage ที่อัปเดตแล้ว
     function changePage(offset) { 
-        if (pdfDoc && currentPage + offset > 0 && currentPage + offset <= pdfDoc.numPages) {
-            renderPage(currentPage + offset); 
+        if (pdfDoc) {
+            const targetPage = currentPage + offset;
+            if (targetPage >= 1 && targetPage <= pdfDoc.numPages) {
+                renderPage(targetPage); 
+            }
         }
     }
 

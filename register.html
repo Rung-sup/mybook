@@ -13,158 +13,337 @@
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background-color: #f4f1ea; color: #333; padding-bottom: 120px; overflow-x: hidden; }
+        
         .header { padding: 10px 15px; background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; }
         .search-input { width: 100%; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+
         .view-controls { display: flex; gap: 5px; margin-left: 5px; }
-        .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; }
+        .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .btn-view.active { background: #d4af37; color: #000; border-color: #d4af37; }
+
         .container { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+        
         .container.list-mode { display: flex; flex-direction: column; gap: 8px; }
-        .container.list-mode .book-card { display: flex; align-items: center; height: 60px; }
-        .container.list-mode .cover-box { width: 45px; min-width: 45px; padding-bottom: 0; height: 100%; }
-        .container.list-mode .book-info { flex-grow: 1; text-align: left; padding-left: 15px; font-size: 13px; height: auto; justify-content: flex-start; }
+        .container.list-mode .book-card { display: flex; align-items: center; height: 60px; border-radius: 8px; }
+        .container.list-mode .cover-box { width: 45px; min-width: 45px; padding-bottom: 0; height: 100%; border-right: 1px solid #eee; }
+        .container.list-mode .book-info { flex-grow: 1; text-align: left; padding-left: 15px; font-size: 13px; height: auto; justify-content: flex-start; white-space: nowrap; text-overflow: ellipsis; }
+        .container.list-mode .folder-badge, .container.list-mode .status-badge { font-size: 8px; padding: 1px 4px; }
+
         .book-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; position: relative; border: 1px solid #eee; }
         .folder-card { border: 2px solid #d4af37; }
         .cover-box { width: 100%; padding-bottom: 145%; position: relative; background: #e0e0e0; }
         .book-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-        .folder-badge { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fff; padding: 3px 7px; border-radius: 5px; font-size: 10px; font-weight: bold; }
-        .status-badge { position: absolute; top: 5px; left: 5px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+        
+        .folder-badge { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fff; padding: 3px 7px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 10; }
+        .status-badge { position: absolute; top: 5px; left: 5px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
+
         #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
-        #pdf-render-container { flex-grow: 1; overflow: auto; background: #1a1a1a; display: block; position: relative; }
+        #pdf-render-container { flex-grow: 1; overflow: auto; background: #1a1a1a; display: block; position: relative; -webkit-overflow-scrolling: touch; }
         #pdf-canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; }
-        .reader-top-bar { padding: 10px; background: rgba(34,34,34,0.9); color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        
+        .nav-zone { position: absolute; top: 0; bottom: 0; width: 20%; z-index: 5010; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(212, 175, 55, 0.1); font-size: 40px; transition: 0.3s; user-select: none; pointer-events: none; }
+        .nav-zone::before { content: ''; display: block; width: 100%; height: 100%; pointer-events: auto; }
+        .nav-zone:hover { color: rgba(212, 175, 55, 0.6); background: rgba(255,255,255,0.03); }
+        .nav-left { left: 0; }
+        .nav-right { right: 0; }
+
+        .reader-top-bar { padding: 10px; background: rgba(34,34,34,0.9); color: #fff; display: flex; justify-content: space-between; align-items: center; z-index: 5020; }
         #music-player-fixed { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; background: #fff; border-top: 1px solid #d4af37; }
+        .queue-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .queue-active { background: #fff9e6; color: #d4af37; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <button onclick="goBack()" class="btn-back">❮ กลับ</button>
-        <div class="view-controls">
-            <button id="grid-btn" onclick="toggleView('grid')" class="btn-view">🔳</button>
-            <button id="list-btn" onclick="toggleView('list')" class="btn-view">≡</button>
+
+<div class="header">
+    <button onclick="goBack()" class="btn-back">❮ กลับ</button>
+    <div class="view-controls">
+        <button id="grid-btn" onclick="toggleView('grid')" class="btn-view">🔳</button>
+        <button id="list-btn" onclick="toggleView('list')" class="btn-view">≡</button>
+    </div>
+    <div style="flex-grow: 1;"><input type="text" id="global-search" class="search-input" placeholder="ค้นหาหนังสือ/เพลง..." oninput="handleSearch()"></div>
+</div>
+
+<div id="continue-reading-section" style="display: none; padding: 15px; background: #e9e4d9; border-bottom: 2px solid #d4af37;">
+    <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #8b6d00;">📚 อ่านค้างไว้ล่าสุด</h3>
+    <div id="continue-list" style="display: flex; overflow-x: auto; gap: 12px; padding-bottom: 10px;"></div>
+</div>
+
+<div id="book-list" class="container"></div>
+
+<div id="queue-panel" style="display: none; background: #fff; border-top: 2px solid #d4af37; padding: 10px; margin-bottom: 60px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <strong style="font-size: 14px;">🎵 คิวเพลง</strong>
+        <div>
+            <button onclick="saveQueue()" style="font-size: 11px; background: #28a745; color: white; border: none; padding: 4px 10px; border-radius: 20px; cursor: pointer;">บันทึกคิว</button>
+            <button onclick="clearQueue()" style="font-size: 11px; background: #dc3545; color: white; border: none; padding: 4px 10px; border-radius: 20px; cursor: pointer;">ล้างคิว</button>
         </div>
-        <div style="flex-grow: 1;"><input type="text" id="global-search" class="search-input" placeholder="ค้นหา..." oninput="handleSearch()"></div>
     </div>
-    <div id="continue-reading-section" style="display: none; padding: 15px; background: #e9e4d9; border-bottom: 2px solid #d4af37;">
-        <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #8b6d00;">📚 อ่านค้างไว้ล่าสุด</h3>
-        <div id="continue-list" style="display: flex; overflow-x: auto; gap: 12px; padding-bottom: 10px;"></div>
+    <div id="queue-list" style="max-height: 200px; overflow-y: auto;"></div>
+</div>
+
+<div id="music-player-fixed" style="display: none;"><div id="aplayer"></div></div>
+
+<div id="reader-overlay">
+    <div class="reader-top-bar">
+        <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">ปิดการอ่าน</button>
+        <span id="page-info" style="color: #d4af37; font-size: 14px;"></span>
+        <div style="width: 80px;"></div>
     </div>
-    <div id="book-list" class="container"></div>
-    <div id="music-player-fixed" style="display: none;"><div id="aplayer"></div></div>
-    <div id="reader-overlay">
-        <div class="reader-top-bar">
-            <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">ปิด</button>
-            <span id="page-info" style="color: #d4af37; font-size: 14px;"></span>
-            <div style="width: 80px;"></div>
-        </div>
-        <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
+    <div id="pdf-render-container">
+        <div class="nav-zone nav-left" onclick="changePage(-1)">❮</div>
+        <canvas id="pdf-canvas"></canvas>
+        <div class="nav-zone nav-right" onclick="changePage(1)">❯</div>
     </div>
+</div>
 
-    <script>
-        const firebaseConfig = { apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo", authDomain: "myreaderapp-89e75.firebaseapp.com", projectId: "myreaderapp-89e75", storageBucket: "myreaderapp-89e75.firebasestorage.app", messagingSenderId: "1016151043482", appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23" };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo", authDomain: "myreaderapp-89e75.firebaseapp.com", projectId: "myreaderapp-89e75", storageBucket: "myreaderapp-89e75.firebasestorage.app", messagingSenderId: "1016151043482", appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
-        let allBooksRaw = [], displayItems = [], isInFolder = false, currentCategory = "";
-        let pdfDoc = null, currentBookId = "", currentPage = 1, ap = null;
-        let currentViewMode = localStorage.getItem('puk_view_mode') || 'grid';
+    let allBooksRaw = [], displayItems = [], isInFolder = false, currentCategory = "";
+    let pdfDoc = null, currentBookId = "", currentPage = 1;
+    let ap = null;
+    
+    // ระบบจำโหมดการแสดงผล
+    let currentViewMode = localStorage.getItem('puk_view_mode') || 'grid';
 
-        async function loadData() {
-            applyViewMode();
-            const params = new URLSearchParams(window.location.search);
-            currentCategory = params.get('cat') || "";
-            
-            // ✅ แก้ไข: เลือกไฟล์ JSON ให้ถูกหมวด
-            const targetFile = (currentCategory === '7_music') ? 'music_db.json' : 'database.json';
-            const res = await fetch(`${targetFile}?v=${Date.now()}`);
-            const data = await res.json();
-            
-            if (currentCategory === '7_music') {
-                allBooksRaw = (data.music || []).map(m => ({...m, is_music: true}));
-                document.getElementById('music-player-fixed').style.display = 'block';
-                initMusicPlayer();
-            } else {
-                allBooksRaw = data.books ? data.books.filter(b => b.category.startsWith(currentCategory)) : [];
-                renderContinueReading(data.books);
+    async function loadData() {
+        applyViewMode();
+        const params = new URLSearchParams(window.location.search);
+        currentCategory = params.get('cat') || "";
+        
+        // เลือกว่าจะโหลด database.json หรือ music_db.json
+        const targetDb = currentCategory === '7_music' ? 'music_db.json' : 'database.json';
+        const res = await fetch(`${targetDb}?v=${Date.now()}`);
+        const data = await res.json();
+        
+        // ถ้าเป็นหมวดหนังสือ ให้แสดงประวัติอ่านค้าง
+        if (currentCategory !== '7_music' && data.books) {
+            renderContinueReading(data.books);
+        }
+
+        if (currentCategory === '7_music') {
+            allBooksRaw = (data.music || []).map(m => ({...m, is_music: true}));
+            document.getElementById('music-player-fixed').style.display = 'block';
+            document.getElementById('queue-panel').style.display = 'block';
+            initMusicPlayer();
+        } else {
+            allBooksRaw = data.books ? data.books.filter(b => b.category.trim().startsWith(currentCategory.trim())) : [];
+        }
+        processFolders(allBooksRaw);
+    }
+
+    function toggleView(mode) {
+        currentViewMode = mode;
+        localStorage.setItem('puk_view_mode', mode);
+        applyViewMode();
+    }
+
+    function applyViewMode() {
+        const container = document.getElementById('book-list');
+        const gridBtn = document.getElementById('grid-btn');
+        const listBtn = document.getElementById('list-btn');
+
+        if (currentViewMode === 'list') {
+            container.classList.add('list-mode');
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
+        } else {
+            container.classList.remove('list-mode');
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
+        }
+    }
+
+    // ฟังก์ชันอ่านค้างกลับมาเต็มรูปแบบแล้วครับ
+    function renderContinueReading(books) {
+        const user = firebase.auth().currentUser;
+        if (!user) return;
+        const history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {};
+        const container = document.getElementById('continue-list');
+        const section = document.getElementById('continue-reading-section');
+        const historyArray = Object.keys(history).map(id => ({ id, ...history[id] })).sort((a, b) => b.t - a.t);
+        
+        container.innerHTML = '';
+        let count = 0;
+        historyArray.forEach(item => {
+            const book = books.find(b => btoa(encodeURIComponent(b.url)) === item.id);
+            if (book && count < 10) {
+                count++;
+                const div = document.createElement('div');
+                div.style.minWidth = '90px';
+                div.innerHTML = `
+                    <div class="book-card" onclick="openBook('${book.url}')">
+                        <div class="cover-box">
+                            <div class="status-badge">หน้า ${item.p}</div>
+                            <img src="covers/${book.category}/${book.cover_id}.jpg" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=Runnara'">
+                        </div>
+                        <div class="book-info" style="font-size:9px; height:30px;">${book.title}</div>
+                    </div>`;
+                container.appendChild(div);
             }
-            processFolders(allBooksRaw);
-        }
+        });
+        section.style.display = count > 0 ? 'block' : 'none';
+    }
 
-        function toggleView(mode) { currentViewMode = mode; localStorage.setItem('puk_view_mode', mode); applyViewMode(); }
-        function applyViewMode() {
-            const container = document.getElementById('book-list');
-            if (currentViewMode === 'list') { container.classList.add('list-mode'); document.getElementById('list-btn').classList.add('active'); document.getElementById('grid-btn').classList.remove('active'); }
-            else { container.classList.remove('list-mode'); document.getElementById('grid-btn').classList.add('active'); document.getElementById('list-btn').classList.remove('active'); }
-        }
-
-        function processFolders(dataArray) {
-            const folders = {}; const standalone = [];
-            dataArray.forEach(item => {
-                if (item.folder && item.folder !== "ทั่วไป") { 
-                    if (!folders[item.folder]) folders[item.folder] = []; 
-                    folders[item.folder].push(item); 
-                } else standalone.push(item);
+    function processFolders(dataArray) {
+        const folders = {}; const standalone = [];
+        dataArray.forEach(item => {
+            if (item.folder && item.folder !== "ทั่วไป") { 
+                if (!folders[item.folder]) folders[item.folder] = []; 
+                folders[item.folder].push(item); 
+            } else standalone.push(item);
+        });
+        displayItems = [];
+        for (const fName in folders) {
+            const sortedFiles = folders[fName].sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true }));
+            displayItems.push({ 
+                title: fName, 
+                isFolder: true, 
+                count: sortedFiles.length, 
+                files: sortedFiles, 
+                cover_id: sortedFiles[0].cover_id, 
+                category: sortedFiles[0].category || '7_music', 
+                is_music: sortedFiles[0].is_music 
             });
-            displayItems = [];
-            for (const fName in folders) {
-                const sorted = folders[fName].sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true }));
-                displayItems.push({ title: fName, isFolder: true, count: sorted.length, files: sorted, cover_id: sorted[0].cover_id, category: sorted[0].category, is_music: sorted[0].is_music });
-            }
-            standalone.forEach(b => displayItems.push(b));
-            displayItems.sort((a, b) => { if (a.isFolder === b.isFolder) return a.title.localeCompare(b.title, 'th', { numeric: true }); return a.isFolder ? -1 : 1; });
-            renderList(displayItems);
         }
+        standalone.forEach(b => displayItems.push(b));
+        displayItems.sort((a, b) => { 
+            if (a.isFolder === b.isFolder) return a.title.localeCompare(b.title, 'th', { numeric: true }); 
+            return a.isFolder ? -1 : 1; 
+        });
+        renderList(displayItems);
+    }
 
-        function renderList(items) {
-            const container = document.getElementById('book-list');
-            container.innerHTML = '';
+    function renderList(items) {
+        const container = document.getElementById('book-list');
+        container.innerHTML = '';
+        const user = firebase.auth().currentUser;
+        const history = user ? JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {} : {};
+        
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'book-card' + (item.isFolder ? ' folder-card' : '');
+            
+            // ดึงป้ายบอกจำนวนหนังสือและป้ายประวัติหน้ากลับมาแล้วครับ
+            let badgeHtml = '';
+            if (item.isFolder) { 
+                badgeHtml = `<div class="folder-badge">${item.is_music ? '🎵' : '📁'} ${item.count} เล่ม</div>`; 
+            } else if (!item.is_music) { 
+                const bId = btoa(encodeURIComponent(item.url)); 
+                if (history[bId]) badgeHtml = `<div class="status-badge">หน้า ${history[bId].p}</div>`; 
+            }
+            
+            card.innerHTML = `<div class="cover-box">${badgeHtml}<img src="covers/${item.category || '7_music'}/${item.cover_id}.jpg" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=Runnara'"></div><div class="book-info">${item.title}</div>`;
+            
+            card.onclick = () => { 
+                if (item.isFolder) { 
+                    isInFolder = true; 
+                    renderList(item.files); 
+                    window.scrollTo(0,0); 
+                } else if (item.is_music) {
+                    playMusic(item); 
+                } else {
+                    openBook(item.url); 
+                }
+            };
+            container.appendChild(card);
+        });
+    }
+
+    function initMusicPlayer() {
+        const savedQueue = JSON.parse(localStorage.getItem('puk_music_queue')) || [];
+        ap = new APlayer({ container: document.getElementById('aplayer'), listFolded: true, theme: '#d4af37', audio: savedQueue.length > 0 ? savedQueue : [] });
+        ap.on('listswitch', () => updateQueueUI());
+        updateQueueUI();
+    }
+    
+    function playMusic(item) {
+        if (!ap) return;
+        const songData = { name: item.title, artist: item.folder || 'Runnara Library', url: item.url, cover: `covers/${item.category || '7_music'}/${item.cover_id}.jpg` };
+        const currentIndex = ap.list.audios.findIndex(s => s.url === item.url);
+        if (currentIndex === -1) { ap.list.add([songData]); ap.list.switch(ap.list.audios.length - 1); } else { ap.list.switch(currentIndex); }
+        ap.play(); updateQueueUI();
+    }
+
+    function updateQueueUI() {
+        const listDiv = document.getElementById('queue-list'); if (!ap || !listDiv) return; listDiv.innerHTML = '';
+        ap.list.audios.forEach((audio, index) => {
+            const isPlaying = ap.list.index === index;
+            const row = document.createElement('div'); row.className = `queue-item ${isPlaying ? 'queue-active' : ''}`;
+            row.innerHTML = `<div onclick="ap.list.switch(${index}); ap.play();" style="cursor:pointer; flex-grow:1;">${index + 1}. ${audio.name}</div><div onclick="removeSong(${index})" style="color:red; padding:0 10px; cursor:pointer;">✕</div>`;
+            listDiv.appendChild(row);
+        });
+    }
+    
+    function removeSong(index) { ap.list.remove(index); updateQueueUI(); }
+    function clearQueue() { ap.list.clear(); localStorage.removeItem('puk_music_queue'); updateQueueUI(); }
+    function saveQueue() { if (ap) { localStorage.setItem('puk_music_queue', JSON.stringify(ap.list.audios)); alert('บันทึกคิวเพลงเรียบร้อยแล้ว'); } }
+
+    async function openBook(url) {
+        currentBookId = btoa(encodeURIComponent(url));
+        document.getElementById('reader-overlay').style.display = 'flex';
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        try {
+            const loadingTask = pdfjsLib.getDocument(url);
+            pdfDoc = await loadingTask.promise;
             const user = firebase.auth().currentUser;
             const history = user ? JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {} : {};
-            items.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'book-card' + (item.isFolder ? ' folder-card' : '');
-                let badge = item.isFolder ? `<div class="folder-badge">${item.is_music ? '🎵' : '📁'} ${item.count}</div>` : '';
-                if (!item.isFolder && !item.is_music) {
-                    const bId = btoa(encodeURIComponent(item.url));
-                    if (history[bId]) badge = `<div class="status-badge">หน้า ${history[bId].p}</div>`;
-                }
-                card.innerHTML = `<div class="cover-box">${badge}<img src="covers/${item.category}/${item.cover_id}.jpg" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=Runnara'"></div><div class="book-info">${item.title}</div>`;
-                card.onclick = () => {
-                    if (item.isFolder) { isInFolder = true; renderList(item.files); window.scrollTo(0,0); }
-                    else if (item.is_music) { window.location.href = 'music_room.html'; }
-                    else openBook(item.url);
-                };
-                container.appendChild(card);
-            });
+            currentPage = (history[currentBookId] && history[currentBookId].p) ? history[currentBookId].p : 1;
+            renderPage(currentPage);
+        } catch (error) {
+            alert("ไม่สามารถโหลด PDF ได้");
+            closeBook();
         }
+    }
 
-        function initMusicPlayer() { ap = new APlayer({ container: document.getElementById('aplayer'), listFolded: true, theme: '#d4af37', audio: [] }); }
-        async function openBook(url) {
-            currentBookId = btoa(encodeURIComponent(url));
-            document.getElementById('reader-overlay').style.display = 'flex';
-            const loadingTask = pdfjsLib.getDocument(url); pdfDoc = await loadingTask.promise;
-            currentPage = 1; renderPage(currentPage);
+    async function renderPage(num) {
+        if (!pdfDoc || num < 1 || num > pdfDoc.numPages) return;
+        currentPage = num;
+        const page = await pdfDoc.getPage(num);
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        const outputScale = window.devicePixelRatio || 1;
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = window.innerWidth / unscaledViewport.width;
+        const viewport = page.getViewport({ scale: scale });
+        
+        canvas.width = Math.floor(viewport.width * outputScale);
+        canvas.height = Math.floor(viewport.height * outputScale);
+        canvas.style.width = viewport.width + "px";
+        canvas.style.height = viewport.height + "px";
+        ctx.setTransform(outputScale, 0, 0, outputScale, 0, 0);
+        document.getElementById('pdf-render-container').scrollTop = 0;
+        
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+        
+        const user = firebase.auth().currentUser;
+        if (user) {
+            let history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {};
+            history[currentBookId] = { p: num, t: Date.now() };
+            localStorage.setItem(`puk_history_${user.uid}`, JSON.stringify(history));
         }
-        async function renderPage(num) {
-            const page = await pdfDoc.getPage(num);
-            const canvas = document.getElementById('pdf-canvas');
-            const ctx = canvas.getContext('2d');
-            const viewport = page.getViewport({ scale: window.innerWidth / page.getViewport({scale:1}).width });
-            canvas.width = viewport.width; canvas.height = viewport.height;
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-            document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
-        }
-        function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; if(pdfDoc) pdfDoc.destroy(); }
-        function goBack() { if (isInFolder) { isInFolder = false; loadData(); } else window.location.href = 'categories.html'; }
-        function handleSearch() {
-            const q = document.getElementById('global-search').value.toLowerCase();
-            if (!q) { processFolders(allBooksRaw); return; }
-            renderList(allBooksRaw.filter(b => b.title.toLowerCase().includes(q)));
-        }
-        function renderContinueReading(books) { /* โค้ดเดิมคงไว้ */ }
-        firebase.auth().onAuthStateChanged(user => user ? loadData() : window.location.href='index.html');
-    </script>
+    }
+
+    function changePage(offset) { renderPage(currentPage + offset); }
+    function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; if(pdfDoc) pdfDoc.destroy(); loadData(); }
+    function goBack() { if (isInFolder) { isInFolder = false; loadData(); } else window.location.href = 'categories.html'; }
+    function handleSearch() {
+        const q = document.getElementById('global-search').value.toLowerCase();
+        if (!q) { processFolders(allBooksRaw); return; }
+        const filtered = allBooksRaw.filter(b => b.title.toLowerCase().includes(q));
+        renderList(filtered);
+    }
+    
+    firebase.auth().onAuthStateChanged(user => user ? loadData() : window.location.href='index.html');
+</script>
 </body>
 </html>

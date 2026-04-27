@@ -200,6 +200,24 @@ def main():
                 subprocess.run("git push origin HEAD", cwd=f_p, shell=True, timeout=60)
             except: print(f"   ⚠️ ห้อง {folder} ใช้เวลาส่งนานเกินไป (ข้าม)")
 
+    # ... (ส่วนต้นของโค้ดเหมือนเดิมจนถึง Step 3) ...
+
+    # --- STEP 3: FULL SYNC ---
+    print("\n☁️ [3/3] กำลังทยอยส่งข้อมูลขึ้น Cloud...")
+    
+    # 3.1 ส่งเนื้อหา (MyLibrary)
+    for folder in os.listdir(LIBRARY_ROOT):
+        f_p = os.path.join(LIBRARY_ROOT, folder)
+        if os.path.exists(os.path.join(f_p, ".git")):
+            print(f"🚀 กำลังส่งห้อง: {folder}")
+            run_git("git add .", f_p)
+            run_git('git commit -m "Auto-sync V1.4"', f_p)
+            # ✅ แก้ไข: เพิ่ม timeout 60 วินาที ป้องกันการค้าง
+            try:
+                subprocess.run("git push origin HEAD", cwd=f_p, shell=True, timeout=60)
+            except subprocess.TimeoutExpired:
+                print(f"   ⚠️ ห้อง {folder} ใช้เวลาส่งนานเกินไป (ข้ามเพื่อไม่ให้ค้าง)")
+
     # 3.2 ส่งฐานข้อมูลและหน้าปก (MyBook_Test)
     if os.path.exists(os.path.join(DB_DIR, ".git")):
         print("💾 กำลังส่งฐานข้อมูลและหน้าปก...")
@@ -207,11 +225,12 @@ def main():
         status = run_git("git status --porcelain", DB_DIR)
         if status:
             run_git('git commit -m "Final DB and Covers Sync"', DB_DIR)
-            # ซ่อม: ใช้ subprocess เพื่อให้จบกระบวนการแน่นอน และไม่ค้าง
+            # ✅ แก้ไข: เพิ่ม timeout 60 วินาที ป้องกันการค้าง
             try:
                 subprocess.run("git push origin HEAD", cwd=DB_DIR, shell=True, timeout=60)
                 print("   ✅ อัปเดต Repo MyBook สำเร็จ!")
-            except: print("   ⚠️ การส่งฐานข้อมูลแอปค้าง (ข้าม)")
+            except subprocess.TimeoutExpired:
+                print("   ⚠️ การส่งฐานข้อมูลค้าง (ข้ามเพื่อให้สคริปต์ปิดตัวได้)")
         else:
             print("   ✅ ไม่มีข้อมูลใหม่ใน MyBook_Test")
 

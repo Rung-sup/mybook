@@ -18,12 +18,14 @@
         .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; }
         .search-input { width: 100%; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
 
+        /* ส่วนควบคุมโหมดการดู */
         .view-controls { display: flex; gap: 5px; margin-left: 5px; }
         .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .btn-view.active { background: #d4af37; color: #000; border-color: #d4af37; }
 
         .container { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
         
+        /* สไตล์โหมด List (รายการ) */
         .container.list-mode { display: flex; flex-direction: column; gap: 8px; }
         .container.list-mode .book-card { display: flex; align-items: center; height: 60px; border-radius: 8px; }
         .container.list-mode .cover-box { width: 45px; min-width: 45px; padding-bottom: 0; height: 100%; border-right: 1px solid #eee; }
@@ -121,7 +123,6 @@
             renderContinueReading(data.books);
         }
 
-        // ✅ แก้ไขเงื่อนไขตรงนี้เพื่อให้มองเห็นเพลง
         if (currentCategory === '7_music') {
             allBooksRaw = (data.music || []).map(m => ({...m, is_music: true}));
             document.getElementById('music-player-fixed').style.display = 'block';
@@ -143,16 +144,15 @@
         const container = document.getElementById('book-list');
         const gridBtn = document.getElementById('grid-btn');
         const listBtn = document.getElementById('list-btn');
-        if (!container) return;
 
         if (currentViewMode === 'list') {
             container.classList.add('list-mode');
-            if(listBtn) listBtn.classList.add('active');
-            if(gridBtn) gridBtn.classList.remove('active');
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
         } else {
             container.classList.remove('list-mode');
-            if(gridBtn) gridBtn.classList.add('active');
-            if(listBtn) listBtn.classList.remove('active');
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
         }
     }
 
@@ -181,10 +181,13 @@
     function processFolders(dataArray) {
         const folders = {}; const standalone = [];
         dataArray.forEach(item => {
+            // ปรับเงื่อนไขตรงนี้: ยอมรับ "ทั่วไป" ให้เป็นเพลงเดี่ยว และจัดการโฟลเดอร์อื่นตามปกติ
             if (item.folder && item.folder !== "ทั่วไป") { 
                 if (!folders[item.folder]) folders[item.folder] = []; 
                 folders[item.folder].push(item); 
-            } else standalone.push(item);
+            } else {
+                standalone.push(item);
+            }
         });
         displayItems = [];
         for (const fName in folders) {
@@ -212,21 +215,17 @@
         container.innerHTML = '';
         const user = firebase.auth().currentUser;
         const history = user ? JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {} : {};
-        
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'book-card' + (item.isFolder ? ' folder-card' : '');
             let badgeHtml = '';
-            
             if (item.isFolder) { 
                 badgeHtml = `<div class="folder-badge">${item.is_music ? '🎵' : '📁'} ${item.count} เล่ม</div>`; 
             } else if (!item.is_music) { 
                 const bId = btoa(encodeURIComponent(item.url)); 
                 if (history[bId]) badgeHtml = `<div class="status-badge">หน้า ${history[bId].p}</div>`; 
             }
-            
             card.innerHTML = `<div class="cover-box">${badgeHtml}<img src="covers/${item.category || '7_music'}/${item.cover_id}.jpg" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=Runnara'"></div><div class="book-info">${item.title}</div>`;
-            
             card.onclick = () => { 
                 if (item.isFolder) { 
                     isInFolder = true; 
@@ -274,6 +273,7 @@
         const canvas = document.getElementById('pdf-canvas');
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         try {
             const loadingTask = pdfjsLib.getDocument(url);
             pdfDoc = await loadingTask.promise;
@@ -312,6 +312,7 @@
             localStorage.setItem(`puk_history_${user.uid}`, JSON.stringify(history));
         }
     }
+
     function changePage(offset) { renderPage(currentPage + offset); }
     function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; if(pdfDoc) pdfDoc.destroy(); loadData(); }
     function goBack() { if (isInFolder) { isInFolder = false; loadData(); } else window.location.href = 'categories.html'; }

@@ -1,382 +1,186 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🎵 ห้องฟังเพลงของรันนรา</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aplayer/1.10.1/APlayer.min.js"></script>
-    <style>
-        :root { --gold: #d4af37; --dark-bg: #0f0f0f; --card: #1c1c1c; --card-hover: #262626; }
-        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--dark-bg); color: white; margin: 0; padding: 15px; padding-bottom: 120px; }
-        
-        /* Header & Search */
-        .header-container { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px; }
-        .page-title { color: var(--gold); margin: 0; font-size: 1.5em; text-align: center; width: 100%; }
-        .search-box { width: 100%; padding: 14px 20px; border-radius: 30px; border: 1px solid #333; background: #1a1a1a; color: #fff; margin-bottom: 15px; outline: none; font-size: 15px; transition: border 0.3s; }
-        .search-box:focus { border-color: var(--gold); }
+import os
+import shutil
+import hashlib
+import json
+import unicodedata
+import urllib.parse
+import time
+import subprocess
+from pdf2image import convert_from_path
+from PyPDF2 import PdfReader, PdfWriter
 
-        /* แถบเมนูด่วน (Quick Actions) */
-        .quick-actions { display: flex; gap: 8px; margin-bottom: 25px; }
-        .btn-quick { flex: 1; padding: 10px 5px; border: none; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: transform 0.2s; }
-        .btn-quick:active { transform: scale(0.95); }
-        .btn-quick-save { background: rgba(40, 167, 69, 0.15); color: #4ade80; border: 1px solid rgba(40, 167, 69, 0.4); }
-        .btn-quick-clear { background: rgba(220, 53, 69, 0.15); color: #f87171; border: 1px solid rgba(220, 53, 69, 0.4); }
-        .btn-quick-vault { background: rgba(212, 175, 55, 0.15); color: var(--gold); border: 1px solid rgba(212, 175, 55, 0.4); }
+# ==========================================
+# ⚙️ CONFIGURATION
+# ==========================================
+PROCESS_ZONE = r'C:\Process_Zone'
+LIBRARY_ROOT = r'C:\MyLibrary'
+DB_DIR = r'C:\MyBook_Test'
+DB_PATH = os.path.join(DB_DIR, 'database.json')
+MUSIC_DB_PATH = os.path.join(DB_DIR, 'music_db.json')
+POPPLER_PATH = r'C:\MyBook_Test\poppler-25.12.0\Library\bin'
+GS_PATH = r'C:\Program Files\gs\gs10.07.0\bin\gswin64c.exe'
 
-        /* Folders (Main) */
-        .folder-card { background: var(--card); border-radius: 12px; margin-bottom: 15px; border: 1px solid #2a2a2a; overflow: hidden; transition: all 0.3s; }
-        .folder-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #222; }
-        .folder-title { color: var(--gold); font-size: 1.1em; font-weight: 600; }
-        .folder-icon { transition: transform 0.3s ease; color: #888; }
-        .folder-content { padding: 5px 15px; display: none; background: var(--card); }
+GITHUB_USER = "rung-sup"
+MAX_SIZE_MB = 95
 
-        /* Sub Folders (New Style) */
-        .subfolder-card { margin: 8px 0 8px 10px; border-left: 2px solid #333; border-radius: 8px; background: #151515; overflow: hidden; }
-        .subfolder-header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #1e1e1e; font-size: 0.95em; color: #ddd; border-bottom: 1px solid #222; }
-        .subfolder-content { padding: 0 10px; display: none; }
+def run_git(command, cwd):
+    try:
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore', cwd=cwd, timeout=60)
+        return result.stdout.strip()
+    except: return None
 
-        /* Song List */
-        .music-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2a2a2a; }
-        .music-item:last-child { border-bottom: none; }
-        .song-info { font-size: 14px; color: #eee; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
-        .action-group { display: flex; gap: 8px; }
-        .btn-icon { width: 36px; height: 36px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; transition: transform 0.2s; }
-        .btn-icon:active { transform: scale(0.9); }
-        .btn-play-now { background: rgba(212, 175, 55, 0.15); color: var(--gold); }
-        .btn-add-q { background: transparent; color: #888; border: 1px solid #444; }
+def get_file_hash(f_path):
+    hasher = hashlib.md5()
+    try:
+        with open(f_path, 'rb') as f:
+            chunk = f.read(1024 * 1024)
+            hasher.update(chunk)
+    except: return None
+    return hasher.hexdigest()
 
-        /* Modal (คลังคิวที่บันทึกไว้) */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .modal-overlay.active { display: flex; opacity: 1; }
-        .modal-content { background: var(--card); width: 90%; max-width: 400px; border-radius: 16px; padding: 20px; border: 1px solid #333; position: relative; }
-        .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #888; font-size: 20px; cursor: pointer; }
-        
-        .storage-item { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; border: 1px solid #333; }
-        .btn-small { border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
-        .btn-load { background: var(--gold); color: black; margin-right: 5px; }
-        .btn-del { background: transparent; border: 1px solid #dc3545; color: #dc3545; }
+def compress_pdf_high(f_path):
+    if not os.path.exists(GS_PATH): return False
+    temp_out = f_path.replace(".pdf", "_tmp_small.pdf")
+    gs_cmd = [GS_PATH, '-sDEVICE=pdfwrite', '-dCompatibilityLevel=1.4', '-dPDFSETTINGS=/ebook', '-dNOPAUSE', '-dQUIET', '-dBATCH', f'-sOutputFile={temp_out}', f_path]
+    try:
+        subprocess.run(gs_cmd, capture_output=True)
+        if os.path.exists(temp_out):
+            if os.path.getsize(temp_out) < os.path.getsize(f_path):
+                os.remove(f_path)
+                os.rename(temp_out, f_path)
+                return True
+            os.remove(temp_out)
+    except: pass
+    return False
 
-        /* APlayer Customization */
-        #aplayer-container { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; padding: 10px; background: linear-gradient(transparent, rgba(15,15,15,0.95) 30%); pointer-events: none; }
-        .aplayer { margin: 0 !important; border-radius: 16px !important; background: rgba(30, 30, 30, 0.8) !important; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important; }
-        .aplayer .aplayer-info { padding: 10px 10px 10px 15px !important; }
-        .aplayer .aplayer-title { color: #fff !important; font-size: 14px !important; font-family: 'Prompt', sans-serif !important; }
-        .aplayer .aplayer-author { color: #aaa !important; }
-        .aplayer .aplayer-list { background: rgba(20, 20, 20, 0.95) !important; }
-        .aplayer .aplayer-list li { border-top: 1px solid #333 !important; }
-        .aplayer .aplayer-list li:hover { background: #333 !important; }
-        .aplayer .aplayer-list li.aplayer-list-light { background: rgba(212, 175, 55, 0.1) !important; }
-        .aplayer .aplayer-list li .aplayer-list-title { color: #eee !important; }
-    </style>
-</head>
-<body>
+def split_with_cover(f_path):
+    print(f"   ✂️ กำลังแบ่งเล่ม: {os.path.basename(f_path)}")
+    reader = PdfReader(f_path)
+    total_pages = len(reader.pages)
+    base_name = os.path.splitext(f_path)[0]
+    mid = total_pages // 2
+    
+    paths = []
+    # Part 1
+    w1 = PdfWriter()
+    for i in range(0, mid): w1.add_page(reader.pages[i])
+    p1 = f"{base_name} Part 1.1.pdf"
+    with open(p1, "wb") as f: w1.write(f)
+    paths.append(p1)
+    
+    # Part 2 + Cover
+    w2 = PdfWriter()
+    w2.add_page(reader.pages[0]) 
+    for i in range(mid, total_pages): w2.add_page(reader.pages[i])
+    p2 = f"{base_name} Part 1.2.pdf"
+    with open(p2, "wb") as f: w2.write(f)
+    paths.append(p2)
+    
+    os.remove(f_path)
+    return paths
 
-    <div class="header-container">
-        <h2 class="page-title">🎵 Music Collections</h2>
-    </div>
+def generate_cover_id(rel_path):
+    normalized = unicodedata.normalize('NFC', rel_path.replace('\\', '/')).replace('\u0e4d\u0e32', '\u0e33')
+    return hashlib.md5(normalized.encode('utf-8')).hexdigest()
 
-    <input type="text" id="search" class="search-box" placeholder="🔍 ค้นหาชื่อเพลง หรือ โฟลเดอร์..." oninput="filterMusic()">
+def main():
+    # --- STEP 1: SAFE MOVE & PROCESS ---
+    print("🛠 [1/3] กำลังจัดระเบียบไฟล์ (Safe Move Mode)...")
+    for cat in os.listdir(PROCESS_ZONE):
+        cat_staging = os.path.join(PROCESS_ZONE, cat)
+        if not os.path.isdir(cat_staging): continue
+        target_lib = os.path.join(LIBRARY_ROOT, cat)
+        os.makedirs(target_lib, exist_ok=True)
 
-    <div class="quick-actions">
-        <button class="btn-quick btn-quick-save" onclick="saveQueueToStorage()">💾 เซฟคิว</button>
-        <button class="btn-quick btn-quick-clear" onclick="clearCurrentQueue()">🗑️ ล้างคิว</button>
-        <button class="btn-quick btn-quick-vault" onclick="toggleModal('queue-modal')">📂 คลังคิว</button>
-    </div>
-
-    <div id="content-area" style="text-align: center; color: #666;">กำลังเตรียมคลังเพลง...</div>
-
-    <div id="queue-modal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal" onclick="toggleModal('queue-modal')">✖</button>
-            <h3 style="margin-top: 0; color: var(--gold); margin-bottom: 20px;">📂 คลังคิวที่บันทึกไว้</h3>
-            <div id="saved-queues-area" style="max-height: 300px; overflow-y: auto;"></div>
-        </div>
-    </div>
-
-    <div id="aplayer-container">
-        <div id="aplayer"></div>
-    </div>
-
-    <script>
-        let allMusic = [];
-        let ap = null;
-
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.innerText = message;
-            toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--gold); color:#000; padding:10px 20px; border-radius:20px; z-index:3000; font-size:14px; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.5); transition: opacity 0.5s;';
-            document.body.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 500); }, 2000);
-        }
-
-        async function loadMusic() {
-            try {
-                const res = await fetch(`database.json?v=${Date.now()}`);
-                const data = await res.json();
-                allMusic = data.music || [];
-                initAPlayer();
-                renderMusic(allMusic);
-                renderSavedQueues();
-            } catch (e) { 
-                console.error("Load failed", e);
-                document.getElementById('content-area').innerHTML = "ไม่สามารถโหลดคลังเพลงได้ หรือยังไม่มีข้อมูล";
-            }
-        }
-
-        function initAPlayer() {
-            ap = new APlayer({
-                container: document.getElementById('aplayer'),
-                listFolded: true,
-                listMaxHeight: '250px',
-                theme: '#d4af37',
-                audio: []
-            });
-        }
-
-        function toggleFolder(folderId) {
-            const content = document.getElementById(`content-${folderId}`);
-            const icon = document.getElementById(`icon-${folderId}`);
-            if (content.style.display === "block") {
-                content.style.display = "none";
-                icon.style.transform = "rotate(0deg)";
-            } else {
-                content.style.display = "block";
-                icon.style.transform = "rotate(180deg)";
-            }
-        }
-
-        function toggleModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (modal.classList.contains('active')) {
-                modal.classList.remove('active');
-                setTimeout(() => modal.style.display = 'none', 300);
-            } else {
-                modal.style.display = 'flex';
-                void modal.offsetWidth;
-                modal.classList.add('active');
-                renderSavedQueues();
-            }
-        }
-
-        // ฟังก์ชันช่วยสร้าง HTML รายชื่อเพลง
-        function createSongListHTML(songs, artistName) {
-            return songs.map(song => `
-                <div class="music-item">
-                    <div class="song-info">${song.title}</div>
-                    <div class="action-group">
-                        <button class="btn-icon btn-add-q" onclick="addToQueueOnly('${song.url}', '${song.title.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')" title="เพิ่มลงคิว">➕</button>
-                        <button class="btn-icon btn-play-now" onclick="playNow('${song.url}', '${song.title.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')" title="เล่นทันที">▶</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function renderMusic(songs) {
-            const area = document.getElementById('content-area');
-            const groups = {};
+        for item in os.listdir(cat_staging):
+            f_path = os.path.join(cat_staging, item)
             
-            // 1. จัดกลุ่มข้อมูลแบบ Nested (แก้ไขใหม่ให้แกะโฟลเดอร์ได้แม่นยำ 100%)
-            songs.forEach(s => {
-                let mainFolder = "ทั่วไป";
-                let subFolder = null;
+            # บีบอัด/แบ่งไฟล์ PDF ก่อนย้าย
+            if item.lower().endswith('.pdf'):
+                if os.path.getsize(f_path) / (1024*1024) > MAX_SIZE_MB:
+                    compress_pdf_high(f_path)
+                    if os.path.getsize(f_path) / (1024*1024) > MAX_SIZE_MB:
+                        split_with_cover(f_path)
+                        # หลังจาก split ไฟล์เดิมหายไปแล้ว ให้ข้ามไปจัดการไฟล์ใหม่ในรอบถัดไป
+                        continue
 
-                try {
-                    const decodedUrl = decodeURIComponent(s.url);
+            # ย้ายเข้า LIBRARY_ROOT (ใช้ shutil.move แบบปลอดภัย)
+            dest = os.path.join(target_lib, os.path.basename(f_path))
+            try:
+                if os.path.exists(dest):
+                    if os.path.isdir(f_path):
+                        for sub in os.listdir(f_path):
+                            sub_dest = os.path.join(dest, sub)
+                            if not os.path.exists(sub_dest): shutil.move(os.path.join(f_path, sub), sub_dest)
+                        shutil.rmtree(f_path)
+                    else:
+                        os.remove(f_path) # ซ้ำจริงค่อยลบ
+                else:
+                    shutil.move(f_path, dest)
+            except: pass
+
+    # --- STEP 2: RE-GEN DATA & HASH ---
+    print("📊 [2/3] อัปเดตฐานข้อมูลหนังสือและเพลง...")
+    all_books, all_music = [], []
+    for cat in os.listdir(LIBRARY_ROOT):
+        cat_path = os.path.join(LIBRARY_ROOT, cat)
+        if not os.path.isdir(cat_path) or cat in ['.git', 'covers']: continue
+        
+        for root, _, files in os.walk(cat_path):
+            rel_folder = os.path.relpath(root, cat_path)
+            display_folder = "ทั่วไป" if rel_folder == "." else rel_folder
+            
+            for f in files:
+                if f.lower().endswith(('.pdf', '.mp3')):
+                    full_p = os.path.join(root, f)
+                    f_hash = get_file_hash(full_p)
+                    cover_id = generate_cover_id(os.path.relpath(full_p, LIBRARY_ROOT))
                     
-                    // ใช้ /main/audio_files/ เป็นจุดตัดแทนชื่อ Repo เพราะมันใช้ได้กับทุกห้องไม่ว่าจะชื่ออะไร
-                    if (decodedUrl.includes('/main/audio_files/')) {
-                        const pathAfterMain = decodedUrl.split('/main/audio_files/')[1];
-                        const parts = pathAfterMain.split('/');
-                        parts.pop(); // ตัดชื่อไฟล์เพลงทิ้ง เพื่อให้เหลือแค่ชื่อโฟลเดอร์
+                    # จัดการหน้าปก (เฉพาะ PDF)
+                    cover_dir = os.path.join(DB_DIR, 'covers', cat)
+                    os.makedirs(cover_dir, exist_ok=True)
+                    cover_out = os.path.join(cover_dir, f"{cover_id}.jpg")
+                    if f.lower().endswith('.pdf') and not os.path.exists(cover_out):
+                        try:
+                            imgs = convert_from_path(full_p, first_page=1, last_page=1, size=(None, 400), poppler_path=POPPLER_PATH)
+                            if imgs: imgs[0].save(cover_out, 'JPEG', quality=85)
+                        except: pass
 
-                        if (parts.length === 1) {
-                            mainFolder = parts[0]; // โฟลเดอร์หลัก เช่น "100 อันดับเพลงฮิตไทย"
-                        } else if (parts.length > 1) {
-                            mainFolder = parts[0]; // โฟลเดอร์หลัก เช่น "คาราบาว"
-                            subFolder = parts[1];  // โฟลเดอร์ย่อย เช่น "ชุด ขี้เมา"
-                        }
-                    } else if (decodedUrl.includes('/main/')) {
-                        // เผื่อกรณีไฟล์ไม่ได้อยู่ใน audio_files
-                        const pathAfterMain = decodedUrl.split('/main/')[1];
-                        const parts = pathAfterMain.split('/');
-                        parts.pop();
-                        if (parts.length === 1) {
-                            mainFolder = parts[0];
-                        } else if (parts.length > 1) {
-                            mainFolder = parts[0];
-                            subFolder = parts[1];
-                        }
+                    path_in_repo = os.path.relpath(full_p, cat_path).replace('\\', '/')
+                    item_data = {
+                        "title": os.path.splitext(f)[0],
+                        "url": f"https://raw.githubusercontent.com/{GITHUB_USER}/{cat}/main/{urllib.parse.quote(path_in_repo)}",
+                        "category": cat, "folder": display_folder, "cover_id": cover_id, "file_hash": f_hash
                     }
-                } catch(e) {
-                    console.error("Error parsing URL:", e);
-                }
+                    # ตรวจสอบว่าเป็นเพลงหรือไม่ (เช็กจากโฟลเดอร์หรือนามสกุล)
+                    if cat.startswith("7_") or f.lower().endswith('.mp3'):
+                        all_music.append(item_data)
+                    else:
+                        all_books.append(item_data)
 
-                if (!groups[mainFolder]) groups[mainFolder] = { __songs__: [] };
-                
-                if (subFolder) {
-                    if (!groups[mainFolder][subFolder]) groups[mainFolder][subFolder] = [];
-                    groups[mainFolder][subFolder].push(s);
-                } else {
-                    groups[mainFolder].__songs__.push(s);
-                }
-            });
+    with open(DB_PATH, 'w', encoding='utf-8') as f: json.dump({"books": all_books}, f, ensure_ascii=False, indent=4)
+    with open(MUSIC_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"music": all_music}, f, ensure_ascii=False, indent=4)
 
-            if (Object.keys(groups).length === 0) {
-                area.innerHTML = "<div style='text-align:center; color:#666;'>ไม่พบข้อมูลเพลง</div>";
-                return;
-            }
+    # --- STEP 3: SYNC ---
+    print("\n☁️ [3/3] กำลังส่งข้อมูลขึ้น Cloud...")
+    # ส่งเนื้อหา
+    for folder in os.listdir(LIBRARY_ROOT):
+        f_p = os.path.join(LIBRARY_ROOT, folder)
+        if os.path.exists(os.path.join(f_p, ".git")):
+            run_git("git add .", f_p)
+            if run_git("git status --porcelain", f_p):
+                run_git('git commit -m "Library Sync"', f_p)
+                subprocess.run("git push origin HEAD", cwd=f_p, shell=True, timeout=60)
 
-            // 2. สร้าง HTML โครงสร้างแบบชั้นๆ (ส่วนที่ 2 ใช้ของเดิมต่อได้เลยครับ...)
-            let html = "";
-            let mainIdx = 0;
-            
-            // ... (โค้ดหลังจากนี้เหมือนเดิมครับ) ...
+    # ส่ง DB & Covers
+    if os.path.exists(os.path.join(DB_DIR, ".git")):
+        run_git("git add .", DB_DIR)
+        if run_git("git status --porcelain", DB_DIR):
+            run_git('git commit -m "DB Sync"', DB_DIR)
+            subprocess.run("git push origin HEAD", cwd=DB_DIR, shell=True, timeout=60)
 
-            Object.keys(groups).sort().forEach(main => {
-                const folderData = groups[main];
-                
-                // นับจำนวนเพลงทั้งหมดในโฟลเดอร์หลัก (รวมซับโฟลเดอร์)
-                let totalSongs = folderData.__songs__.length;
-                Object.keys(folderData).forEach(k => {
-                    if (k !== '__songs__') totalSongs += folderData[k].length;
-                });
+    print("\n✨ ภารกิจเสร็จสมบูรณ์!")
+    os._exit(0)
 
-                html += `
-                    <div class="folder-card">
-                        <div class="folder-header" onclick="toggleFolder('main-${mainIdx}')">
-                            <div class="folder-title">📁 ${main} <span style="font-size: 12px; color: #666; font-weight: normal;">(${totalSongs})</span></div>
-                            <div class="folder-icon" id="icon-main-${mainIdx}">▼</div>
-                        </div>
-                        <div class="folder-content" id="content-main-${mainIdx}">
-                `;
-
-                // Render ซับโฟลเดอร์ (ถ้ามี)
-                let subIdx = 0;
-                Object.keys(folderData).sort().forEach(sub => {
-                    if (sub === '__songs__') return;
-                    
-                    html += `
-                        <div class="subfolder-card">
-                            <div class="subfolder-header" onclick="toggleFolder('sub-${mainIdx}-${subIdx}')">
-                                <div>📂 ${sub} <span style="font-size: 11px; color: #888;">(${folderData[sub].length})</span></div>
-                                <div class="folder-icon" id="icon-sub-${mainIdx}-${subIdx}">▼</div>
-                            </div>
-                            <div class="subfolder-content" id="content-sub-${mainIdx}-${subIdx}">
-                                ${createSongListHTML(folderData[sub], main)}
-                            </div>
-                        </div>
-                    `;
-                    subIdx++;
-                });
-
-                // Render เพลงที่อยู่ตรงๆ ในโฟลเดอร์หลัก
-                if (folderData.__songs__.length > 0) {
-                    html += createSongListHTML(folderData.__songs__, main);
-                }
-
-                html += `</div></div>`;
-                mainIdx++;
-            });
-
-            area.innerHTML = html;
-        }
-
-        function playNow(url, title, artist) {
-            const song = { name: title, artist: artist, url: url, theme: '#d4af37' };
-            ap.list.add([song]);
-            ap.list.switch(ap.list.audios.length - 1);
-            ap.play();
-        }
-
-        function addToQueueOnly(url, title, artist) {
-            ap.list.add([{ name: title, artist: artist, url: url, theme: '#d4af37' }]);
-            showToast('เพิ่มลงคิวแล้ว');
-        }
-
-        function saveQueueToStorage() {
-            if (ap.list.audios.length === 0) {
-                showToast("ไม่มีเพลงในคิวให้เซฟครับ");
-                return;
-            }
-            const name = prompt("กรุณาตั้งชื่อคลังคิวเพลงนี้:", "คิวของรันนรา " + new Date().toLocaleTimeString('th-TH'));
-            if (name) {
-                const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
-                collections[name] = ap.list.audios;
-                localStorage.setItem('my_music_vault', JSON.stringify(collections));
-                showToast("บันทึกคิวเรียบร้อย");
-            }
-        }
-
-        function clearCurrentQueue() {
-            if (ap.list.audios.length === 0) {
-                showToast("รายการคิวว่างเปล่าอยู่แล้วครับ");
-                return;
-            }
-            if (confirm("ล้างรายการคิวที่กำลังเล่นอยู่ทั้งหมด?")) {
-                ap.list.clear();
-                showToast("ล้างคิวเรียบร้อย");
-            }
-        }
-
-        function renderSavedQueues() {
-            const container = document.getElementById('saved-queues-area');
-            const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
-            const keys = Object.keys(collections);
-
-            if (keys.length === 0) {
-                container.innerHTML = "<div style='color:#666; font-size:13px; text-align:center; padding: 20px 0;'>ยังไม่มีคลังคิวที่บันทึกไว้</div>";
-                return;
-            }
-
-            container.innerHTML = keys.map(k => `
-                <div class="storage-item">
-                    <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 10px;">💽 ${k} <br><span style="font-size: 11px; color: #888;">${collections[k].length} เพลง</span></span>
-                    <div style="display:flex; gap: 5px;">
-                        <button class="btn-small btn-load" onclick="loadVaultQueue('${k}')">โหลด</button>
-                        <button class="btn-small btn-del" onclick="deleteVaultQueue('${k}')">ลบ</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function loadVaultQueue(name) {
-            const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
-            if (collections[name]) {
-                ap.list.clear();
-                ap.list.add(collections[name]);
-                toggleModal('queue-modal'); 
-                if(ap.list.audios.length > 0) ap.play();
-                showToast("โหลดคิวเรียบร้อย");
-            }
-        }
-
-        function deleteVaultQueue(name) {
-            if (confirm(`ต้องการลบคลังคิว "${name}" ใช่หรือไม่?`)) {
-                const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
-                delete collections[name];
-                localStorage.setItem('my_music_vault', JSON.stringify(collections));
-                renderSavedQueues();
-            }
-        }
-
-        function filterMusic() {
-            const term = document.getElementById('search').value.toLowerCase();
-            const filtered = allMusic.filter(s => 
-                s.title.toLowerCase().includes(term) || s.url.toLowerCase().includes(term)
-            );
-            renderMusic(filtered);
-            
-            // เปิดโฟลเดอร์ทั้งหมดเวลาค้นหาเจอ
-            if (term.trim() !== '') {
-                document.querySelectorAll('.folder-content, .subfolder-content').forEach(el => el.style.display = 'block');
-                document.querySelectorAll('.folder-icon').forEach(el => el.style.transform = 'rotate(180deg)');
-            }
-        }
-
-        loadMusic();
-    </script>
-</body>
-</html>
+if __name__ == "__main__":
+    main()

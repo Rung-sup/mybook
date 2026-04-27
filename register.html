@@ -43,9 +43,19 @@
         #pdf-canvas { display: block; margin: 0 auto; max-width: 100%; height: auto; }
         .reader-top-bar { padding: 10px; background: rgba(34,34,34,0.9); color: #fff; display: flex; justify-content: space-between; align-items: center; z-index: 5020; }
         
+        /* ปุ่มโปร่งแสงซ้าย-ขวา */
+        .nav-zone { position: absolute; top: 0; bottom: 0; width: 20%; z-index: 5010; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(212, 175, 55, 0.1); font-size: 40px; transition: 0.3s; user-select: none; }
+        .nav-zone:hover { color: rgba(212, 175, 55, 0.6); background: rgba(255,255,255,0.03); }
+        .nav-left { left: 0; }
+        .nav-right { right: 0; }
+        
         /* สไตล์พิเศษสำหรับหน้าปกอ่านค้าง 80% */
         .continue-card { width: 88px !important; min-width: 88px !important; }
         .continue-card .book-info { font-size: 9px; height: 30px; }
+
+        #music-player-fixed { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; background: #fff; border-top: 1px solid #d4af37; }
+        .queue-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .queue-active { background: #fff9e6; color: #d4af37; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -71,9 +81,13 @@
     <div class="reader-top-bar">
         <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;">ปิดการอ่าน</button>
         <span id="page-info" style="color: #d4af37; font-size: 14px;"></span>
-        <div style="width: 40px;"></div>
+        <div style="width: 80px;"></div>
     </div>
-    <div id="pdf-render-container"><canvas id="pdf-canvas"></canvas></div>
+    <div id="pdf-render-container">
+        <div class="nav-zone nav-left" onclick="changePage(-1)">❮</div>
+        <canvas id="pdf-canvas"></canvas>
+        <div class="nav-zone nav-right" onclick="changePage(1)">❯</div>
+    </div>
 </div>
 
 <script>
@@ -90,23 +104,24 @@
         const params = new URLSearchParams(window.location.search);
         currentCategory = params.get('cat') || "";
         
-        // โหลด Database หลักเสมอเพื่อดึงรายการอ่านค้าง Global
         const res = await fetch(`database.json?v=${Date.now()}`);
         const data = await res.json();
         const books = data.books || [];
 
-        // แสดงแถบอ่านค้าง (ทุกห้อง ยกเว้นเพลง)
         if (currentCategory !== '7_music') {
             renderContinueReading(books);
         }
 
-        // กรองหนังสือเฉพาะหมวดหมู่ปัจจุบัน
+        const searchInput = document.getElementById('global-search');
+
         if (currentCategory === '7_music') {
             const resMusic = await fetch(`music_db.json?v=${Date.now()}`);
             const dataMusic = await resMusic.json();
             allBooksRaw = (dataMusic.music || []).map(m => ({...m, is_music: true}));
+            searchInput.placeholder = `ค้นหาเพลงจากทั้งหมด ${allBooksRaw.length} รายการ...`;
         } else {
             allBooksRaw = books.filter(b => b.category.trim().startsWith(currentCategory.trim()));
+            searchInput.placeholder = `ค้นหาหนังสือจากทั้งหมด ${allBooksRaw.length} เล่ม...`;
         }
         
         processFolders(allBooksRaw);
@@ -120,14 +135,17 @@
 
     function applyViewMode() {
         const container = document.getElementById('book-list');
+        const gridBtn = document.getElementById('grid-btn');
+        const listBtn = document.getElementById('list-btn');
+
         if (currentViewMode === 'list') {
             container.classList.add('list-mode');
-            document.getElementById('list-btn').classList.add('active');
-            document.getElementById('grid-btn').classList.remove('active');
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
         } else {
             container.classList.remove('list-mode');
-            document.getElementById('grid-btn').classList.add('active');
-            document.getElementById('list-btn').classList.remove('active');
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
         }
     }
 
@@ -163,7 +181,6 @@
     function processFolders(dataArray) {
         const folders = {}; const standalone = [];
         dataArray.forEach(item => {
-            // แก้ไข Logic การตรวจจับโฟลเดอร์สำหรับห้องนิยายไทย (รองรับทั้ง \ และ /)
             let folderName = item.folder ? item.folder.trim().replace(/\\/g, '/') : "ทั่วไป";
             if (folderName !== "ทั่วไป" && folderName !== ".") { 
                 if (!folders[folderName]) folders[folderName] = []; 
@@ -219,6 +236,12 @@
     async function openBook(url) {
         currentBookId = btoa(encodeURIComponent(url));
         document.getElementById('reader-overlay').style.display = 'flex';
+        
+        // ล้าง Canvas ก่อนเปิดเล่มใหม่
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         const loadingTask = pdfjsLib.getDocument(url);
         pdfDoc = await loadingTask.promise;
         const user = firebase.auth().currentUser;
@@ -241,6 +264,13 @@
             let history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {};
             history[currentBookId] = { p: num, t: Date.now() };
             localStorage.setItem(`puk_history_${user.uid}`, JSON.stringify(history));
+        }
+    }
+
+    // ควบคุมการเปลี่ยนหน้าไม่ให้ทะลุหน้าแรกและหน้าสุดท้าย
+    function changePage(offset) { 
+        if (pdfDoc && currentPage + offset > 0 && currentPage + offset <= pdfDoc.numPages) {
+            renderPage(currentPage + offset); 
         }
     }
 

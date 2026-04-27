@@ -11,28 +11,46 @@
         :root { --gold: #d4af37; --dark-bg: #0f0f0f; --card: #1c1c1c; --card-hover: #262626; }
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--dark-bg); color: white; margin: 0; padding: 15px; padding-bottom: 120px; }
+        
+        /* Header & Search */
         .header-container { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 20px; }
         .page-title { color: var(--gold); margin: 0; font-size: 1.5em; text-align: center; width: 100%; }
         .search-box { width: 100%; padding: 14px 20px; border-radius: 30px; border: 1px solid #333; background: #1a1a1a; color: #fff; margin-bottom: 15px; outline: none; font-size: 15px; transition: border 0.3s; }
         .search-box:focus { border-color: var(--gold); }
+
+        /* แถบเมนูด่วน (Quick Actions) */
         .quick-actions { display: flex; gap: 8px; margin-bottom: 25px; }
         .btn-quick { flex: 1; padding: 10px 5px; border: none; border-radius: 12px; font-weight: 600; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; }
         .btn-quick-save { background: rgba(40, 167, 69, 0.15); color: #4ade80; border: 1px solid rgba(40, 167, 69, 0.4); }
         .btn-quick-clear { background: rgba(220, 53, 69, 0.15); color: #f87171; border: 1px solid rgba(220, 53, 69, 0.4); }
         .btn-quick-vault { background: rgba(212, 175, 55, 0.15); color: var(--gold); border: 1px solid rgba(212, 175, 55, 0.4); }
-        .folder-card { background: var(--card); border-radius: 12px; margin-bottom: 15px; border: 1px solid #2a2a2a; overflow: hidden; }
+
+        /* Folders (Main) */
+        .folder-card { background: var(--card); border-radius: 12px; margin-bottom: 15px; border: 1px solid #2a2a2a; overflow: hidden; transition: all 0.3s; }
         .folder-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #222; }
         .folder-title { color: var(--gold); font-size: 1.1em; font-weight: 600; }
         .folder-icon { transition: transform 0.3s ease; color: #888; }
         .folder-content { padding: 5px 15px; display: none; background: var(--card); }
+
+        /* Sub Folders (โฟลเดอร์ย่อย) */
+        .subfolder-card { margin: 8px 0 8px 10px; border-left: 2px solid #333; border-radius: 8px; background: #151515; overflow: hidden; }
+        .subfolder-header { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #1e1e1e; font-size: 0.95em; color: #ddd; border-bottom: 1px solid #222; }
+        .subfolder-content { padding: 0 10px; display: none; }
+
+        /* Song List */
         .music-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #2a2a2a; }
+        .music-item:last-child { border-bottom: none; }
         .song-info { font-size: 14px; color: #eee; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
         .action-group { display: flex; gap: 8px; }
         .btn-icon { width: 36px; height: 36px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; }
         .btn-play-now { background: rgba(212, 175, 55, 0.15); color: var(--gold); }
         .btn-add-q { background: transparent; color: #888; border: 1px solid #444; }
+
+        /* APlayer Customization */
         #aplayer-container { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1000; padding: 10px; background: linear-gradient(transparent, rgba(15,15,15,0.95) 30%); pointer-events: none; }
-        .aplayer { margin: 0 !important; border-radius: 16px !important; pointer-events: auto; }
+        .aplayer { margin: 0 !important; border-radius: 16px !important; background: rgba(30, 30, 30, 0.8) !important; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important; }
+        
+        /* Modal (คลังคิว) */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; }
         .modal-content { background: var(--card); width: 90%; max-width: 400px; border-radius: 16px; padding: 20px; border: 1px solid #333; position: relative; }
         .storage-item { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
@@ -42,34 +60,42 @@
     </style>
 </head>
 <body>
+
     <div class="header-container"><h2 class="page-title">🎵 Music Collections</h2></div>
     <input type="text" id="search" class="search-box" placeholder="🔍 ค้นหาชื่อเพลง หรือ โฟลเดอร์..." oninput="filterMusic()">
+
     <div class="quick-actions">
         <button class="btn-quick btn-quick-save" onclick="saveQueueToStorage()">💾 เซฟคิว</button>
         <button class="btn-quick btn-quick-clear" onclick="clearCurrentQueue()">🗑️ ล้างคิว</button>
         <button class="btn-quick btn-quick-vault" onclick="toggleModal('queue-modal')">📂 คลังคิว</button>
     </div>
+
     <div id="content-area" style="text-align: center; color: #666;">กำลังเตรียมคลังเพลง...</div>
+
     <div id="queue-modal" class="modal-overlay">
         <div class="modal-content">
-            <button onclick="toggleModal('queue-modal')" style="float:right; background:none; border:none; color:#888; font-size:20px; cursor:pointer;">✖</button>
+            <button onclick="toggleModal('queue-modal')" style="position:absolute; top:15px; right:15px; background:none; border:none; color:#888; font-size:20px; cursor:pointer;">✖</button>
             <h3 style="margin-top: 0; color: var(--gold); margin-bottom: 20px;">📂 คลังคิวที่บันทึกไว้</h3>
             <div id="saved-queues-area" style="max-height: 300px; overflow-y: auto;"></div>
         </div>
     </div>
+
     <div id="aplayer-container"><div id="aplayer"></div></div>
 
     <script>
-        let allMusic = [], ap = null;
-        function showToast(m) {
-            const t = document.createElement('div'); t.innerText = m;
-            t.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--gold); color:#000; padding:10px 20px; border-radius:20px; z-index:3000; font-size:14px; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.5);';
-            document.body.appendChild(t); setTimeout(() => t.remove(), 2000);
+        let allMusic = [];
+        let ap = null;
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.innerText = message;
+            toast.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); background:var(--gold); color:#000; padding:10px 20px; border-radius:20px; z-index:3000; font-size:14px; font-weight:bold; box-shadow:0 4px 10px rgba(0,0,0,0.5);';
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 2000);
         }
 
         async function loadMusic() {
             try {
-                // ✅ แก้ไข: ดึงจาก music_db.json แทน database.json
                 const res = await fetch(`music_db.json?v=${Date.now()}`);
                 const data = await res.json();
                 allMusic = data.music || [];
@@ -82,97 +108,196 @@
         }
 
         function initAPlayer() {
-            ap = new APlayer({ container: document.getElementById('aplayer'), listFolded: true, theme: '#d4af37', audio: [] });
+            ap = new APlayer({
+                container: document.getElementById('aplayer'),
+                listFolded: true, listMaxHeight: '250px', theme: '#d4af37', audio: []
+            });
+        }
+
+        // ฟังก์ชันสร้างโค้ด HTML สำหรับรายชื่อเพลง
+        function createSongListHTML(songs, artistName) {
+            return songs.map(song => `
+                <div class="music-item">
+                    <div class="song-info">${song.title}</div>
+                    <div class="action-group">
+                        <button class="btn-icon btn-add-q" onclick="addToQueueOnly('${song.url}', '${song.title.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')">➕</button>
+                        <button class="btn-icon btn-play-now" onclick="playNow('${song.url}', '${song.title.replace(/'/g, "\\'")}', '${artistName.replace(/'/g, "\\'")}')">▶</button>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function renderMusic(songs) {
             const area = document.getElementById('content-area');
             const groups = {};
+            
+            // 1. จัดกลุ่มหลักและกลุ่มย่อยโดยอาศัยเครื่องหมาย \ หรือ / จาก JSON
             songs.forEach(s => {
-                // ✅ แก้ไข: ใช้ค่า folder จาก JSON ตรงๆ แทนการแกะ URL
-                let f = s.folder ? s.folder.replace('audio_files\\', '') : "ทั่วไป";
-                if (!groups[f]) groups[f] = [];
-                groups[f].push(s);
+                let rawFolder = s.folder ? s.folder.replace('audio_files\\', '').replace('audio_files/', '') : "ทั่วไป";
+                let parts = rawFolder.split(/[\\/]/); // แยกด้วย \ หรือ /
+                
+                let mainFolder = parts[0] || "ทั่วไป";
+                let subFolder = parts.length > 1 ? parts.slice(1).join(' / ') : null;
+
+                if (!groups[mainFolder]) groups[mainFolder] = { __songs__: [] };
+                
+                if (subFolder) {
+                    if (!groups[mainFolder][subFolder]) groups[mainFolder][subFolder] = [];
+                    groups[mainFolder][subFolder].push(s);
+                } else {
+                    groups[mainFolder].__songs__.push(s);
+                }
             });
 
+            if (Object.keys(groups).length === 0) {
+                area.innerHTML = "<div style='text-align:center; color:#666;'>ไม่พบข้อมูลเพลง</div>";
+                return;
+            }
+
             let html = "";
-            Object.keys(groups).sort().forEach((f, idx) => {
+            let mainIdx = 0;
+
+            // 2. นำข้อมูลที่จัดกลุ่มแล้วมาสร้าง HTML โฟลเดอร์ซ้อนโฟลเดอร์
+            Object.keys(groups).sort().forEach(main => {
+                const folderData = groups[main];
+                let totalSongs = folderData.__songs__.length;
+                
+                Object.keys(folderData).forEach(k => {
+                    if (k !== '__songs__') totalSongs += folderData[k].length;
+                });
+
                 html += `
                     <div class="folder-card">
-                        <div class="folder-header" onclick="toggleFolder('${idx}')">
-                            <div class="folder-title">📁 ${f} <span style="font-size:12px; color:#666; font-weight:normal;">(${groups[f].length})</span></div>
-                            <div class="folder-icon" id="icon-${idx}">▼</div>
+                        <div class="folder-header" onclick="toggleFolder('main-${mainIdx}')">
+                            <div class="folder-title">📁 ${main} <span style="font-size: 12px; color: #666; font-weight: normal;">(${totalSongs})</span></div>
+                            <div class="folder-icon" id="icon-main-${mainIdx}">▼</div>
                         </div>
-                        <div class="folder-content" id="content-${idx}">
-                            ${groups[f].map(s => `
-                                <div class="music-item">
-                                    <div class="song-info">${s.title}</div>
-                                    <div class="action-group">
-                                        <button class="btn-icon btn-add-q" onclick="addToQueueOnly('${s.url}', '${s.title.replace(/'/g, "\\'")}', '${f.replace(/'/g, "\\'")}')">➕</button>
-                                        <button class="btn-icon btn-play-now" onclick="playNow('${s.url}', '${s.title.replace(/'/g, "\\'")}', '${f.replace(/'/g, "\\'")}')">▶</button>
-                                    </div>
-                                </div>
-                            `).join('')}
+                        <div class="folder-content" id="content-main-${mainIdx}">
+                `;
+
+                // วาดโฟลเดอร์ย่อย (ถ้ามี)
+                let subIdx = 0;
+                Object.keys(folderData).sort().forEach(sub => {
+                    if (sub === '__songs__') return;
+                    html += `
+                        <div class="subfolder-card">
+                            <div class="subfolder-header" onclick="toggleFolder('sub-${mainIdx}-${subIdx}')">
+                                <div>📂 ${sub} <span style="font-size: 11px; color: #888;">(${folderData[sub].length})</span></div>
+                                <div class="folder-icon" id="icon-sub-${mainIdx}-${subIdx}">▼</div>
+                            </div>
+                            <div class="subfolder-content" id="content-sub-${mainIdx}-${subIdx}">
+                                ${createSongListHTML(folderData[sub], main)}
+                            </div>
                         </div>
-                    </div>`;
+                    `;
+                    subIdx++;
+                });
+
+                // วาดเพลงที่อยู่ในโฟลเดอร์หลักโดยตรง (ไม่มีโฟลเดอร์ย่อย)
+                if (folderData.__songs__.length > 0) {
+                    html += createSongListHTML(folderData.__songs__, main);
+                }
+
+                html += `</div></div>`;
+                mainIdx++;
             });
-            area.innerHTML = html || "ไม่พบข้อมูลเพลง";
+
+            area.innerHTML = html;
         }
 
         function toggleFolder(id) {
-            const c = document.getElementById(`content-${id}`);
-            const i = document.getElementById(`icon-${id}`);
-            const isOpen = c.style.display === "block";
-            c.style.display = isOpen ? "none" : "block";
-            i.style.transform = isOpen ? "rotate(0deg)" : "rotate(180deg)";
+            const content = document.getElementById(`content-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                icon.style.transform = "rotate(0deg)";
+            } else {
+                content.style.display = "block";
+                icon.style.transform = "rotate(180deg)";
+            }
         }
 
-        function playNow(url, name, artist) {
-            ap.list.add([{ name, artist, url, theme: '#d4af37' }]);
+        function playNow(url, title, artist) {
+            ap.list.add([{ name: title, artist: artist, url: url, theme: '#d4af37' }]);
             ap.list.switch(ap.list.audios.length - 1); ap.play();
         }
-        function addToQueueOnly(url, name, artist) {
-            ap.list.add([{ name, artist, url, theme: '#d4af37' }]); showToast('เพิ่มลงคิวแล้ว');
+
+        function addToQueueOnly(url, title, artist) {
+            ap.list.add([{ name: title, artist: artist, url: url, theme: '#d4af37' }]);
+            showToast('เพิ่มลงคิวแล้ว');
         }
-        function toggleModal(id) {
-            const m = document.getElementById(id);
-            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
-            if(m.style.display === 'flex') renderSavedQueues();
+
+        function toggleModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+            if(modal.style.display === 'flex') renderSavedQueues();
         }
+
         function saveQueueToStorage() {
             if (ap.list.audios.length === 0) return showToast("ไม่มีเพลงในคิว");
-            const n = prompt("ตั้งชื่อคลังคิวเพลงนี้:", "คิว " + new Date().toLocaleTimeString());
-            if (n) {
-                const v = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
-                v[n] = ap.list.audios; localStorage.setItem('my_music_vault', JSON.stringify(v));
+            const name = prompt("ตั้งชื่อคลังคิวเพลงนี้:", "คิว " + new Date().toLocaleTimeString('th-TH'));
+            if (name) {
+                const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
+                collections[name] = ap.list.audios;
+                localStorage.setItem('my_music_vault', JSON.stringify(collections));
                 showToast("บันทึกคิวเรียบร้อย");
             }
         }
-        function clearCurrentQueue() { if (confirm("ล้างรายการคิว?")) { ap.list.clear(); showToast("ล้างคิวเรียบร้อย"); } }
+
+        function clearCurrentQueue() {
+            if (ap.list.audios.length === 0) return showToast("รายการคิวว่างเปล่า");
+            if (confirm("ล้างรายการคิวที่กำลังเล่นอยู่ทั้งหมด?")) { ap.list.clear(); showToast("ล้างคิวเรียบร้อย"); }
+        }
+
         function renderSavedQueues() {
-            const c = document.getElementById('saved-queues-area');
-            const v = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
-            const k = Object.keys(v);
-            c.innerHTML = k.length ? k.map(x => `
+            const container = document.getElementById('saved-queues-area');
+            const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
+            const keys = Object.keys(collections);
+            if (keys.length === 0) {
+                container.innerHTML = "<div style='color:#666; font-size:13px; text-align:center; padding: 20px 0;'>ยังไม่มีคลังคิวที่บันทึกไว้</div>";
+                return;
+            }
+            container.innerHTML = keys.map(k => `
                 <div class="storage-item">
-                    <span>💽 ${x} (${v[x].length} เพลง)</span>
-                    <div>
-                        <button class="btn-small btn-load" onclick="loadVaultQueue('${x}')">โหลด</button>
-                        <button class="btn-small btn-del" onclick="deleteVaultQueue('${x}')">ลบ</button>
+                    <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 10px;">💽 ${k} <br><span style="font-size: 11px; color: #888;">${collections[k].length} เพลง</span></span>
+                    <div style="display:flex; gap: 5px;">
+                        <button class="btn-small btn-load" onclick="loadVaultQueue('${k}')">โหลด</button>
+                        <button class="btn-small btn-del" onclick="deleteVaultQueue('${k}')">ลบ</button>
                     </div>
-                </div>`).join('') : "ยังไม่มีคลังคิว";
+                </div>
+            `).join('');
         }
-        function loadVaultQueue(n) {
-            const v = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
-            if (v[n]) { ap.list.clear(); ap.list.add(v[n]); toggleModal('queue-modal'); ap.play(); }
+
+        function loadVaultQueue(name) {
+            const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
+            if (collections[name]) {
+                ap.list.clear(); ap.list.add(collections[name]);
+                toggleModal('queue-modal'); if(ap.list.audios.length > 0) ap.play();
+                showToast("โหลดคิวเรียบร้อย");
+            }
         }
-        function deleteVaultQueue(n) { if (confirm(`ลบคลังคิว "${n}"?`)) { const v = JSON.parse(localStorage.getItem('my_music_vault') || '{}'); delete v[n]; localStorage.setItem('my_music_vault', JSON.stringify(v)); renderSavedQueues(); } }
+
+        function deleteVaultQueue(name) {
+            if (confirm(`ต้องการลบคลังคิว "${name}" ใช่หรือไม่?`)) {
+                const collections = JSON.parse(localStorage.getItem('my_music_vault') || '{}');
+                delete collections[name];
+                localStorage.setItem('my_music_vault', JSON.stringify(collections));
+                renderSavedQueues();
+            }
+        }
+
         function filterMusic() {
-            const t = document.getElementById('search').value.toLowerCase();
-            const f = allMusic.filter(s => s.title.toLowerCase().includes(t) || (s.folder && s.folder.toLowerCase().includes(t)));
-            renderMusic(f);
-            if (t) { document.querySelectorAll('.folder-content').forEach(el => el.style.display = 'block'); }
+            const term = document.getElementById('search').value.toLowerCase();
+            const filtered = allMusic.filter(s => 
+                s.title.toLowerCase().includes(term) || (s.folder && s.folder.toLowerCase().includes(term))
+            );
+            renderMusic(filtered);
+            if (term.trim() !== '') {
+                document.querySelectorAll('.folder-content, .subfolder-content').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.folder-icon').forEach(el => el.style.transform = 'rotate(180deg)');
+            }
         }
+
         loadMusic();
     </script>
 </body>

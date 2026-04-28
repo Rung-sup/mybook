@@ -6,17 +6,19 @@ import unicodedata
 import urllib.parse
 import time
 import subprocess
+import requests  # เพิ่มสำหรับดึงปกจาก YouTube
 from pdf2image import convert_from_path
 from PyPDF2 import PdfReader, PdfWriter
 
 # ==========================================
-# ⚙️ CONFIGURATION (ตรวจสอบ Path ให้ตรงกับเครื่องท่าน)
+# ⚙️ CONFIGURATION
 # ==========================================
 PROCESS_ZONE = r'C:\Process_Zone'
 LIBRARY_ROOT = r'C:\MyLibrary'
 DB_DIR = r'C:\MyBook_Test'
 DB_PATH = os.path.join(DB_DIR, 'database.json')
 MUSIC_DB_PATH = os.path.join(DB_DIR, 'music_db.json')
+AUDIOBOOK_DB_PATH = os.path.join(DB_DIR, 'audiobook_db.json') # เพิ่มก้อน DB ใหม่
 POPPLER_PATH = r'C:\MyBook_Test\poppler-25.12.0\Library\bin'
 GS_PATH = r'C:\Program Files\gs\gs10.07.0\bin\gswin64c.exe'
 
@@ -24,15 +26,31 @@ GITHUB_USER = "rung-sup"
 MAX_SIZE_MB = 95
 BATCH_SIZE = 15
 
+# ✅ ฟีเจอร์ดึงปก YouTube อัตโนมัติ
+def get_yt_thumbnail(url, save_path):
+    if os.path.exists(save_path): return True
+    video_id = ""
+    if "v=" in url: video_id = url.split("v=")[1].split("&")[0]
+    elif "youtu.be/" in url: video_id = url.split("youtu.be/")[1]
+    
+    if video_id:
+        img_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+        try:
+            r = requests.get(img_url, timeout=10)
+            if r.status_code == 200:
+                with open(save_path, 'wb') as f: f.write(r.content)
+                return True
+        except: pass
+    return False
+
 def run_git(command, cwd):
     try:
-        # ซ่อม: เพิ่ม timeout เพื่อไม่ให้ค้างที่คำสั่ง git
+        # 📍 กฎเหล็ก: Timeout 60 วินาที
         result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8', errors='ignore', cwd=cwd, timeout=60)
         return result.stdout.strip()
     except: return None
 
 def get_file_hash(f_path):
-    """สร้าง MD5 Hash เพื่อตรวจไฟล์ซ้ำจากเนื้อหาจริงๆ"""
     hasher = hashlib.md5()
     try:
         with open(f_path, 'rb') as f:
@@ -45,7 +63,6 @@ def get_file_hash(f_path):
     return hasher.hexdigest()
 
 def compress_pdf_high(f_path):
-    """บีบอัด PDF ขั้นสูง (eBook Quality) เพื่อพยายามรักษาเล่มไม่ให้ถูกแบ่ง"""
     if not os.path.exists(GS_PATH): return False
     temp_out = f_path.replace(".pdf", "_compressed_tmp.pdf")
     gs_cmd = [
@@ -65,22 +82,19 @@ def compress_pdf_high(f_path):
     return False
 
 def split_with_cover_injection(f_path):
-    """แบ่งเล่ม PDF และคัดลอกหน้าปกจากเล่มแรกไปใส่ให้เล่มที่สองอัตโนมัติ"""
-    print(f"   ✂️ ไฟล์ยังใหญ่เกินไป! กำลังแบ่งเล่มและแถมหน้าปกให้เล่มลูก...")
+    print(f"   ✂️ ไฟล์ยังใหญ่เกินไป! กำลังแบ่งเล่ม...")
     reader = PdfReader(f_path)
     total_pages = len(reader.pages)
     base_name = os.path.splitext(f_path)[0]
     mid = total_pages // 2
     
-    # เล่ม 1.1
     w1 = PdfWriter()
     for i in range(0, mid): w1.add_page(reader.pages[i])
     path1 = f"{base_name} Part 1.1.pdf"
     with open(path1, "wb") as f: w1.write(f)
     
-    # เล่ม 1.2 (แถมปกหน้าแรก)
     w2 = PdfWriter()
-    w2.add_page(reader.pages[0]) # ✅ ก๊อปปี้หน้าปก
+    w2.add_page(reader.pages[0])
     for i in range(mid, total_pages): w2.add_page(reader.pages[i])
     path2 = f"{base_name} Part 1.2.pdf"
     with open(path2, "wb") as f: w2.write(f)
@@ -93,7 +107,6 @@ def generate_cover_id(rel_path):
     return hashlib.md5(normalized.encode('utf-8')).hexdigest()
 
 def main():
-    # โหลด Hash เดิมจาก DB เพื่อเช็กซ้ำ
     existing_hashes = {}
     if os.path.exists(DB_PATH):
         with open(DB_PATH, 'r', encoding='utf-8') as f:
@@ -104,7 +117,7 @@ def main():
             except: pass
 
     # --- STEP 1: SMART PROCESS & MOVE ---
-    print("🛠 [1/3] กำลังตรวจสอบไฟล์ด้วยระบบ Hash & High Compression...")
+    print("🛠 [1/3] กำลังตรวจสอบไฟล์ระบบ Hash & Compression...")
     for cat in os.listdir(PROCESS_ZONE):
         cat_staging = os.path.join(PROCESS_ZONE, cat)
         if not os.path.isdir(cat_staging): continue
@@ -113,22 +126,19 @@ def main():
 
         for item in os.listdir(cat_staging):
             f_path = os.path.join(cat_staging, item)
-            
-            # ตรวจซ้ำด้วย Hash
             if not os.path.isdir(f_path):
                 f_hash = get_file_hash(f_path)
                 if f_hash in existing_hashes:
-                    print(f"   🗑️ พบไฟล์ซ้ำจากเนื้อหา (ลบทิ้ง): {item} (ซ้ำกับ {existing_hashes[f_hash]})")
+                    print(f"   🗑️ พบไฟล์ซ้ำ: {item}")
                     os.remove(f_path); continue
 
-            # บีบอัดและแบ่งเล่ม (เฉพาะ PDF)
+            # 📍 กฎเหล็ก: คุมขนาด 95MB เฉพาะ PDF
             if item.lower().endswith('.pdf'):
                 if os.path.getsize(f_path) / (1024*1024) > MAX_SIZE_MB:
                     compress_pdf_high(f_path)
                     if os.path.getsize(f_path) / (1024*1024) > MAX_SIZE_MB:
                         split_with_cover_injection(f_path); continue
 
-            # ย้ายไฟล์/โฟลเดอร์
             dest = os.path.join(target_lib, item)
             if os.path.isdir(f_path):
                 if os.path.exists(dest):
@@ -142,27 +152,57 @@ def main():
                 if os.path.exists(dest): os.remove(f_path)
                 else: shutil.move(f_path, dest)
 
-    # --- STEP 2: UPDATE DB & GROUPING ---
-    print("📊 [2/3] อัปเดตฐานข้อมูล จัดกลุ่มโฟลเดอร์ และสร้างหน้าปก...")
-    all_books, all_music = [], []
+    # --- STEP 2: UPDATE DB & AUDIOBOOKS ---
+    print("📊 [2/3] อัปเดตฐานข้อมูล (รวมหมวด AudioBooks)...")
+    all_books, all_music, all_audiobooks = [], [], []
     for cat in os.listdir(LIBRARY_ROOT):
         cat_path = os.path.join(LIBRARY_ROOT, cat)
         if not os.path.isdir(cat_path) or cat in ['.git', 'covers']: continue
         
-        for root, _, files in os.walk(cat_path):
+        is_audio_cat = cat.startswith("8_") or "audiobook" in cat.lower()
+
+        for root, dirs, files in os.walk(cat_path):
             rel_folder = os.path.relpath(root, cat_path)
             display_folder = "ทั่วไป" if rel_folder == "." else rel_folder
-            
+
+            # ✅ ฟีเจอร์ใหม่: หนังสือเสียงจาก links.txt
+            if is_audio_cat and "links.txt" in files:
+                link_path = os.path.join(root, "links.txt")
+                with open(link_path, 'r', encoding='utf-8') as f:
+                    content = f.read().splitlines()
+                
+                first_link = next((line for line in content if "http" in line), "")
+                cover_id = generate_cover_id(rel_folder)
+                cover_dir = os.path.join(DB_DIR, 'covers', cat)
+                os.makedirs(cover_dir, exist_ok=True)
+                cover_out = os.path.join(cover_dir, f"{cover_id}.jpg")
+                
+                get_yt_thumbnail(first_link, cover_out) # ดึงปก YouTube
+
+                episodes = []
+                current_title = ""
+                for line in content:
+                    if not line.strip(): continue
+                    if "http" in line:
+                        episodes.append({"ep_title": current_title, "ep_url": line.strip()})
+                    else: current_title = line.strip()
+
+                all_audiobooks.append({
+                    "title": rel_folder, "cover_id": cover_id, "category": cat,
+                    "episodes": episodes, "type": "audiobook_playlist"
+                })
+                dirs.clear(); continue # จบงานโฟลเดอร์นี้
+
+            # PDF & MP3 เดิม
             for f in files:
                 if f.lower().endswith(('.pdf', '.mp3')):
                     full_p = os.path.join(root, f)
                     f_hash = get_file_hash(full_p)
                     cover_id = generate_cover_id(os.path.relpath(full_p, LIBRARY_ROOT))
-                    
-                    # สร้างปกไปที่ MyBook_Test/covers
                     cover_dir = os.path.join(DB_DIR, 'covers', cat)
                     os.makedirs(cover_dir, exist_ok=True)
                     cover_out = os.path.join(cover_dir, f"{cover_id}.jpg")
+                    
                     if f.lower().endswith('.pdf') and not os.path.exists(cover_out):
                         try:
                             imgs = convert_from_path(full_p, first_page=1, last_page=1, size=(None, 400), poppler_path=POPPLER_PATH)
@@ -175,67 +215,36 @@ def main():
                         "url": f"https://raw.githubusercontent.com/{GITHUB_USER}/{cat}/main/{urllib.parse.quote(path_in_repo)}",
                         "category": cat, "folder": display_folder, "cover_id": cover_id, "file_hash": f_hash
                     }
-                    # ซ่อม: ปรับการแยกเพลงให้แม่นยำขึ้น
-                    if cat.startswith("7_") or f.lower().endswith('.mp3'):
-                        all_music.append(item_data)
-                    else:
-                        all_books.append(item_data)
+                    if cat.startswith("7_") or f.lower().endswith('.mp3'): all_music.append(item_data)
+                    else: all_books.append(item_data)
 
     # บันทึก JSON
     with open(DB_PATH, 'w', encoding='utf-8') as f: json.dump({"books": all_books}, f, ensure_ascii=False, indent=4)
     with open(MUSIC_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"music": all_music}, f, ensure_ascii=False, indent=4)
+    with open(AUDIOBOOK_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"audiobooks": all_audiobooks}, f, ensure_ascii=False, indent=4)
 
     # --- STEP 3: FULL SYNC ---
     print("\n☁️ [3/3] กำลังทยอยส่งข้อมูลขึ้น Cloud...")
-    
-    # 3.1 ส่งเนื้อหา (MyLibrary)
     for folder in os.listdir(LIBRARY_ROOT):
         f_p = os.path.join(LIBRARY_ROOT, folder)
         if os.path.exists(os.path.join(f_p, ".git")):
-            print(f"🚀 กำลังส่งห้อง: {folder}")
+            print(f"🚀 ส่งห้อง: {folder}")
             run_git("git add .", f_p)
-            run_git('git commit -m "Auto-sync V1.4"', f_p)
-            # ซ่อม: ใช้ subprocess แบบมี timeout เพื่อป้องกันการค้าง
+            run_git('git commit -m "Auto-sync AudioBooks"', f_p)
             try:
                 subprocess.run("git push origin HEAD", cwd=f_p, shell=True, timeout=60)
-            except: print(f"   ⚠️ ห้อง {folder} ใช้เวลาส่งนานเกินไป (ข้าม)")
+            except: print(f"   ⚠️ {folder} Timeout")
 
-    # ... (ส่วนต้นของโค้ดเหมือนเดิมจนถึง Step 3) ...
-
-    # --- STEP 3: FULL SYNC ---
-    print("\n☁️ [3/3] กำลังทยอยส่งข้อมูลขึ้น Cloud...")
-    
-    # 3.1 ส่งเนื้อหา (MyLibrary)
-    for folder in os.listdir(LIBRARY_ROOT):
-        f_p = os.path.join(LIBRARY_ROOT, folder)
-        if os.path.exists(os.path.join(f_p, ".git")):
-            print(f"🚀 กำลังส่งห้อง: {folder}")
-            run_git("git add .", f_p)
-            run_git('git commit -m "Auto-sync V1.4"', f_p)
-            # ✅ แก้ไข: เพิ่ม timeout 60 วินาที ป้องกันการค้าง
-            try:
-                subprocess.run("git push origin HEAD", cwd=f_p, shell=True, timeout=60)
-            except subprocess.TimeoutExpired:
-                print(f"   ⚠️ ห้อง {folder} ใช้เวลาส่งนานเกินไป (ข้ามเพื่อไม่ให้ค้าง)")
-
-    # 3.2 ส่งฐานข้อมูลและหน้าปก (MyBook_Test)
     if os.path.exists(os.path.join(DB_DIR, ".git")):
-        print("💾 กำลังส่งฐานข้อมูลและหน้าปก...")
+        print("💾 ส่งฐานข้อมูลและปก...")
         run_git("git add .", DB_DIR)
-        status = run_git("git status --porcelain", DB_DIR)
-        if status:
-            run_git('git commit -m "Final DB and Covers Sync"', DB_DIR)
-            # ✅ แก้ไข: เพิ่ม timeout 60 วินาที ป้องกันการค้าง
+        if run_git("git status --porcelain", DB_DIR):
+            run_git('git commit -m "Update Audiobook DB"', DB_DIR)
             try:
                 subprocess.run("git push origin HEAD", cwd=DB_DIR, shell=True, timeout=60)
-                print("   ✅ อัปเดต Repo MyBook สำเร็จ!")
-            except subprocess.TimeoutExpired:
-                print("   ⚠️ การส่งฐานข้อมูลค้าง (ข้ามเพื่อให้สคริปต์ปิดตัวได้)")
-        else:
-            print("   ✅ ไม่มีข้อมูลใหม่ใน MyBook_Test")
+            except: print("   ⚠️ DB Sync Timeout")
 
-    # บังคับจบงาน
-    print("\n✨ [ภารกิจเสร็จสมบูรณ์] ข้อมูลทุกอย่างปลอดภัยบน Cloud แล้วครับ")
+    print("\n✨ เสร็จสมบูรณ์! เชิญเช็กที่หน้าแอปได้เลยครับ")
     time.sleep(2)
     os._exit(0)
 

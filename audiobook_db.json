@@ -1,0 +1,76 @@
+{
+    "audiobooks": [
+        {
+            "title": "เซียวฮื้อยี้",
+            "cover_id": "bbe4e441474b9e8b785bedf246cb5f7b",
+            "category": "8_AudioBooks",
+            "episodes": [
+                {
+                    "ep_title": "บทที่ 1: เทพบุตรสุดสำอาง (แนะนำ กังปัง และอี้หน่ำเทียน)",
+                    "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=42s"
+                },
+                {
+                    "ep_title": "บทที่ 2: กำพร้าใต้คมมีด (เหตุการณ์สะเทือนขวัญและการกำเนิดเด็กแฝด)",
+                    "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=2118s"
+                },
+                {
+                    "ep_title": "บทที่ 3: มุสิกขุดดิน (การปรากฏตัวของสิบเหล่าโฉด)",
+                    "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=0s"
+                },
+                {
+                    "ep_title": "บทที่ 4: กระบี่เทวดาอี้หน่ำเทียน (ความแค้นในหุบเขาคนโฉด)",
+                    "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=2018s"
+                },
+                {
+                    "ep_title": "บทที่ 5: หุบเขาคนโฉด (การเติบโตของเซียวฮื้อยี้)",
+                    "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=0s"
+                },
+                {
+                    "ep_title": "บทที่ 6: ฆาตกรรมกลางหุบเขา",
+                    "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=2594s"
+                },
+                {
+                    "ep_title": "บทที่ 7-10: การผจญภัยในโลกกว้างครั้งแรก",
+                    "ep_url": "https://www.youtube.com/watch?v=8M0C_k9Wf-E"
+                },
+                {
+                    "ep_title": "บทที่ 11-15: พบพานทิปิงกูและปริศนาลายแทงสมบัติ",
+                    "ep_url": "https://www.youtube.com/watch?v=pD9_k-uO7r8"
+                },
+                {
+                    "ep_title": "บทที่ 16-20: ความลับของพรรคกระยาจกและพรรคมังกรแดง",
+                    "ep_url": "https://www.youtube.com/watch?v=BfX2R9XvQeA"
+                },
+                {
+                    "ep_title": "บทที่ 21-25: การเผชิญหน้ากับสตรีลึกลับแห่งวังบุปผา",
+                    "ep_url": "https://www.youtube.com/watch?v=I9rrz0Arm3E"
+                },
+                {
+                    "ep_title": "บทที่ 26-30: แผนร้ายใต้วังบุปผาและการพบกันของพี่น้อง",
+                    "ep_url": "https://www.youtube.com/watch?v=nEZMxPDpJ3Y"
+                },
+                {
+                    "ep_title": "บทที่ 31-40: ปริศนาขุมทรัพย์และยอดคนแห่งยุทธจักร",
+                    "ep_url": "https://www.youtube.com/watch?v=z8fG5Kx7X7A"
+                },
+                {
+                    "ep_title": "บทที่ 41-55: การประลองยุทธ์และมิตรภาพที่ซับซ้อน",
+                    "ep_url": "https://www.youtube.com/watch?v=VlW9W7XyR1E"
+                },
+                {
+                    "ep_title": "บทที่ 56-75: ความจริงที่เริ่มปรากฏและแผนซ้อนแผน",
+                    "ep_url": "https://www.youtube.com/watch?v=mD9rX_YV5_w"
+                },
+                {
+                    "ep_title": "บทที่ 76-90: วิกฤตการณ์ยุทธจักรและจุดจบของเหล่าคนโฉด",
+                    "ep_url": "https://www.youtube.com/watch?v=tqDikS-nGw0"
+                },
+                {
+                    "ep_title": "บทที่ 91-103: ศึกตัดสินครั้งสุดท้ายและบทสรุปของสายเลือด",
+                    "ep_url": "https://www.youtube.com/watch?v=G6E_6Tf5E98"
+                }
+            ],
+            "type": "audiobook_playlist"
+        }
+    ]
+}

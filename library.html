@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, user-scalable=yes">
+    <title>คลังสื่อคุณ Runnara</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background-color: #f4f1ea; color: #333; padding-bottom: 120px; overflow-x: hidden; }
+        
+        /* Header & Search */
+        .header { padding: 10px 15px; background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight: 500; }
+        .search-input { width: 100%; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 13px; }
+
+        .view-controls { display: flex; gap: 5px; margin-left: 5px; }
+        .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .btn-view.active { background: #d4af37; color: #000; border-color: #d4af37; }
+
+        /* Grid & List Layout */
+        .container { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+        .container.list-mode { display: flex; flex-direction: column; gap: 8px; }
+        .container.list-mode .book-card { display: flex; align-items: center; height: 60px; border-radius: 8px; }
+        .container.list-mode .cover-box { width: 45px; min-width: 45px; padding-bottom: 0; height: 100%; border-right: 1px solid #eee; }
+        .container.list-mode .book-info { flex-grow: 1; text-align: left; padding-left: 15px; font-size: 13px; height: auto; justify-content: flex-start; }
+
+        .book-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; position: relative; border: 1px solid #eee; }
+        .folder-card { border: 2px solid #d4af37; }
+        .cover-box { width: 100%; padding-bottom: 145%; position: relative; background: #e0e0e0; }
+        .book-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Badges */
+        .folder-badge { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fff; padding: 3px 7px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 10; }
+        .status-badge { position: absolute; top: 5px; left: 5px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; z-index: 5; }
+        .audio-badge { position: absolute; top: 5px; right: 5px; background: #ff4d4d; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; z-index: 5; }
+        .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
+
+        /* Glass-morphism Audiobook Player */
+        .glass-player {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 25px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 9999; border: 1px solid rgba(255, 255, 255, 0.3);
+            display: none; align-items: center; gap: 12px;
+        }
+        .player-cover { width: 55px; height: 55px; border-radius: 15px; object-fit: cover; }
+        .player-info-text { flex-grow: 1; overflow: hidden; }
+        .player-info-text h4 { margin: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .player-info-text p { margin: 0; font-size: 11px; color: #666; }
+        .player-btns { display: flex; gap: 8px; }
+        .btn-circle { width: 34px; height: 34px; border-radius: 50%; border: none; background: #333; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+
+        /* Episode Selector Modal */
+        #episode-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; align-items: flex-end; }
+        .modal-content { background: #fff; width: 100%; max-height: 70vh; border-radius: 25px 25px 0 0; padding: 20px; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .episode-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+
+        /* PDF Reader Overlay */
+        #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
+        #pdf-render-container { flex-grow: 1; overflow: auto; background: #1a1a1a; position: relative; }
+        #pdf-canvas { display: block; margin: 0 auto; max-width: 100%; }
+        .nav-zone { position: absolute; top: 0; bottom: 0; width: 25%; z-index: 5010; cursor: pointer; background: rgba(0,0,0,0); }
+        .nav-left { left: 0; } .nav-right { right: 0; }
+
+        /* Continue Reading Section (88px) */
+        .continue-card { width: 88px !important; min-width: 88px !important; }
+        .continue-card .book-info { font-size: 9px; height: 30px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <button onclick="goBack()" class="btn-back">❮ กลับ</button>
+    <div style="flex-grow: 1;"><input type="text" id="global-search" class="search-input" placeholder="กำลังโหลด..." oninput="handleSearch()"></div>
+    <div class="view-controls">
+        <button id="grid-btn" onclick="toggleView('grid')" class="btn-view active">🔳</button>
+        <button id="list-btn" onclick="toggleView('list')" class="btn-view">≡</button>
+    </div>
+</div>
+
+<div id="continue-reading-section" style="display: none; padding: 15px; background: #e9e4d9; border-bottom: 2px solid #d4af37;">
+    <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #8b6d00;">📚 อ่านค้างไว้ล่าสุด</h3>
+    <div id="continue-list" style="display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px;"></div>
+</div>
+
+<div id="book-list" class="container"></div>
+
+<div id="episode-modal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3 id="modal-title" style="margin-top:0;">เลือกตอน</h3>
+        <div id="episode-list"></div>
+    </div>
+</div>
+
+<div id="audio-player-ui" class="glass-player">
+    <img id="player-img" src="" class="player-cover">
+    <div class="player-info-text">
+        <h4 id="player-title">กำลังเล่น...</h4>
+        <p id="player-ep">ตอนที่ 1</p>
+    </div>
+    <div class="player-btns">
+        <button class="btn-circle" onclick="seek(-10)">-10</button>
+        <button id="master-play-btn" class="btn-circle" style="background:#d4af37; color:#000;" onclick="toggleYT()">▶</button>
+        <button class="btn-circle" onclick="seek(30)">+30</button>
+        <button class="btn-circle" style="background:#eee; color:#333;" onclick="closePlayer()">✕</button>
+    </div>
+</div>
+
+<div id="yt-player-hidden" style="position:fixed; top:-999px;"></div>
+
+<div id="reader-overlay">
+    <div style="padding:10px; background:#222; display:flex; justify-content:space-between; align-items:center;">
+        <button onclick="closeBook()" style="background:#ff4d4d; color:white; border:none; padding:8px 15px; border-radius:5px;">ปิด</button>
+        <span id="page-info" style="color:#d4af37; font-size:14px;"></span>
+        <div style="width:40px;"></div>
+    </div>
+    <div id="pdf-render-container">
+        <div class="nav-zone nav-left" onclick="changePage(-1)"></div>
+        <canvas id="pdf-canvas"></canvas>
+        <div class="nav-zone nav-right" onclick="changePage(1)"></div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo", authDomain: "myreaderapp-89e75.firebaseapp.com", projectId: "myreaderapp-89e75", storageBucket: "myreaderapp-89e75.firebasestorage.app", messagingSenderId: "1016151043482", appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+    let allBooksGlobal = [], allBooksCurrent = [], currentCategory = "", pdfDoc = null, ytPlayer = null, isYTReady = false;
+
+    // YouTube API
+    function onYouTubeIframeAPIReady() {
+        ytPlayer = new YT.Player('yt-player-hidden', {
+            events: { 'onReady': () => { isYTReady = true; }, 'onStateChange': (e) => { if(e.data === 0) document.getElementById('master-play-btn').innerText = '▶'; } }
+        });
+    }
+
+    async function loadData() {
+        const params = new URLSearchParams(window.location.search);
+        currentCategory = params.get('cat') || "";
+        
+        const res = await fetch(`database.json?v=${Date.now()}`);
+        const data = await res.json();
+        allBooksGlobal = data.books || [];
+        renderContinueReading();
+
+        if (currentCategory === '8_AudioBooks') {
+            const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
+            const dataAudio = await resAudio.json();
+            allBooksCurrent = dataAudio.audiobooks || [];
+        } else if (currentCategory === '7_music') {
+            const resMusic = await fetch(`music_db.json?v=${Date.now()}`);
+            const dataMusic = await resMusic.json();
+            allBooksCurrent = (dataMusic.music || []).map(m => ({...m, is_music: true}));
+        } else {
+            allBooksCurrent = allBooksGlobal.filter(b => b.category === currentCategory);
+        }
+        renderList(allBooksCurrent);
+    }
+
+    function renderList(items) {
+        const container = document.getElementById('book-list');
+        container.innerHTML = '';
+        const user = firebase.auth().currentUser;
+        const history = user ? JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {} : {};
+
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'book-card' + (item.episodes ? ' folder-card' : '');
+            let badge = item.episodes ? `<div class="audio-badge">🔊 ${item.episodes.length}</div>` : '';
+            if (!item.episodes) {
+                const bId = btoa(encodeURIComponent(item.url));
+                if (history[bId]) badge = `<div class="status-badge">หน้า ${history[bId].p}</div>`;
+            }
+
+            card.innerHTML = `<div class="cover-box">${badge}<img src="covers/${item.category}/${item.cover_id}.jpg" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=Runnara'"></div><div class="book-info">${item.title}</div>`;
+            card.onclick = () => item.episodes ? openEpisodes(item) : (item.is_music ? window.location.href='music_room.html' : openBook(item.url));
+            container.appendChild(card);
+        });
+    }
+
+    function openEpisodes(book) {
+        const list = document.getElementById('episode-list');
+        list.innerHTML = '';
+        document.getElementById('modal-title').innerText = book.title;
+        book.episodes.forEach(ep => {
+            const div = document.createElement('div');
+            div.className = 'episode-item';
+            div.innerHTML = `<span>${ep.ep_title}</span> ➔`;
+            div.onclick = () => playAudio(ep, book);
+            list.appendChild(div);
+        });
+        document.getElementById('episode-modal').style.display = 'flex';
+    }
+
+    function playAudio(ep, book) {
+        if(!isYTReady) return;
+        const vid = ep.ep_url.split('v=')[1].split('&')[0];
+        const saved = localStorage.getItem(`audio_pos_${btoa(ep.ep_url)}`) || 0;
+        ytPlayer.loadVideoById(vid, parseFloat(saved));
+        document.getElementById('audio-player-ui').style.display = 'flex';
+        document.getElementById('player-img').src = `covers/${book.category}/${book.cover_id}.jpg`;
+        document.getElementById('player-title').innerText = book.title;
+        document.getElementById('player-ep').innerText = ep.ep_title;
+        document.getElementById('master-play-btn').innerText = '⏸';
+        document.getElementById('episode-modal').style.display = 'none';
+        
+        if(window.audInt) clearInterval(window.audInt);
+        window.audInt = setInterval(() => {
+            if(ytPlayer.getPlayerState() === 1) localStorage.setItem(`audio_pos_${btoa(ep.ep_url)}`, ytPlayer.getCurrentTime());
+        }, 5000);
+    }
+
+    function toggleYT() {
+        const s = ytPlayer.getPlayerState();
+        if(s === 1) { ytPlayer.pauseVideo(); document.getElementById('master-play-btn').innerText = '▶'; }
+        else { ytPlayer.playVideo(); document.getElementById('master-play-btn').innerText = '⏸'; }
+    }
+
+    function seek(sec) { ytPlayer.seekTo(ytPlayer.getCurrentTime() + sec, true); }
+    function closePlayer() { ytPlayer.stopVideo(); document.getElementById('audio-player-ui').style.display = 'none'; }
+
+    async function openBook(url) {
+        const overlay = document.getElementById('reader-overlay');
+        overlay.style.display = 'flex';
+        pdfDoc = await pdfjsLib.getDocument(url).promise;
+        const history = JSON.parse(localStorage.getItem(`puk_history_${firebase.auth().currentUser.uid}`)) || {};
+        const start = history[btoa(encodeURIComponent(url))] ? history[btoa(encodeURIComponent(url))].p : 1;
+        renderPage(start, url);
+    }
+
+    async function renderPage(num, url) {
+        const page = await pdfDoc.getPage(num);
+        const canvas = document.getElementById('pdf-canvas');
+        const viewport = page.getViewport({ scale: window.innerWidth / page.getViewport({scale:1}).width * 1.5 });
+        canvas.width = viewport.width; canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+        window.currP = num; window.currU = url;
+        let history = JSON.parse(localStorage.getItem(`puk_history_${firebase.auth().currentUser.uid}`)) || {};
+        history[btoa(encodeURIComponent(url))] = { p: num, t: Date.now() };
+        localStorage.setItem(`puk_history_${firebase.auth().currentUser.uid}`, JSON.stringify(history));
+    }
+
+    function changePage(d) { let n = window.currP + d; if(n >= 1 && n <= pdfDoc.numPages) renderPage(n, window.currU); }
+    function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; loadData(); }
+    function goBack() { window.location.href = 'categories.html'; }
+    function toggleView(m) { 
+        const c = document.getElementById('book-list');
+        if(m === 'list') { c.classList.add('list-mode'); document.getElementById('list-btn').classList.add('active'); document.getElementById('grid-btn').classList.remove('active'); }
+        else { c.classList.remove('list-mode'); document.getElementById('grid-btn').classList.add('active'); document.getElementById('list-btn').classList.remove('active'); }
+    }
+    function renderContinueReading() {
+        const user = firebase.auth().currentUser; if(!user) return;
+        const history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {};
+        const sorted = Object.keys(history).sort((a,b) => history[b].t - history[a].t).slice(0, 10);
+        const list = document.getElementById('continue-list'); list.innerHTML = '';
+        if(sorted.length > 0) document.getElementById('continue-reading-section').style.display = 'block';
+        sorted.forEach(id => {
+            const book = allBooksGlobal.find(b => btoa(encodeURIComponent(b.url)) === id);
+            if(book) {
+                const div = document.createElement('div'); div.className = 'book-card continue-card';
+                div.innerHTML = `<div class="cover-box"><div class="status-badge">หน้า ${history[id].p}</div><img src="covers/${book.category}/${book.cover_id}.jpg" class="book-cover-img"></div><div class="book-info">${book.title}</div>`;
+                div.onclick = () => openBook(book.url); list.appendChild(div);
+            }
+        });
+    }
+    function handleSearch() {
+        const q = document.getElementById('global-search').value.toLowerCase();
+        renderList(allBooksCurrent.filter(b => b.title.toLowerCase().includes(q)));
+    }
+    firebase.auth().onAuthStateChanged(user => user ? loadData() : window.location.href='index.html');
+</script>
+</body>
+</html>

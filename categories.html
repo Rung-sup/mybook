@@ -4,79 +4,101 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>หมวดหมู่หนังสือ - Reader App</title>
-    
-    <link rel="icon" type="image/png" sizes="192x192" href="app-icon.png?v=2">
-    <link rel="apple-touch-icon" href="app-icon.png?v=2">
-    
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Runnara">
-    <meta name="theme-color" content="#667eea">
-    
-   
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         body { 
-            /* ใช้โทนสีเดียวกับหน้า Terms ที่พี่ให้มา */
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
             margin: 0; 
-            padding: 20px; 
-            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 40px 20px;
+        }
+        .header { text-align: center; color: white; margin-bottom: 40px; }
+        .header h1 { font-size: 28px; margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 20px; 
+            width: 100%; 
+            max-width: 800px; 
+        }
+        
+        .category-card { 
+            background: white; 
+            border-radius: 20px; 
+            padding: 30px 10px; 
+            text-align: center; 
+            cursor: pointer; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
             align-items: center;
-        }
-        h1 { color: #fff; margin: 30px 0; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
-            gap: 20px; 
-            max-width: 900px; 
-            width: 100%;
+            justify-content: center;
+            text-decoration: none;
+            color: #333;
         }
         
-        .cat-card { 
-            background: rgba(255, 255, 255, 0.9); 
-            padding: 40px 20px; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2); 
-            cursor: pointer; 
-            transition: all 0.3s ease; 
-            border: none; 
-            font-weight: 600; 
-            color: #4a148c; /* สีม่วงเข้ม */
-            font-size: 18px;
-            text-align: center;
-        }
-        
-        .cat-card:hover { 
-            background: #fff; 
-            transform: translateY(-10px); 
-            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-            color: #667eea;
-        }
+        .category-card:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+        .category-card .icon { font-size: 40px; margin-bottom: 15px; }
+        .category-card .name { font-weight: 600; font-size: 16px; color: #4a148c; }
 
-        /* เพิ่มไอคอนเล็กๆ หน้าชื่อหมวด (ถ้าต้องการ) */
-        .cat-card::before {
-            content: "📖";
-            display: block;
-            font-size: 30px;
-            margin-bottom: 10px;
-        }
+        /* สีพิเศษสำหรับห้องฟังเพลงและหนังสือเสียง */
+        .music-card { border-bottom: 5px solid #ff4081; }
+        .audio-card { border-bottom: 5px solid #d4af37; }
     </style>
 </head>
 <body>
-    <h1>📚 หอสมุดส่วนตัว</h1>
-    <div class="grid">
-        <div class="cat-card" onclick="location.href='register.html?cat=1_PetchPraUma&name=เพชรพระอุมา'">เพชรพระอุมา</div>
-        <div class="cat-card" onclick="location.href='register.html?cat=2_Thai_Novel'">นิยายไทย</div>
-        <div class="cat-card" onclick="location.href='register.html?cat=3_English_Translated&name=นิยายแปล'">นิยายแปล</div>
-        <div class="cat-card" onclick="location.href='register.html?cat=4_Chinese_Novel&name=นิยายจีน'">นิยายจีน</div>
-        <div class="cat-card" onclick="location.href='register.html?cat=5_HowTo&name=How-to'">How-to</div>
-        <div class="cat-card" onclick="location.href='register.html?cat=6_Wait&name=หมวดรอแยก'">หมวดรอแยก</div>
-        <div class="cat-card" style="color: #e91e63;" onclick="location.href='music_room.html'">🎵 ห้องฟังเพลง</div>
+
+    <div class="header">
+        <h1>📚 หอสมุดส่วนตัว</h1>
     </div>
+
+    <div class="grid-container">
+        <a href="library.html?cat=1_เพชรพระอุมา" class="category-card">
+            <div class="icon">📖</div>
+            <div class="name">เพชรพระอุมา</div>
+        </a>
+
+        <a href="library.html?cat=2_นิยายไทย" class="category-card">
+            <div class="icon">📖</div>
+            <div class="name">นิยายไทย</div>
+        </a>
+
+        <a href="library.html?cat=3_นิยายแปล" class="category-card">
+            <div class="icon">📖</div>
+            <div class="name">นิยายแปล</div>
+        </a>
+
+        <a href="library.html?cat=4_นิยายจีน" class="category-card">
+            <div class="icon">📖</div>
+            <div class="name">นิยายจีน</div>
+        </a>
+
+        <a href="library.html?cat=5_How-to" class="category-card">
+            <div class="icon">📖</div>
+            <div class="name">How-to</div>
+        </a>
+
+        <a href="library.html?cat=6_หมวดรอแยก" class="category-card">
+            <div class="icon">📖</div>
+            <div class="name">หมวดรอแยก</div>
+        </a>
+
+        <a href="library.html?cat=7_music" class="category-card music-card">
+            <div class="icon">🎵</div>
+            <div class="name" style="color: #ff4081;">ห้องฟังเพลง</div>
+        </a>
+
+        <a href="library.html?cat=8_AudioBooks" class="category-card audio-card">
+            <div class="icon">🎧</div>
+            <div class="name" style="color: #8b6d00;">หนังสือเสียง</div>
+        </a>
+    </div>
+
 </body>
 </html>

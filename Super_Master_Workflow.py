@@ -28,19 +28,22 @@ BATCH_SIZE = 15
 
 # ✅ ฟีเจอร์ดึงปก YouTube อัตโนมัติ
 def get_yt_thumbnail(url, save_path):
-    if os.path.exists(save_path): return True
+    if os.path.exists(save_path): return True 
     video_id = ""
     if "v=" in url: video_id = url.split("v=")[1].split("&")[0]
     elif "youtu.be/" in url: video_id = url.split("youtu.be/")[1]
     
     if video_id:
-        img_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+        # เปลี่ยนจาก maxresdefault เป็น hqdefault (ชัวร์กว่า)
+        img_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
         try:
             r = requests.get(img_url, timeout=10)
             if r.status_code == 200:
                 with open(save_path, 'wb') as f: f.write(r.content)
+                print(f"   ✅ ดึงปกสำเร็จ: {save_path}")
                 return True
-        except: pass
+        except Exception as e:
+            print(f"   ❌ ดึงปกพลาด: {e}")
     return False
 
 def run_git(command, cwd):

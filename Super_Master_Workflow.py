@@ -235,7 +235,7 @@ def main():
             run_git("git add .", f_p)
             run_git('git commit -m "Auto-sync AudioBooks"', f_p)
             try:
-                subprocess.run("git push origin HEAD", cwd=f_p, shell=True, timeout=60)
+                subprocess.run("git push origin HEAD -f", cwd=f_p, shell=True, timeout=60)
             except: print(f"   ⚠️ {folder} Timeout")
 
     if os.path.exists(os.path.join(DB_DIR, ".git")):

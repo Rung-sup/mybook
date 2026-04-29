@@ -281,44 +281,43 @@
     }
 
     async function loadData() {
-        const params = new URLSearchParams(window.location.search);
-        currentCategory = (params.get('cat') || '').trim();
-        currentCategorySet = categoryMap[currentCategory] || [currentCategory];
+    const params = new URLSearchParams(window.location.search);
+    currentCategory = (params.get('cat') || '').trim();
+    currentCategorySet = categoryMap[currentCategory] || [currentCategory];
 
-        try {
-            const res = await fetch(`database.json?v=${Date.now()}`);
-            const data = await res.json();
-            allBooksGlobal = data.books || data || [];
-
-            renderContinueReading();
-
-            if (currentCategory === "8_AudioBooks") {
-                const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
-                const dataAudio = await resAudio.json();
-                allBooksCurrent = (dataAudio.audiobooks || []).filter(item =>
-                    currentCategorySet.includes((item.category || "").trim())
-                );
-            } else if (currentCategory === "7_music") {
-                const resMusic = await fetch(`music_db.json?v=${Date.now()}`);
-                const dataMusic = await resMusic.json();
-                allBooksCurrent = (dataMusic.music || [])
-                    .filter(item => currentCategorySet.includes((item.category || "").trim()))
-                    .map(item => ({ ...item, ismusic: true }));
-            } else {
-                const filtered = allBooksGlobal.filter(item =>
-                    currentCategorySet.includes((item.category || "").trim())
-                );
-                allBooksCurrent = buildDisplayList(filtered);
-            }
-
-            renderList(allBooksCurrent);
-            document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} รายการ...`;
-        } catch (error) {
-            console.error("Load Error:", error);
-            document.getElementById('book-list').innerHTML =
-                '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#999;">โหลดข้อมูลไม่สำเร็จ</div>';
-        }
+    if (currentCategory === "7_music") {
+        window.location.href = "music_room.html";
+        return;
     }
+
+    try {
+        const res = await fetch(`database.json?v=${Date.now()}`);
+        const data = await res.json();
+        allBooksGlobal = data.books || data || [];
+
+        renderContinueReading();
+
+        if (currentCategory === "8_AudioBooks") {
+            const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
+            const dataAudio = await resAudio.json();
+            allBooksCurrent = (dataAudio.audiobooks || []).filter(item =>
+                currentCategorySet.includes((item.category || "").trim())
+            );
+        } else {
+            const filtered = allBooksGlobal.filter(item =>
+                currentCategorySet.includes((item.category || "").trim())
+            );
+            allBooksCurrent = buildDisplayList(filtered);
+        }
+
+        renderList(allBooksCurrent);
+        document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} รายการ...`;
+    } catch (error) {
+        console.error("Load Error:", error);
+        document.getElementById('book-list').innerHTML =
+            '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#999;">โหลดข้อมูลไม่สำเร็จ</div>';
+    }
+}
 
     function renderList(items) {
         const container = document.getElementById('book-list');

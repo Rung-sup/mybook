@@ -154,38 +154,49 @@
 
     async function loadData() {
         const params = new URLSearchParams(window.location.search);
-        // ใช้ค่าเริ่มต้นเป็น 1_PetchPraUma ถ้าไม่มี cat ส่งมา
-        currentCategory = params.get('cat') || '1_PetchPraUma'; 
+        // แก้ไข: กำหนดค่าเริ่มต้นให้ฉลาดขึ้น และรองรับการเปิดหน้า register ตรงๆ
+        currentCategory = (params.get('cat') || "").trim();
         
         try {
+            // 1. ดึงฐานข้อมูล (รองรับโครงสร้างใหม่ {"books": [...]})
             const res = await fetch(`database.json?v=${Date.now()}`);
-            const data = await res.json();
-            // รองรับทั้งแบบ [{},{}] และ {"books": [{},{}]}
-            allBooksGlobal = data.books || data; 
+            const rawData = await res.json();
+            allBooksGlobal = rawData.books || rawData; // ถ้ามีกล่อง books ให้แกะ ถ้าไม่มีให้ใช้เลย
 
+            // 2. แสดงแถบอ่านค้างทันที (เหมือนที่คุณเคยทำได้สำเร็จ)
             renderContinueReading();
 
             const catLower = currentCategory.toLowerCase();
 
-            if (catLower.startsWith('8_') || catLower.includes('audiobook')) {
+            // 3. แยกประเภทการแสดงผล
+            if (catLower.startsWith('8_')) {
+                // --- หมวดหนังสือเสียง ---
                 const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
                 const dataAudio = await resAudio.json();
                 allBooksCurrent = dataAudio.audiobooks || [];
+                document.getElementById('global-search').placeholder = `ค้นหาหนังสือเสียงจาก ${allBooksCurrent.length} เรื่อง...`;
                 renderList(allBooksCurrent);
-            } else if (catLower === '7_music') {
+            } 
+            else if (catLower === '7_music') {
+                // --- หมวดเพลง (เด้งเข้าห้องเพลงทันที) ---
                 window.location.href = 'music_room.html';
                 return;
-            } else {
-                // ตรรกะการจัด Folder จากโค้ดเดิมที่คุณส่งมา (ทำงานได้จริง)
+            } 
+            else {
+                // --- หมวดหนังสือปกติ (ใช้ตรรกะจัดโฟลเดอร์ที่คุณต้องการ) ---
                 const catBooks = allBooksGlobal.filter(item => 
                     (item.category || "").toLowerCase() === catLower
                 );
 
+                // ระบบกันเหนียว: ถ้าไม่ระบุหมวดมา ให้โชว์ทั้งหมด (เหมือนที่ชั้นอ่านค้างทำ)
+                let sourceData = (currentCategory === "" || catBooks.length === 0) ? allBooksGlobal : catBooks;
+
                 const groupedData = {};
                 const standaloneFiles = [];
 
-                catBooks.forEach(item => {
+                sourceData.forEach(item => {
                     const folderName = item.folder || "";
+                    // ถ้าโฟลเดอร์ชื่อ "ทั่วไป" หรือว่าง ให้แยกเป็นเล่มๆ
                     if (folderName !== "" && folderName !== "ทั่วไป") {
                         if (!groupedData[folderName]) groupedData[folderName] = [];
                         groupedData[folderName].push(item);
@@ -195,6 +206,7 @@
                 });
 
                 const displayList = [];
+                // รวมกลุ่มเล่มเข้าเป็นโฟลเดอร์
                 for (const name in groupedData) {
                     const files = groupedData[name];
                     files.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
@@ -206,6 +218,7 @@
                 }
                 standaloneFiles.forEach(file => displayList.push(file));
 
+                // เรียง: โฟลเดอร์ก่อน แล้วตามด้วยไฟล์เดี่ยว
                 displayList.sort((a, b) => {
                     if (a.isFolder && !b.isFolder) return -1;
                     if (!a.isFolder && b.isFolder) return 1;
@@ -213,40 +226,44 @@
                 });
 
                 allBooksCurrent = displayList;
+                document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} รายการ...`;
                 renderList(allBooksCurrent);
             }
-            document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} รายการ...`;
-        } catch (err) {
-            console.error("Load Error:", err);
+        } catch (error) {
+            console.error("Load Error:", error);
+            document.getElementById('global-search').placeholder = "เกิดข้อผิดพลาดในการดึงข้อมูล...";
         }
     }
 
+    // แก้ไขฟังก์ชันวาดหน้าจอให้ดึง Path รูปภาพได้แม่นยำ
     function renderList(items) {
         const container = document.getElementById('book-list');
-        container.innerHTML = '';
-        const user = firebase.auth().currentUser;
-        const history = user ? JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {} : {};
-
+        container.innerHTML = ''; 
+        
         items.forEach(item => {
             const card = document.createElement('div');
-            card.className = 'book-card' + (item.episodes ? ' folder-card' : '');
+            card.className = 'book-card' + (item.isFolder ? ' folder-card' : '');
             
-            let badge = '';
-            if (item.episodes) badge = `<div class="audio-badge">🔊 ${item.episodes.length} ตอน</div>`;
-            else {
-                const bId = btoa(encodeURIComponent(item.url));
-                if (history[bId]) badge = `<div class="status-badge">หน้า ${history[bId].p}</div>`;
-            }
+            // ดึง Category จากตัวเล่มเอง เพื่อให้ดึงรูปจากโฟลเดอร์ที่ถูกต้อง
+            const cat = item.category || currentCategory;
+            const coverUrl = item.cover_id ? `covers/${cat}/${item.cover_id}.jpg` : 'https://via.placeholder.com/150x220?text=No+Cover';
 
             card.innerHTML = `
-                <div class="cover-box">${badge}
-                    <img src="covers/${item.category}/${item.cover_id}.jpg" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=Audio'">
+                <div class="cover-box">
+                    ${item.isFolder ? `<div class="folder-badge">📂 ${item.count} เล่ม</div>` : ''}
+                    <img src="${coverUrl}" class="book-cover-img" loading="lazy" onerror="this.src='https://via.placeholder.com/150x220?text=Error'">
                 </div>
-                <div class="book-info">${item.title}</div>`;
+                <div class="book-info">${item.title}</div>
+            `;
             
             card.onclick = () => {
-                if (item.episodes) openEpisodeModal(item);
-                else openBook(item.url);
+                if (item.isFolder) {
+                    // ถ้าเป็นโฟลเดอร์ ให้เข้าไปโชว์เฉพาะเล่มในนั้น
+                    renderList(item.allFiles);
+                    window.scrollTo(0,0);
+                } else {
+                    openBook(item.url);
+                }
             };
             container.appendChild(card);
         });

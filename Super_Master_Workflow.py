@@ -26,7 +26,6 @@ GITHUB_USER = "rung-sup"
 MAX_SIZE_MB = 95
 BATCH_SIZE = 15
 
-# ✅ ฟีเจอร์ดึงปก YouTube อัตโนมัติ
 def get_yt_thumbnail(url, save_path):
     if os.path.exists(save_path): return True 
     video_id = ""
@@ -41,8 +40,7 @@ def get_yt_thumbnail(url, save_path):
                 with open(save_path, 'wb') as f: f.write(r.content)
                 print(f"   ✅ ดึงปกสำเร็จ: {save_path}")
                 return True
-        except Exception as e:
-            print(f"   ❌ ดึงปกพลาด: {e}")
+        except Exception as e: pass
     return False
 
 def run_git(command, cwd):
@@ -117,7 +115,6 @@ def main():
                     if 'file_hash' in b: existing_hashes[b['file_hash']] = b['title']
             except: pass
 
-    # --- STEP 1: SMART PROCESS & MOVE ---
     print("🛠 [1/3] กำลังตรวจสอบไฟล์ระบบ Hash & Compression...")
     for cat in os.listdir(PROCESS_ZONE):
         cat_staging = os.path.join(PROCESS_ZONE, cat)
@@ -130,7 +127,6 @@ def main():
             if not os.path.isdir(f_path):
                 f_hash = get_file_hash(f_path)
                 if f_hash in existing_hashes:
-                    print(f"   🗑️ พบไฟล์ซ้ำ: {item}")
                     os.remove(f_path); continue
 
             if item.lower().endswith('.pdf'):
@@ -152,8 +148,7 @@ def main():
                 if os.path.exists(dest): os.remove(f_path)
                 else: shutil.move(f_path, dest)
 
-    # --- STEP 2: UPDATE DB & AUDIOBOOKS (Full Scan รักษาฐานข้อมูล) ---
-    print("📊 [2/3] กำลังสแกนอัปเดตฐานข้อมูล (Full Scan)...")
+    print("📊 [2/3] สร้างฐานข้อมูล (สแกนใหม่ทั้งหมด 100% เพื่อรักษาโครงสร้างโฟลเดอร์ย่อย)...")
     all_books, all_music, all_audiobooks = [], [], []
     for cat in os.listdir(LIBRARY_ROOT):
         cat_path = os.path.join(LIBRARY_ROOT, cat)
@@ -170,7 +165,7 @@ def main():
                 with open(link_path, 'r', encoding='utf-8') as f:
                     content = f.read().splitlines()
                 
-                # ✅ แก้ไข 1: ตัดวงเล็บ URL สำหรับภาพปก
+                # ตัดข้อความต่อท้าย URL (แก้ปัญหาหลัก)
                 valid_links = [line.split()[0].strip() for line in content if "http" in line]
                 first_link = valid_links[0] if valid_links else ""
                 
@@ -186,7 +181,6 @@ def main():
                 for line in content:
                     if not line.strip(): continue
                     if "http" in line:
-                        # ✅ แก้ไข 2: ตัดวงเล็บ URL สำหรับไฟล์เสียงให้ฟังได้ปกติ
                         clean_url = line.split()[0].strip()
                         episodes.append({"ep_title": current_title, "ep_url": clean_url})
                     else: current_title = line.strip()
@@ -225,35 +219,29 @@ def main():
     with open(MUSIC_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"music": all_music}, f, ensure_ascii=False, indent=4)
     with open(AUDIOBOOK_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"audiobooks": all_audiobooks}, f, ensure_ascii=False, indent=4)
 
-    # --- STEP 3: FULL SYNC (ข้ามห้องที่ไม่มีอะไรเปลี่ยน เพื่อแก้ปัญหา Timeout) ---
-    print("\n☁️ [3/3] กำลังส่งข้อมูลขึ้น Cloud...")
+    print("\n☁️ [3/3] อัปโหลดขึ้น Cloud (เช็กสถานะป้องกัน Timeout)...")
     for folder in os.listdir(LIBRARY_ROOT):
         f_p = os.path.join(LIBRARY_ROOT, folder)
         if os.path.exists(os.path.join(f_p, ".git")):
-            
-            # ✅ แก้ไข 3: เช็กก่อนว่ามีอะไรเปลี่ยนไหม ถ้าไม่มีให้ข้ามไปเลย
-            status = run_git("git status --porcelain", f_p)
-            if status: 
-                print(f"🚀 ตรวจพบการเปลี่ยนแปลง กำลังส่งห้อง: {folder}")
+            # ด่านตรวจจับ ลด Timeout อย่างปลอดภัย
+            if run_git("git status --porcelain", f_p): 
+                print(f"🚀 ส่งห้อง: {folder}")
                 run_git("git add .", f_p)
                 run_git('git commit -m "Auto-sync update"', f_p)
                 try:
                     subprocess.run("git push origin HEAD -f", cwd=f_p, shell=True, timeout=300)
-                except: 
-                    print(f"   ⚠️ {folder} Timeout")
-            else:
-                print(f"⏩ ห้อง {folder} ไม่มีข้อมูลใหม่ (ข้ามการอัปโหลด)")
+                except: pass
 
     if os.path.exists(os.path.join(DB_DIR, ".git")):
         print("💾 ส่งฐานข้อมูลและปก...")
         run_git("git add .", DB_DIR)
         if run_git("git status --porcelain", DB_DIR):
-            run_git('git commit -m "Update Audiobook DB"', DB_DIR)
+            run_git('git commit -m "Update DB"', DB_DIR)
             try:
                 subprocess.run("git push origin HEAD", cwd=DB_DIR, shell=True, timeout=300)
-            except: print("   ⚠️ DB Sync Timeout")
+            except: pass
 
-    print("\n✨ เสร็จสมบูรณ์เรียบร้อยครับ")
+    print("\n✨ เสร็จสมบูรณ์")
     time.sleep(2)
     os._exit(0)
 

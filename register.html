@@ -154,42 +154,48 @@
 
     async function loadData() {
         const params = new URLSearchParams(window.location.search);
-        currentCategory = (params.get('cat') || "").trim();
+        // ดึงชื่อหมวดจาก URL และทำให้เป็นตัวเล็กทั้งหมดเพื่อใช้เปรียบเทียบ
+        const catFromUrl = (params.get('cat') || "").trim().toLowerCase();
         
         try {
             const res = await fetch(`database.json?v=${Date.now()}`);
-            const rawData = await res.json();
-            allBooksGlobal = rawData.books || rawData;
+            const data = await res.json();
+            allBooksGlobal = data.books || data;
 
             renderContinueReading();
 
-            const catLower = currentCategory.toLowerCase();
-
-            if (catLower.startsWith('8_')) {
+            if (catFromUrl.startsWith('8_')) {
+                // หมวดหนังสือเสียง
                 const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
                 const dataAudio = await resAudio.json();
                 allBooksCurrent = dataAudio.audiobooks || [];
-                document.getElementById('global-search').placeholder = `ค้นหาหนังสือเสียง...`;
                 renderList(allBooksCurrent);
-            } 
-            else if (catLower === '7_music') {
-                window.location.href = 'music_room.html';
-                return;
-            } 
-            else {
-                // 🛠️ แก้จุดตาย: ตรวจสอบแบบไม่สนตัวพิมพ์เล็กใหญ่ให้แม่นยำขึ้น
+            } else {
+                // 🛠️ จุดแก้ไขสำคัญ: กรองหนังสือโดยทำให้ทั้งสองฝั่งเป็นตัวเล็กเหมือนกัน
                 let catBooks = allBooksGlobal.filter(item => {
                     const itemCat = (item.category || "").toLowerCase();
-                    return itemCat === catLower;
+                    return itemCat === catFromUrl;
                 });
 
-                // 🌟 ถ้ากรองแล้วไม่เจอ หรือไม่ได้ระบุหมวดมา ให้เอาทั้งหมด (กันจอขาว)
-                let sourceData = (catBooks.length === 0) ? allBooksGlobal : catBooks;
+                // 🌟 ระบบกันเหนียว: 
+                // ถ้ามีชื่อหมวดใน URL (catFromUrl) แต่กรองแล้วไม่เจอหนังสือเลย 
+                // ให้สันนิษฐานว่าชื่อหมวดอาจจะพิมพ์ผิด หรือฐานข้อมูลไม่ตรง
+                // ให้โชว์หนังสือทั้งหมด (allBooksGlobal) ไปก่อน เพื่อไม่ให้หน้าจอว่างเปล่า
+                if (catFromUrl !== "" && catBooks.length === 0) {
+                    console.warn("ไม่พบหนังสือในหมวด:", catFromUrl, "กำลังแสดงหนังสือทั้งหมดแทน");
+                    allBooksCurrent = allBooksGlobal;
+                } else if (catFromUrl === "") {
+                    // ถ้าเปิด register.html มาเฉยๆ โดยไม่มี ?cat=
+                    allBooksCurrent = allBooksGlobal;
+                } else {
+                    // ถ้าเจอหมวดหมู่ที่ตรงกัน
+                    allBooksCurrent = catBooks;
+                }
 
+                // --- ตรรกะการจัดโฟลเดอร์ (คงไว้ตามที่คุณต้องการ) ---
                 const groupedData = {};
                 const standaloneFiles = [];
-
-                sourceData.forEach(item => {
+                allBooksCurrent.forEach(item => {
                     const folderName = item.folder || "";
                     if (folderName !== "" && folderName !== "ทั่วไป") {
                         if (!groupedData[folderName]) groupedData[folderName] = [];
@@ -210,17 +216,11 @@
                     });
                 }
                 standaloneFiles.forEach(file => displayList.push(file));
-
-                displayList.sort((a, b) => {
-                    if (a.isFolder && !b.isFolder) return -1;
-                    if (!a.isFolder && b.isFolder) return 1;
-                    return a.title.localeCompare(b.title, 'th', {numeric: true});
-                });
-
+                
                 allBooksCurrent = displayList;
-                document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} รายการ...`;
                 renderList(allBooksCurrent);
             }
+            document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} รายการ...`;
         } catch (error) {
             console.error("Load Error:", error);
         }

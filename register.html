@@ -170,12 +170,17 @@
             const dataAudio = await resAudio.json();
             allBooksCurrent = dataAudio.audiobooks || [];
             document.getElementById('global-search').placeholder = `ค้นหาหนังสือเสียงจาก ${allBooksCurrent.length} เรื่อง...`;
-        } else if (currentCategory === '7_music') {
-            const resMusic = await fetch(`music_db.json?v=${Date.now()}`);
-            const dataMusic = await resMusic.json();
-            allBooksCurrent = (dataMusic.music || []).map(m => ({...m, is_music: true}));
         } else {
-            allBooksCurrent = allBooksGlobal.filter(b => b.category === currentCategory);
+            // แก้ไข: ใช้ .toLowerCase() ทั้งสองฝั่งเพื่อให้มันหากันเจอเสมอ ไม่ว่าจะเป็นตัวเล็กหรือใหญ่
+            allBooksCurrent = allBooksGlobal.filter(b => 
+                (b.category || "").toLowerCase() === (currentCategory || "").toLowerCase()
+            );
+            
+            // ระบบกันเหนียว: ถ้าหากรองตามหมวดแล้วไม่เจอจริงๆ ให้โชว์หนังสือทั้งหมด (ป้องกันจอขาว)
+            if (allBooksCurrent.length === 0 && !currentCategory) {
+                allBooksCurrent = allBooksGlobal;
+            }
+
             document.getElementById('global-search').placeholder = `ค้นหาหนังสือจาก ${allBooksCurrent.length} เล่ม...`;
         }
         

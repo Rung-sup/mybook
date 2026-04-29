@@ -153,36 +153,30 @@
     }
 
     async function loadData() {
+        const params = new URLSearchParams(window.location.search);
+        // ใช้ค่าเริ่มต้นเป็น 1_PetchPraUma ถ้าไม่มี cat ส่งมา
+        currentCategory = params.get('cat') || '1_PetchPraUma'; 
+        
         try {
-            const params = new URLSearchParams(window.location.search);
-            currentCategory = params.get('cat') || "";
-            const catLower = currentCategory.toLowerCase();
+            const res = await fetch(`database.json?v=${Date.now()}`);
+            const data = await res.json();
+            // รองรับทั้งแบบ [{},{}] และ {"books": [{},{}]}
+            allBooksGlobal = data.books || data; 
 
-            // 1. โหลดฐานข้อมูล (รองรับทั้งโครงสร้างใหม่ที่มี {"books": ...})
-            const response = await fetch(`database.json?v=${Date.now()}`);
-            const rawData = await response.json();
-            // ดึงข้อมูลออกมาให้เป็น Array ชั้นเดียวแบบที่โค้ดเก่าถนัด
-            allBooksGlobal = rawData.books || rawData; 
-
-            // 2. แสดงแถบอ่านค้าง
             renderContinueReading();
 
-            // 3. แยกตรรกะตามหมวดหมู่
+            const catLower = currentCategory.toLowerCase();
+
             if (catLower.startsWith('8_') || catLower.includes('audiobook')) {
-                // --- หมวดหนังสือเสียง ---
                 const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
                 const dataAudio = await resAudio.json();
                 allBooksCurrent = dataAudio.audiobooks || [];
-                document.getElementById('global-search').placeholder = `ค้นหาหนังสือเสียงจาก ${allBooksCurrent.length} เรื่อง...`;
                 renderList(allBooksCurrent);
-
             } else if (catLower === '7_music') {
-                // --- หมวดเพลง (เด้งทันที) ---
                 window.location.href = 'music_room.html';
                 return;
-
             } else {
-                // --- หมวดหนังสือปกติ (ใช้ระบบ Group Folder แบบโค้ดเก่าที่คุณชอบ) ---
+                // ตรรกะการจัด Folder จากโค้ดเดิมที่คุณส่งมา (ทำงานได้จริง)
                 const catBooks = allBooksGlobal.filter(item => 
                     (item.category || "").toLowerCase() === catLower
                 );
@@ -201,23 +195,17 @@
                 });
 
                 const displayList = [];
-                // รวมกลุ่มเข้าโฟลเดอร์
                 for (const name in groupedData) {
                     const files = groupedData[name];
                     files.sort((a, b) => a.title.localeCompare(b.title, 'th', {numeric: true}));
                     displayList.push({ 
-                        title: name, 
-                        isFolder: true, 
-                        count: files.length, 
-                        url: files[0].url, // ใช้ไฟล์แรกเป็นตัวแทน
-                        cover_id: files[0].cover_id, 
-                        category: files[0].category, 
-                        allFiles: files 
+                        title: name, isFolder: true, count: files.length, 
+                        url: files[0].url, cover_id: files[0].cover_id, 
+                        category: files[0].category, allFiles: files 
                     });
                 }
                 standaloneFiles.forEach(file => displayList.push(file));
 
-                // เรียงลำดับ: โฟลเดอร์ขึ้นก่อน แล้วตามด้วยไฟล์
                 displayList.sort((a, b) => {
                     if (a.isFolder && !b.isFolder) return -1;
                     if (!a.isFolder && b.isFolder) return 1;
@@ -225,13 +213,11 @@
                 });
 
                 allBooksCurrent = displayList;
-                document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} รายการ...`;
-                
-                // สั่งวาดหน้าจอ
                 renderList(allBooksCurrent);
             }
-        } catch (err) { 
-            console.error("Load Error:", err); 
+            document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} รายการ...`;
+        } catch (err) {
+            console.error("Load Error:", err);
         }
     }
 

@@ -10,45 +10,74 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.youtube.com/iframe_api"></script>
     <style>
-        /* ส่วน Style เดิมคงไว้ทั้งหมด */
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background-color: #f4f1ea; color: #333; padding-bottom: 120px; overflow-x: hidden; }
+        
         .header { padding: 10px 15px; background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight: 500; }
         .search-input { width: 100%; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 13px; }
+
         .view-controls { display: flex; gap: 5px; margin-left: 5px; }
         .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .btn-view.active { background: #d4af37; color: #000; border-color: #d4af37; }
+
         .container { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
         .book-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; position: relative; border: 1px solid #eee; transition: 0.2s; }
         .book-card:active { transform: scale(0.95); }
         .folder-card { border: 2px solid #d4af37; }
         .cover-box { width: 100%; padding-bottom: 145%; position: relative; background: #e0e0e0; }
         .book-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Badges */
+        .folder-badge { position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fff; padding: 3px 7px; border-radius: 5px; font-size: 10px; font-weight: bold; z-index: 10; }
         .status-badge { position: absolute; top: 5px; left: 5px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .audio-badge { position: absolute; top: 5px; right: 5px; background: #ff4d4d; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; z-index: 5; }
+
         .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
-        .glass-player { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 20px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; border: 1px solid rgba(255, 255, 255, 0.3); display: none; align-items: center; gap: 12px; }
+
+        /* Glass-morphism Audiobook Player */
+        .glass-player {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            z-index: 9999; border: 1px solid rgba(255, 255, 255, 0.3);
+            display: none; align-items: center; gap: 12px;
+        }
         .player-cover { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; }
         .player-info-text { flex-grow: 1; overflow: hidden; }
         .player-info-text h4 { margin: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .player-info-text p { margin: 0; font-size: 11px; color: #666; }
         .player-btns { display: flex; gap: 10px; align-items: center; }
         .btn-circle { width: 35px; height: 35px; border-radius: 50%; border: none; background: #333; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-        #episode-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: flex-end; }
-        .modal-content { background: #fff; width: 100%; max-height: 80vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+
+        /* Episode Modal */
+        #episode-modal { 
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; 
+            align-items: flex-end; 
+        }
+        .modal-content { 
+            background: #fff; width: 100%; max-height: 80vh; border-radius: 20px 20px 0 0; 
+            padding: 20px; overflow-y: auto; animation: slideUp 0.3s ease-out;
+        }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .episode-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .episode-item { 
+            padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer;
+        }
+        .episode-item:active { background: #f9f9f9; }
+
+        /* PDF Reader */
         #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
         #pdf-render-container { flex-grow: 1; overflow: auto; background: #1a1a1a; position: relative; }
         #pdf-canvas { display: block; margin: 0 auto; max-width: 100%; }
         .nav-zone { position: absolute; top: 0; bottom: 0; width: 25%; z-index: 5010; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(212, 175, 55, 0.1); font-size: 40px; }
+        .nav-zone:hover { background: rgba(255,255,255,0.02); color: rgba(212, 175, 55, 0.5); }
+        .nav-left { left: 0; } .nav-right { right: 0; }
+
+        /* Continue Reading 88px */
         .continue-card { width: 88px !important; min-width: 88px !important; }
         .continue-card .book-info { font-size: 9px; height: 30px; }
-        
-        /* สไตล์ใหม่สำหรับแถบฟังค้างไว้ */
-        #continue-listening-section { display: none; padding: 15px; background: #f0f4f8; border-bottom: 2px solid #3498db; }
-        .listening-badge { background: #3498db !important; color: white !important; }
     </style>
 </head>
 <body>
@@ -62,16 +91,9 @@
     </div>
 </div>
 
-<!-- แถบอ่านค้างเดิม -->
 <div id="continue-reading-section" style="display: none; padding: 15px; background: #e9e4d9; border-bottom: 2px solid #d4af37;">
     <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #8b6d00;">📚 อ่านค้างไว้ล่าสุด</h3>
     <div id="continue-list" style="display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px;"></div>
-</div>
-
-<!-- เพิ่มใหม่: แถบฟังค้างไว้ -->
-<div id="continue-listening-section">
-    <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #2980b9;">🎧 ฟังค้างไว้ล่าสุด</h3>
-    <div id="listening-list" style="display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px;"></div>
 </div>
 
 <div id="book-list" class="container"></div>
@@ -114,13 +136,15 @@
 </div>
 
 <script>
+    // Firebase Setup
     const firebaseConfig = { apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo", authDomain: "myreaderapp-89e75.firebaseapp.com", projectId: "myreaderapp-89e75", storageBucket: "myreaderapp-89e75.firebasestorage.app", messagingSenderId: "1016151043482", appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
-    let allBooksGlobal = [], allBooksCurrent = [], currentCategory = "";
-    let ytPlayer = null, currentAudioId = "", isYTReady = false, currentAudioData = null;
+    let allBooksGlobal = [], allBooksCurrent = [], currentCategory = "", isInFolder = false;
+    let ytPlayer = null, currentAudioId = "", isYTReady = false;
 
+    // 1. YouTube Player API Setup
     function onYouTubeIframeAPIReady() {
         ytPlayer = new YT.Player('yt-player-hidden', {
             height: '0', width: '0',
@@ -131,14 +155,17 @@
     async function loadData() {
         const params = new URLSearchParams(window.location.search);
         currentCategory = params.get('cat') || "";
+        
+        // โหลดข้อมูลหนังสือ
         const res = await fetch(`database.json?v=${Date.now()}`);
         const data = await res.json();
         allBooksGlobal = data.books || [];
 
+        // แสดงอ่านค้าง
         renderContinueReading();
-        renderContinueListening(); // แสดงรายการฟังค้างไว้
 
         if (currentCategory.startsWith('8_')) {
+            // โหลดข้อมูล Audiobook
             const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
             const dataAudio = await resAudio.json();
             allBooksCurrent = dataAudio.audiobooks || [];
@@ -151,6 +178,7 @@
             allBooksCurrent = allBooksGlobal.filter(b => b.category === currentCategory);
             document.getElementById('global-search').placeholder = `ค้นหาหนังสือจาก ${allBooksCurrent.length} เล่ม...`;
         }
+        
         renderList(allBooksCurrent);
     }
 
@@ -163,30 +191,40 @@
         items.forEach(item => {
             const card = document.createElement('div');
             card.className = 'book-card' + (item.episodes ? ' folder-card' : '');
+            
             let badge = '';
             if (item.episodes) badge = `<div class="audio-badge">🔊 ${item.episodes.length} ตอน</div>`;
             else {
                 const bId = btoa(encodeURIComponent(item.url));
                 if (history[bId]) badge = `<div class="status-badge">หน้า ${history[bId].p}</div>`;
             }
-            card.innerHTML = `<div class="cover-box">${badge}<img src="covers/${item.category}/${item.cover_id}.jpg" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=Audio'"></div><div class="book-info">${item.title}</div>`;
-            card.onclick = () => item.episodes ? openEpisodeModal(item) : openBook(item.url);
+
+            card.innerHTML = `
+                <div class="cover-box">${badge}
+                    <img src="covers/${item.category}/${item.cover_id}.jpg" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=Audio'">
+                </div>
+                <div class="book-info">${item.title}</div>`;
+            
+            card.onclick = () => {
+                if (item.episodes) openEpisodeModal(item);
+                else openBook(item.url);
+            };
             container.appendChild(card);
         });
     }
 
+    // --- Audiobook Logic ---
     function openEpisodeModal(book) {
         const modal = document.getElementById('episode-modal');
         const list = document.getElementById('episode-list');
         document.getElementById('modal-title').innerText = book.title;
         list.innerHTML = '';
-        book.episodes.forEach((ep) => {
+        
+        book.episodes.forEach((ep, index) => {
             const div = document.createElement('div');
             div.className = 'episode-item';
-            const audioId = btoa(ep.ep_url);
-            const saved = JSON.parse(localStorage.getItem(`audio_progress_${audioId}`));
-            const progressStr = saved ? ` (${Math.floor(saved.current/60)}/${Math.floor(saved.total/60)} น.)` : "";
-            div.innerHTML = `<span>${ep.ep_title}</span> <small style="color:#d4af37">${progressStr}</small>`;
+            const progress = localStorage.getItem(`audio_pos_${btoa(ep.ep_url)}`) ? "✓ ฟังค้างไว้" : "";
+            div.innerHTML = `<span>${ep.ep_title}</span> <small style="color:#d4af37">${progress}</small>`;
             div.onclick = () => playAudio(ep, book);
             list.appendChild(div);
         });
@@ -194,81 +232,76 @@
     }
 
     function playAudio(ep, book) {
-        if (!isYTReady) return alert("เครื่องเล่นยังไม่พร้อม");
+        if (!isYTReady) return alert("เครื่องเล่นยังไม่พร้อม กรุณารอครู่เดียวครับ");
         document.getElementById('episode-modal').style.display = 'none';
+        
         const videoId = ep.ep_url.split('v=')[1].split('&')[0];
         const audioId = btoa(ep.ep_url);
         currentAudioId = audioId;
-        currentAudioData = { ep, book };
 
-        const savedData = JSON.parse(localStorage.getItem(`audio_progress_${audioId}`));
-        const startSec = savedData ? savedData.current : 0;
-        ytPlayer.loadVideoById({ videoId: videoId, startSeconds: parseFloat(startSec) });
+        // ดึงเวลาเดิม
+        const savedTime = localStorage.getItem(`audio_pos_${audioId}`) || 0;
         
+        ytPlayer.loadVideoById({ videoId: videoId, startSeconds: parseFloat(savedTime) });
+        
+        // อัปเดต UI
         document.getElementById('audio-player-ui').style.display = 'flex';
         document.getElementById('player-img').src = `covers/${book.category}/${book.cover_id}.jpg`;
         document.getElementById('player-title').innerText = book.title;
         document.getElementById('player-ep').innerText = ep.ep_title;
         document.getElementById('master-play-btn').innerText = '⏸';
 
+        // บันทึกความคืบหน้าทุก 10 วินาที
         if (window.audioInterval) clearInterval(window.audioInterval);
         window.audioInterval = setInterval(() => {
             if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-                const progressData = {
-                    current: ytPlayer.getCurrentTime(),
-                    total: ytPlayer.getDuration(),
-                    t: Date.now(),
-                    book: book,
-                    ep: ep
-                };
-                localStorage.setItem(`audio_progress_${currentAudioId}`, JSON.stringify(progressData));
+                localStorage.setItem(`audio_pos_${currentAudioId}`, ytPlayer.getCurrentTime());
             }
-        }, 5000);
-    }
-
-    function renderContinueListening() {
-        const container = document.getElementById('listening-list');
-        container.innerHTML = '';
-        let records = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('audio_progress_')) {
-                records.push({ key, data: JSON.parse(localStorage.getItem(key)) });
-            }
-        }
-        records.sort((a,b) => b.data.t - a.data.t);
-        if (records.length > 0) document.getElementById('continue-listening-section').style.display = 'block';
-        
-        records.slice(0, 10).forEach(item => {
-            const d = item.data;
-            const div = document.createElement('div');
-            div.className = 'book-card continue-card';
-            const cur = Math.floor(d.current/60);
-            const tot = Math.floor(d.total/60);
-            div.innerHTML = `<div class="cover-box"><div class="status-badge listening-badge">${cur}/${tot}น.</div><img src="covers/${d.book.category}/${d.book.cover_id}.jpg" class="book-cover-img"></div><div class="book-info">${d.book.title}</div>`;
-            div.onclick = () => playAudio(d.ep, d.book);
-            container.appendChild(div);
-        });
+        }, 10000);
     }
 
     function toggleYT() {
         const state = ytPlayer.getPlayerState();
-        if (state === YT.PlayerState.PLAYING) { ytPlayer.pauseVideo(); document.getElementById('master-play-btn').innerText = '▶'; }
-        else { ytPlayer.playVideo(); document.getElementById('master-play-btn').innerText = '⏸'; }
+        if (state === YT.PlayerState.PLAYING) {
+            ytPlayer.pauseVideo();
+            document.getElementById('master-play-btn').innerText = '▶';
+        } else {
+            ytPlayer.playVideo();
+            document.getElementById('master-play-btn').innerText = '⏸';
+        }
     }
-    function seek(sec) { ytPlayer.seekTo(ytPlayer.getCurrentTime() + sec, true); }
-    function closePlayer() { ytPlayer.stopVideo(); document.getElementById('audio-player-ui').style.display = 'none'; clearInterval(window.audioInterval); renderContinueListening(); }
-    function onPlayerStateChange(event) { if (event.data === YT.PlayerState.ENDED) { localStorage.removeItem(`audio_progress_${currentAudioId}`); document.getElementById('master-play-btn').innerText = '▶'; renderContinueListening(); } }
 
+    function seek(sec) {
+        const now = ytPlayer.getCurrentTime();
+        ytPlayer.seekTo(now + sec, true);
+    }
+
+    function closePlayer() {
+        ytPlayer.stopVideo();
+        document.getElementById('audio-player-ui').style.display = 'none';
+        clearInterval(window.audioInterval);
+    }
+
+    function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.ENDED) {
+            localStorage.removeItem(`audio_pos_${currentAudioId}`);
+            document.getElementById('master-play-btn').innerText = '▶';
+        }
+    }
+
+    // --- PDF Logic (คงเดิมตามกฎเหล็ก) ---
     async function openBook(url) {
         const overlay = document.getElementById('reader-overlay');
         overlay.style.display = 'flex';
         const loadingTask = pdfjsLib.getDocument(url);
         pdfDoc = await loadingTask.promise;
+        
         const history = JSON.parse(localStorage.getItem(`puk_history_${firebase.auth().currentUser.uid}`)) || {};
         const bookId = btoa(encodeURIComponent(url));
-        renderPage(history[bookId] ? history[bookId].p : 1, url);
+        const startPage = history[bookId] ? history[bookId].p : 1;
+        renderPage(startPage, url);
     }
+
     async function renderPage(num, url) {
         if (!pdfDoc) return;
         const page = await pdfDoc.getPage(num);
@@ -276,21 +309,32 @@
         const viewport = page.getViewport({ scale: window.innerWidth / page.getViewport({scale:1}).width * 1.5 });
         canvas.width = viewport.width; canvas.height = viewport.height;
         await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        
         document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
         window.currentPage = num;
+        
+        // บันทึกประวัติ
         const bookId = btoa(encodeURIComponent(url));
         let history = JSON.parse(localStorage.getItem(`puk_history_${firebase.auth().currentUser.uid}`)) || {};
         history[bookId] = { p: num, t: Date.now() };
         localStorage.setItem(`puk_history_${firebase.auth().currentUser.uid}`, JSON.stringify(history));
     }
-    function changePage(dir) { const next = window.currentPage + dir; if (next >= 1 && next <= pdfDoc.numPages) renderPage(next); }
+
+    function changePage(dir) {
+        const next = window.currentPage + dir;
+        if (next >= 1 && next <= pdfDoc.numPages) renderPage(next);
+    }
+
     function renderContinueReading() {
-        const user = firebase.auth().currentUser; if (!user) return;
+        const user = firebase.auth().currentUser;
+        if (!user) return;
         const history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`)) || {};
         const container = document.getElementById('continue-list');
         const sorted = Object.keys(history).sort((a,b) => history[b].t - history[a].t).slice(0, 10);
+        
         container.innerHTML = '';
         if (sorted.length > 0) document.getElementById('continue-reading-section').style.display = 'block';
+        
         sorted.forEach(id => {
             const book = allBooksGlobal.find(b => btoa(encodeURIComponent(b.url)) === id);
             if (book) {
@@ -302,6 +346,7 @@
             }
         });
     }
+
     function closeBook() { document.getElementById('reader-overlay').style.display = 'none'; pdfDoc = null; loadData(); }
     function goBack() { window.location.href = 'categories.html'; }
     function closeModal(e) { if(e.target.id === 'episode-modal') e.target.style.display = 'none'; }
@@ -309,6 +354,7 @@
         const q = document.getElementById('global-search').value.toLowerCase();
         renderList(allBooksCurrent.filter(b => b.title.toLowerCase().includes(q)));
     }
+
     firebase.auth().onAuthStateChanged(user => user ? loadData() : window.location.href='index.html');
 </script>
 </body>

@@ -360,7 +360,18 @@
         renderList(allBooksCurrent.filter(b => b.title.toLowerCase().includes(q)));
     }
 
-    firebase.auth().onAuthStateChanged(user => user ? loadData() : window.location.href='index.html');
+    // ระบบตรวจสอบตัวตนที่ถูกต้อง (คงคุณสมบัติเดิมไว้ครบถ้วน)
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            // เมื่อยืนยันตัวตนสำเร็จแล้วเท่านั้น จึงค่อยเริ่มโหลดข้อมูลหนังสือ
+            console.log("เข้าสู่ระบบสำเร็จ:", user.email);
+            loadData(); 
+        } else {
+            // ถ้าไม่ได้ Login หรือ Session หลุด ให้ดีดไปหน้า index.html
+            console.log("กรุณาเข้าสู่ระบบก่อนใช้งาน");
+            window.location.href = 'index.html';
+        }
+    });
 </script>
 </body>
 </html>

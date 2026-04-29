@@ -162,42 +162,46 @@
             const data = await res.json();
             allBooksGlobal = data.books || [];
 
-            // 2. แสดงแถบอ่านค้างทันที (เพราะข้อมูล Global มาแล้ว)
+            // 2. แสดงแถบอ่านค้างทันที
             renderContinueReading();
 
-            // 3. จัดการแยกหมวดหมู่
-            if (currentCategory.toLowerCase().startsWith('8_') || currentCategory.toLowerCase().includes('audiobook')) {
-                // โหลดหมวดหนังสือเสียง
+            // 3. ตรวจสอบเงื่อนไขหมวดหมู่
+            const catLower = currentCategory.toLowerCase();
+
+            if (catLower.startsWith('8_') || catLower.includes('audiobook')) {
+                // หมวดหนังสือเสียง
                 const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
                 const dataAudio = await resAudio.json();
                 allBooksCurrent = dataAudio.audiobooks || [];
                 document.getElementById('global-search').placeholder = `ค้นหาหนังสือเสียงจาก ${allBooksCurrent.length} เรื่อง...`;
                 
-            } else if (currentCategory.toLowerCase() === '7_music') {
-                // ถ้าเป็นหมวดเพลง ให้เด้งไปหน้าเครื่องเล่นเพลง
+            } else if (catLower === '7_music') {
+                // ✅ แก้ปัญหาปกเทา: ถ้าเป็นห้องเพลง ให้เด้งไปหน้าเครื่องเล่นทันที ไม่ต้องรอวาดปก
                 window.location.href = 'music_room.html';
-                return;
+                return; // จบการทำงานตรงนี้เลย
                 
             } else {
                 // หมวดหนังสือปกติ: กรองแบบไม่สนตัวพิมพ์เล็ก-ใหญ่
                 allBooksCurrent = allBooksGlobal.filter(b => 
-                    (b.category || "").toLowerCase() === currentCategory.toLowerCase()
+                    (b.category || "").toLowerCase() === catLower
                 );
                 
-                // 🌟 ระบบกันเหนียว: ถ้าไม่ระบุหมวดมา (เปิดหน้า register ตรงๆ) ให้โชว์ทั้งหมดเหมือน "อ่านค้าง"
+                // 🌟 ระบบกันเหนียว (แบบ Pro): ถ้าไม่ระบุหมวดมา หรือกรองแล้วไม่เจอ 
+                // ให้ดึงหนังสือ "ทั้งหมด" มาโชว์ เพื่อไม่ให้หน้าจอว่างเปล่า
                 if (!currentCategory || allBooksCurrent.length === 0) {
                     allBooksCurrent = allBooksGlobal;
                 }
                 
-                document.getElementById('global-search').placeholder = `ค้นหาหนังสือจาก ${allBooksCurrent.length} เล่ม...`;
+                document.getElementById('global-search').placeholder = `ค้นหาจาก ${allBooksCurrent.length} เล่ม...`;
             }
 
-            // 4. สั่งวาดรายชื่อลงหน้าจอ (จุดนี้สำคัญที่สุด ต้องอยู่หลังการตั้งค่า allBooksCurrent)
+            // 4. สั่งวาดรายชื่อลงหน้าจอ (Render)
+            // ถ้าไม่ถึงบรรทัดนี้ รายชื่อหนังสือจะไม่โชว์ครับ
             renderList(allBooksCurrent);
 
         } catch (error) {
-            console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
-            document.getElementById('global-search').placeholder = "เกิดข้อผิดพลาดในการดึงฐานข้อมูล...";
+            console.error("Error:", error);
+            document.getElementById('global-search').placeholder = "ไม่สามารถโหลดฐานข้อมูลได้...";
         }
     }
 

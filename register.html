@@ -154,37 +154,51 @@
 
     async function loadData() {
         const params = new URLSearchParams(window.location.search);
-        currentCategory = params.get('cat') || "";
+        currentCategory = (params.get('cat') || "").trim();
         
-        // โหลดข้อมูลหนังสือ
-        const res = await fetch(`database.json?v=${Date.now()}`);
-        const data = await res.json();
-        allBooksGlobal = data.books || [];
+        try {
+            // 1. ดึงข้อมูลพื้นฐาน (เหมือนที่ "อ่านค้าง" ทำ)
+            const res = await fetch(`database.json?v=${Date.now()}`);
+            const data = await res.json();
+            allBooksGlobal = data.books || [];
 
-        // แสดงอ่านค้าง
-        renderContinueReading();
+            // 2. แสดงแถบอ่านค้างทันที (เพราะข้อมูล Global มาแล้ว)
+            renderContinueReading();
 
-        if (currentCategory.startsWith('8_')) {
-            // โหลดข้อมูล Audiobook
-            const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
-            const dataAudio = await resAudio.json();
-            allBooksCurrent = dataAudio.audiobooks || [];
-            document.getElementById('global-search').placeholder = `ค้นหาหนังสือเสียงจาก ${allBooksCurrent.length} เรื่อง...`;
-        } else {
-            // แก้ไข: ใช้ .toLowerCase() ทั้งสองฝั่งเพื่อให้มันหากันเจอเสมอ ไม่ว่าจะเป็นตัวเล็กหรือใหญ่
-            allBooksCurrent = allBooksGlobal.filter(b => 
-                (b.category || "").toLowerCase() === (currentCategory || "").toLowerCase()
-            );
-            
-            // ระบบกันเหนียว: ถ้าหากรองตามหมวดแล้วไม่เจอจริงๆ ให้โชว์หนังสือทั้งหมด (ป้องกันจอขาว)
-            if (allBooksCurrent.length === 0 && !currentCategory) {
-                allBooksCurrent = allBooksGlobal;
+            // 3. จัดการแยกหมวดหมู่
+            if (currentCategory.toLowerCase().startsWith('8_') || currentCategory.toLowerCase().includes('audiobook')) {
+                // โหลดหมวดหนังสือเสียง
+                const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
+                const dataAudio = await resAudio.json();
+                allBooksCurrent = dataAudio.audiobooks || [];
+                document.getElementById('global-search').placeholder = `ค้นหาหนังสือเสียงจาก ${allBooksCurrent.length} เรื่อง...`;
+                
+            } else if (currentCategory.toLowerCase() === '7_music') {
+                // ถ้าเป็นหมวดเพลง ให้เด้งไปหน้าเครื่องเล่นเพลง
+                window.location.href = 'music_room.html';
+                return;
+                
+            } else {
+                // หมวดหนังสือปกติ: กรองแบบไม่สนตัวพิมพ์เล็ก-ใหญ่
+                allBooksCurrent = allBooksGlobal.filter(b => 
+                    (b.category || "").toLowerCase() === currentCategory.toLowerCase()
+                );
+                
+                // 🌟 ระบบกันเหนียว: ถ้าไม่ระบุหมวดมา (เปิดหน้า register ตรงๆ) ให้โชว์ทั้งหมดเหมือน "อ่านค้าง"
+                if (!currentCategory || allBooksCurrent.length === 0) {
+                    allBooksCurrent = allBooksGlobal;
+                }
+                
+                document.getElementById('global-search').placeholder = `ค้นหาหนังสือจาก ${allBooksCurrent.length} เล่ม...`;
             }
 
-            document.getElementById('global-search').placeholder = `ค้นหาหนังสือจาก ${allBooksCurrent.length} เล่ม...`;
+            // 4. สั่งวาดรายชื่อลงหน้าจอ (จุดนี้สำคัญที่สุด ต้องอยู่หลังการตั้งค่า allBooksCurrent)
+            renderList(allBooksCurrent);
+
+        } catch (error) {
+            console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
+            document.getElementById('global-search').placeholder = "เกิดข้อผิดพลาดในการดึงฐานข้อมูล...";
         }
-        
-        renderList(allBooksCurrent);
     }
 
     function renderList(items) {

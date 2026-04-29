@@ -144,24 +144,38 @@
 
     async function loadData() {
         const params = new URLSearchParams(window.location.search);
-        currentCategory = params.get('cat') || "";
+        currentCategory = (params.get('cat') || "").trim();
         
+        // โหลดข้อมูลหนังสือ
         const res = await fetch(`database.json?v=${Date.now()}`);
         const data = await res.json();
         allBooksGlobal = data.books || [];
+
+        // แสดงอ่านค้าง
         renderContinueReading();
 
-        if (currentCategory === '8_AudioBooks') {
+        if (currentCategory.toLowerCase().startsWith('8_') || currentCategory.toLowerCase().includes('audiobook')) {
+            // โหลดข้อมูล Audiobook
             const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
             const dataAudio = await resAudio.json();
             allBooksCurrent = dataAudio.audiobooks || [];
-        } else if (currentCategory === '7_music') {
-            const resMusic = await fetch(`music_db.json?v=${Date.now()}`);
-            const dataMusic = await resMusic.json();
-            allBooksCurrent = (dataMusic.music || []).map(m => ({...m, is_music: true}));
+            document.getElementById('global-search').placeholder = `ค้นหาหนังสือเสียงจาก ${allBooksCurrent.length} เรื่อง...`;
+            
+        } else if (currentCategory.toLowerCase() === '7_music') {
+            // ดักจับห้องเพลง: ให้วิ่งไปหน้าเครื่องเล่นเพลงทันที
+            window.location.href = 'music_room.html';
+            return;
+            
         } else {
-            allBooksCurrent = allBooksGlobal.filter(b => b.category.toLowerCase() === currentCategory.toLowerCase());
+            // โหลดหนังสือปกติ (แก้ปัญหาตัวพิมพ์เล็ก-ใหญ่ ไม่ตรงกัน)
+            if (!currentCategory) {
+                allBooksCurrent = allBooksGlobal;
+            } else {
+                allBooksCurrent = allBooksGlobal.filter(b => b.category.toLowerCase() === currentCategory.toLowerCase());
+            }
+            document.getElementById('global-search').placeholder = `ค้นหาหนังสือจาก ${allBooksCurrent.length} เล่ม...`;
         }
+        
         renderList(allBooksCurrent);
     }
 

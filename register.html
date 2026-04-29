@@ -350,8 +350,12 @@
 
             allBooksCurrent = (dataMusic.music || []).map(m => ({...m, is_music: true}));
 
+        } else if (currentCategory.toLowerCase() === '7_music') {
+            // แก้ปัญหาห้องเพลง: ให้เด้งไปหน้าจอเครื่องเล่นเพลงทันที
+            window.location.href = 'music_room.html';
+            return;
         } else {
-            // บังคับให้มันมองข้ามตัวพิมพ์เล็ก-ใหญ่ จะได้หากันเจอเสมอ
+            // กรองให้ตรงหมวดเป๊ะๆ แค่ไม่สนพิมพ์เล็กพิมพ์ใหญ่ (รับประกันหนังสือไม่ล้นหมวด)[cite: 3]
             allBooksCurrent = allBooksGlobal.filter(b => b.category.toLowerCase() === currentCategory.toLowerCase());
             document.getElementById('global-search').placeholder = `ค้นหาหนังสือจาก ${allBooksCurrent.length} เล่ม...`;
         }

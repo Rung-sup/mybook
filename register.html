@@ -351,11 +351,9 @@
             allBooksCurrent = (dataMusic.music || []).map(m => ({...m, is_music: true}));
 
         } else {
-
-            allBooksCurrent = allBooksGlobal.filter(b => b.category === currentCategory);
-
+            // บังคับให้มันมองข้ามตัวพิมพ์เล็ก-ใหญ่ จะได้หากันเจอเสมอ
+            allBooksCurrent = allBooksGlobal.filter(b => b.category.toLowerCase() === currentCategory.toLowerCase());
             document.getElementById('global-search').placeholder = `ค้นหาหนังสือจาก ${allBooksCurrent.length} เล่ม...`;
-
         }
 
        

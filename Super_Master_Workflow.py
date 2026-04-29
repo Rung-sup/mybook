@@ -152,8 +152,8 @@ def main():
                 if os.path.exists(dest): os.remove(f_path)
                 else: shutil.move(f_path, dest)
 
-    # --- STEP 2: UPDATE DB & AUDIOBOOKS (Full Scan กู้ข้อมูล) ---
-    print("📊 [2/3] กำลังสแกนคลังสื่อทั้งหมดเพื่อสร้างฐานข้อมูลใหม่...")
+    # --- STEP 2: UPDATE DB & AUDIOBOOKS (Full Scan รักษาฐานข้อมูล) ---
+    print("📊 [2/3] กำลังสแกนอัปเดตฐานข้อมูล (Full Scan)...")
     all_books, all_music, all_audiobooks = [], [], []
     for cat in os.listdir(LIBRARY_ROOT):
         cat_path = os.path.join(LIBRARY_ROOT, cat)
@@ -170,7 +170,7 @@ def main():
                 with open(link_path, 'r', encoding='utf-8') as f:
                     content = f.read().splitlines()
                 
-                # ตัดลิงก์ให้สะอาดเพื่อให้ดึงปกและเล่นไฟล์ได้
+                # ✅ แก้ไข 1: ตัดวงเล็บ URL สำหรับภาพปก
                 valid_links = [line.split()[0].strip() for line in content if "http" in line]
                 first_link = valid_links[0] if valid_links else ""
                 
@@ -186,7 +186,8 @@ def main():
                 for line in content:
                     if not line.strip(): continue
                     if "http" in line:
-                        clean_url = line.split()[0].strip() 
+                        # ✅ แก้ไข 2: ตัดวงเล็บ URL สำหรับไฟล์เสียงให้ฟังได้ปกติ
+                        clean_url = line.split()[0].strip()
                         episodes.append({"ep_title": current_title, "ep_url": clean_url})
                     else: current_title = line.strip()
 
@@ -224,23 +225,24 @@ def main():
     with open(MUSIC_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"music": all_music}, f, ensure_ascii=False, indent=4)
     with open(AUDIOBOOK_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"audiobooks": all_audiobooks}, f, ensure_ascii=False, indent=4)
 
-    # --- STEP 3: FULL SYNC ---
+    # --- STEP 3: FULL SYNC (ข้ามห้องที่ไม่มีอะไรเปลี่ยน เพื่อแก้ปัญหา Timeout) ---
     print("\n☁️ [3/3] กำลังส่งข้อมูลขึ้น Cloud...")
     for folder in os.listdir(LIBRARY_ROOT):
         f_p = os.path.join(LIBRARY_ROOT, folder)
         if os.path.exists(os.path.join(f_p, ".git")):
             
+            # ✅ แก้ไข 3: เช็กก่อนว่ามีอะไรเปลี่ยนไหม ถ้าไม่มีให้ข้ามไปเลย
             status = run_git("git status --porcelain", f_p)
             if status: 
                 print(f"🚀 ตรวจพบการเปลี่ยนแปลง กำลังส่งห้อง: {folder}")
                 run_git("git add .", f_p)
-                run_git(f'git commit -m "Auto-sync update {time.strftime("%Y-%m-%d %H:%M")}"', f_p)
+                run_git('git commit -m "Auto-sync update"', f_p)
                 try:
                     subprocess.run("git push origin HEAD -f", cwd=f_p, shell=True, timeout=300)
                 except: 
                     print(f"   ⚠️ {folder} Timeout")
             else:
-                print(f"✅ ห้อง {folder} เป็นปัจจุบันแล้ว (Skip)")
+                print(f"⏩ ห้อง {folder} ไม่มีข้อมูลใหม่ (ข้ามการอัปโหลด)")
 
     if os.path.exists(os.path.join(DB_DIR, ".git")):
         print("💾 ส่งฐานข้อมูลและปก...")
@@ -251,7 +253,7 @@ def main():
                 subprocess.run("git push origin HEAD", cwd=DB_DIR, shell=True, timeout=300)
             except: print("   ⚠️ DB Sync Timeout")
 
-    print("\n✨ เสร็จสมบูรณ์! ข้อมูลถูกกู้คืนและส่งขึ้นแอปแล้วครับ")
+    print("\n✨ เสร็จสมบูรณ์เรียบร้อยครับ")
     time.sleep(2)
     os._exit(0)
 

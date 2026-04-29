@@ -160,7 +160,7 @@
             const dataMusic = await resMusic.json();
             allBooksCurrent = (dataMusic.music || []).map(m => ({...m, is_music: true}));
         } else {
-            allBooksCurrent = allBooksGlobal.filter(b => b.category === currentCategory);
+            allBooksCurrent = allBooksGlobal.filter(b => b.category.toLowerCase() === currentCategory.toLowerCase());
         }
         renderList(allBooksCurrent);
     }

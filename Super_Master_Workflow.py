@@ -155,103 +155,46 @@ def main():
                 if os.path.exists(dest): os.remove(f_path)
                 else: shutil.move(f_path, dest)
 
-   # --- STEP 2: UPDATE DB & AUDIOBOOKS (Safe & Permanent Fix Version) ---
-    print("📊 [2/3] อัปเดตฐานข้อมูล (สแกนเฉพาะส่วนที่มีการเปลี่ยนแปลง)...")
+    # --- STEP 2: UPDATE DB & AUDIOBOOKS ---
+    print("📊 [2/3] อัปเดตฐานข้อมูล (รวมหมวด AudioBooks)...")
     all_books, all_music, all_audiobooks = [], [], []
-
-    # 1. โหลดข้อมูลเดิมที่มีอยู่ทั้งหมดจากไฟล์ JSON มาเก็บไว้เป็นฐานก่อน
-    try:
-        if os.path.exists(DB_PATH):
-            with open(DB_PATH, 'r', encoding='utf-8') as f: all_books = json.load(f).get('books', [])
-        if os.path.exists(MUSIC_DB_PATH):
-            with open(MUSIC_DB_PATH, 'r', encoding='utf-8') as f: all_music = json.load(f).get('music', [])
-        if os.path.exists(AUDIOBOOK_DB_PATH):
-            with open(AUDIOBOOK_DB_PATH, 'r', encoding='utf-8') as f: all_audiobooks = json.load(f).get('audiobooks', [])
-    except: 
-        print("   ⚠️ ไม่สามารถโหลดข้อมูลเดิมได้ จะเริ่มสร้างใหม่ทั้งหมด")
-
     for cat in os.listdir(LIBRARY_ROOT):
         cat_path = os.path.join(LIBRARY_ROOT, cat)
         if not os.path.isdir(cat_path) or cat in ['.git', 'covers']: continue
         
-        # 🔍 ตรวจความเปลี่ยนแปลงด้วย Git Status
-        repo_changes = run_git("git status --porcelain", cat_path)
         is_audio_cat = cat.startswith("8_") or "audiobook" in cat.lower()
-        
-        # ✅ จุดแก้ไขสำคัญ: ถ้าไม่มีอะไรเปลี่ยน ให้ปล่อยข้อมูลใน List ไว้เหมือนเดิมแล้วข้ามไปเลย
-        if not repo_changes and not is_audio_cat:
-            print(f"   ⏩ ข้ามการสแกนห้อง: {cat} (รักษาข้อมูลเดิมไว้ในระบบ)")
-            continue
 
-        # 🧹 ถ้าพบความเปลี่ยนแปลงจริง ให้ล้างเฉพาะข้อมูลของ "หมวดนั้นๆ" เพื่อเตรียมใส่ข้อมูลใหม่ที่สแกนเจอ[cite: 1]
-        if is_audio_cat: 
-            all_audiobooks = [b for b in all_audiobooks if b['category'] != cat]
-        elif cat.startswith("7_"): 
-            all_music = [m for m in all_music if m['category'] != cat]
-        else: 
-            all_books = [b for b in all_books if b['category'] != cat]
-
-        print(f"   🔎 เริ่มสแกนข้อมูลใหม่ใน: {cat}")
         for root, dirs, files in os.walk(cat_path):
             rel_folder = os.path.relpath(root, cat_path)
             display_folder = "ทั่วไป" if rel_folder == "." else rel_folder
 
-            # ✅ หนังสือเสียงจาก links.txt[cite: 1]
+            # ✅ ฟีเจอร์ใหม่: หนังสือเสียงจาก links.txt
             if is_audio_cat and "links.txt" in files:
                 link_path = os.path.join(root, "links.txt")
                 with open(link_path, 'r', encoding='utf-8') as f:
                     content = f.read().splitlines()
                 
-                # 🧼 ล้าง URL ให้สะอาด (แก้ปัญหาฟังไม่ได้/ไม่มีปก)
-                valid_links = [line.split()[0].strip() for line in content if "http" in line]
-                first_link = valid_links[0] if valid_links else ""
-                
+                first_link = next((line for line in content if "http" in line), "")
                 cover_id = generate_cover_id(rel_folder)
                 cover_dir = os.path.join(DB_DIR, 'covers', cat)
                 os.makedirs(cover_dir, exist_ok=True)
                 cover_out = os.path.join(cover_dir, f"{cover_id}.jpg")
                 
-                if first_link: get_yt_thumbnail(first_link, cover_out)
+                get_yt_thumbnail(first_link, cover_out) # ดึงปก YouTube
 
                 episodes = []
                 current_title = ""
                 for line in content:
                     if not line.strip(): continue
                     if "http" in line:
-                        clean_url = line.split()[0].strip() 
-                        episodes.append({"ep_title": current_title, "ep_url": clean_url})
+                        episodes.append({"ep_title": current_title, "ep_url": line.strip()})
                     else: current_title = line.strip()
 
                 all_audiobooks.append({
                     "title": rel_folder, "cover_id": cover_id, "category": cat,
                     "episodes": episodes, "type": "audiobook_playlist"
                 })
-                dirs.clear(); continue 
-
-            # ✅ PDF & MP3 ปกติ[cite: 1]
-            for f in files:
-                if f.lower().endswith(('.pdf', '.mp3')):
-                    full_p = os.path.join(root, f)
-                    f_hash = get_file_hash(full_p)
-                    cover_id = generate_cover_id(os.path.relpath(full_p, LIBRARY_ROOT))
-                    cover_dir = os.path.join(DB_DIR, 'covers', cat)
-                    os.makedirs(cover_dir, exist_ok=True)
-                    cover_out = os.path.join(cover_dir, f"{cover_id}.jpg")
-                    
-                    if f.lower().endswith('.pdf') and not os.path.exists(cover_out):
-                        try:
-                            imgs = convert_from_path(full_p, first_page=1, last_page=1, size=(None, 400), poppler_path=POPPLER_PATH)
-                            if imgs: imgs[0].save(cover_out, 'JPEG', quality=85)
-                        except: pass
-
-                    path_in_repo = os.path.relpath(full_p, cat_path).replace('\\', '/')
-                    item_data = {
-                        "title": os.path.splitext(f)[0],
-                        "url": f"https://raw.githubusercontent.com/{GITHUB_USER}/{cat}/main/{urllib.parse.quote(path_in_repo)}",
-                        "category": cat, "folder": display_folder, "cover_id": cover_id, "file_hash": f_hash
-                    }
-                    if cat.startswith("7_") or f.lower().endswith('.mp3'): all_music.append(item_data)
-                    else: all_books.append(item_data)
+                dirs.clear(); continue # จบงานโฟลเดอร์นี้
 
             # PDF & MP3 เดิม
             for f in files:
@@ -283,28 +226,17 @@ def main():
     with open(MUSIC_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"music": all_music}, f, ensure_ascii=False, indent=4)
     with open(AUDIOBOOK_DB_PATH, 'w', encoding='utf-8') as f: json.dump({"audiobooks": all_audiobooks}, f, ensure_ascii=False, indent=4)
 
-   # --- STEP 3: FULL SYNC (Optimized Version) ---
-    print("\n☁️ [3/3] กำลังทยอยส่งข้อมูลขึ้น Cloud (เฉพาะห้องที่มีการเปลี่ยนแปลง)...")
+    # --- STEP 3: FULL SYNC ---
+    print("\n☁️ [3/3] กำลังทยอยส่งข้อมูลขึ้น Cloud...")
     for folder in os.listdir(LIBRARY_ROOT):
         f_p = os.path.join(LIBRARY_ROOT, folder)
         if os.path.exists(os.path.join(f_p, ".git")):
-            
-            # 🔍 ตรวจเช็กว่ามีความเปลี่ยนแปลงในโฟลเดอร์นี้หรือไม่
-            status = run_git("git status --porcelain", f_p)
-            
-            if status: # ถ้ามีไฟล์ใหม่หรือมีการแก้ไขไฟล์
-                print(f"🚀 ตรวจพบการเปลี่ยนแปลง กำลังส่งห้อง: {folder}")
-                run_git("git add .", f_p)
-                # ใช้ commit message ที่ระบุวันที่/เวลา เพื่อความชัดเจนในประวัติการแก้ไข
-                run_git(f'git commit -m "Auto-sync update {time.strftime("%Y-%m-%d %H:%M")}"', f_p)
-                try:
-                    # พยายามส่งข้อมูลขึ้น Cloud
-                    subprocess.run("git push origin HEAD -f", cwd=f_p, shell=True, timeout=300)
-                except: 
-                    print(f"   ⚠️ {folder} Timeout")
-            else:
-                # ถ้าไม่มีอะไรเปลี่ยน จะข้ามห้องนี้ไปทันที ไม่ต้องเสียเวลาเชื่อมต่อ Git
-                print(f"✅ ห้อง {folder} เป็นปัจจุบันแล้ว (Skip)")
+            print(f"🚀 ส่งห้อง: {folder}")
+            run_git("git add .", f_p)
+            run_git('git commit -m "Auto-sync AudioBooks"', f_p)
+            try:
+                subprocess.run("git push origin HEAD -f", cwd=f_p, shell=True, timeout=300)
+            except: print(f"   ⚠️ {folder} Timeout")
 
     if os.path.exists(os.path.join(DB_DIR, ".git")):
         print("💾 ส่งฐานข้อมูลและปก...")

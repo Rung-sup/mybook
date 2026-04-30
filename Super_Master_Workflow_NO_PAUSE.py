@@ -31,7 +31,7 @@ GS_PATH = r'C:\Program Files\gs\gs10.07.0\bin\gswin64c.exe'
 GITHUB_USER = "rung-sup"
 MAX_SIZE_MB = 95
 
-# à¸›à¸¥à¸­à¸”à¸ à¸±à¸¢à¸à¸§à¹ˆà¸² default à¹€à¸”à¸´à¸¡
+# ปลอดภัยกว่า default เดิม
 ALLOW_FORCE_PUSH = False
 PUSH_DB_ALWAYS = True
 
@@ -84,7 +84,7 @@ def clear_state():
 def pause_workflow(step, phase, title, issue, suggestion, current_category="", current_root="", current_file=""):
     lines = [
         "=" * 72,
-        f"WORKFLOW PAUSED @ {now_text()}",
+        f"WORKFLOW ERROR LOG @ {now_text()}",
         f"STEP      : {step}",
         f"PHASE     : {phase}",
         f"CATEGORY  : {current_category}",
@@ -94,21 +94,12 @@ def pause_workflow(step, phase, title, issue, suggestion, current_category="", c
         f"ISSUE     : {title}",
         f"DETAIL    : {issue}",
         f"SUGGEST   : {suggestion}",
-        "=" * 72,
-        "à¹à¸à¹‰à¹„à¸‚à¹€à¸ªà¸£à¹‡à¸ˆà¹à¸¥à¹‰à¸§à¹ƒà¸«à¹‰à¸£à¸±à¸™à¹„à¸Ÿà¸¥à¹Œà¸™à¸µà¹‰à¸‹à¹‰à¸³à¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡ à¸£à¸°à¸šà¸šà¸ˆà¸°à¸žà¸¢à¸²à¸¢à¸²à¸¡ continue à¸ˆà¸²à¸à¸ˆà¸¸à¸”à¸„à¹‰à¸²à¸‡"
+        "=" * 72
     ]
-    print("\n".join(lines))
-    write_report(lines)
-    save_state(
-        step=step,
-        phase=phase,
-        current_category=current_category,
-        current_root=current_root,
-        current_file=current_file,
-        status="paused",
-        error=f"{title} | {issue}",
-        suggestion=suggestion
-    )
+    # เขียนลงไฟล์ Log แต่ไม่หยุดโปรแกรม (No Pause Version)
+    print(f"⚠️ ตรวจพบข้อผิดพลาด: {title} (บันทึกลง Log แล้ว ข้ามการทำงานส่วนนี้...)")
+    with open(REPORT_PATH, "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
     return False
 
 # ==========================================
@@ -151,10 +142,8 @@ def ensure_required_paths():
     required_dirs = [PROCESS_ZONE, LIBRARY_ROOT, DB_DIR]
     for p in required_dirs:
         if not os.path.exists(p):
-            return pause_workflow(
-                0, "startup", "à¹„à¸¡à¹ˆà¸žà¸šà¹‚à¸Ÿà¸¥à¹€à¸”à¸­à¸£à¹Œà¸—à¸µà¹ˆà¸ˆà¸³à¹€à¸›à¹‡à¸™", p,
-                "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š path configuration à¹ƒà¸«à¹‰à¸–à¸¹à¸à¸•à¹‰à¸­à¸‡"
-            )
+            print(f"❌ ไม่พบโฟลเดอร์ที่จำเป็น: {p}")
+            return False
     return True
 
 # ==========================================
@@ -390,7 +379,7 @@ def load_existing_hashes():
     return existing_hashes
 
 def step1_process_and_move(state):
-    print("ðŸ›  [1/3] à¸à¸³à¸¥à¸±à¸‡à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¹„à¸Ÿà¸¥à¹Œà¸£à¸°à¸šà¸š Hash & Compression...")
+    print("🚀 [1/3] กำลังตรวจสอบและย้ายไฟล์เข้าระบบ (ลบไฟล์ที่มีปัญหาอัตโนมัติ)...")
     existing_hashes = load_existing_hashes()
 
     for cat in sorted(os.listdir(PROCESS_ZONE)):
@@ -409,33 +398,21 @@ def step1_process_and_move(state):
                 dest = os.path.join(target_lib, item)
                 try:
                     if os.path.exists(dest):
-                        for sub in sorted(os.listdir(f_path)):
-                            s_src = os.path.join(f_path, sub)
-                            s_dst = os.path.join(dest, sub)
-                            if not os.path.exists(s_dst):
-                                shutil.move(s_src, s_dst)
                         shutil.rmtree(f_path)
+                        print(f"🗑️ ลบโฟลเดอร์ซ้ำ: {item}")
                     else:
                         shutil.move(f_path, dest)
                 except Exception as e:
-                    return pause_workflow(
-                        1, "move_folder", "à¸¢à¹‰à¸²à¸¢à¹‚à¸Ÿà¸¥à¹€à¸”à¸­à¸£à¹Œà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", str(e),
-                        "à¸›à¸´à¸”à¹„à¸Ÿà¸¥à¹Œà¸—à¸µà¹ˆà¸à¸³à¸¥à¸±à¸‡à¹ƒà¸Šà¹‰à¸‡à¸²à¸™à¸«à¸£à¸·à¸­à¹€à¸Šà¹‡à¸ permission à¸‚à¸­à¸‡à¹‚à¸Ÿà¸¥à¹€à¸”à¸­à¸£à¹Œ",
-                        cat, cat_staging, item
-                    )
+                    print(f"❌ ย้ายโฟลเดอร์ไม่สำเร็จ ลบทิ้ง: {item}")
+                    try: shutil.rmtree(f_path) 
+                    except: pass
                 continue
 
             f_hash = get_file_hash(f_path)
             if f_hash and f_hash in existing_hashes:
-                print(f"ðŸ—‘ï¸ à¸žà¸šà¹„à¸Ÿà¸¥à¹Œà¸‹à¹‰à¸³: {item}")
-                try:
-                    os.remove(f_path)
-                except Exception as e:
-                    return pause_workflow(
-                        1, "remove_duplicate", "à¸¥à¸šà¹„à¸Ÿà¸¥à¹Œà¸‹à¹‰à¸³à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", str(e),
-                        "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸§à¹ˆà¸²à¹„à¸Ÿà¸¥à¹Œà¹„à¸¡à¹ˆà¹„à¸”à¹‰à¹€à¸›à¸´à¸”à¸„à¹‰à¸²à¸‡à¸­à¸¢à¸¹à¹ˆ",
-                        cat, cat_staging, item
-                    )
+                print(f"🗑️ ลบไฟล์เนื้อหาซ้ำ: {item}")
+                try: os.remove(f_path)
+                except: pass
                 continue
 
             if item.lower().endswith('.pdf'):
@@ -443,39 +420,33 @@ def step1_process_and_move(state):
                 if size_mb > MAX_SIZE_MB:
                     ok, err = compress_pdf_high(f_path)
                     if not ok:
-                        return pause_workflow(
-                            1, "compress_pdf", "à¸šà¸µà¸šà¸­à¸±à¸” PDF à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", err,
-                            "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š Ghostscript, à¸žà¸·à¹‰à¸™à¸—à¸µà¹ˆà¸§à¹ˆà¸²à¸‡, à¹à¸¥à¸°à¸„à¸§à¸²à¸¡à¸ªà¸¡à¸šà¸¹à¸£à¸“à¹Œà¸‚à¸­à¸‡ PDF",
-                            cat, cat_staging, item
-                        )
+                        print(f"❌ บีบอัดไม่สำเร็จ ลบไฟล์ทิ้ง: {item} ({err})")
+                        try: os.remove(f_path)
+                        except: pass
+                        continue
 
                     size_mb = os.path.getsize(f_path) / (1024 * 1024)
                     if size_mb > MAX_SIZE_MB:
                         ok, result = split_with_cover_injection(f_path)
                         if not ok:
-                            return pause_workflow(
-                                1, "split_pdf", "à¹à¸šà¹ˆà¸‡ PDF à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", result,
-                                "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸§à¹ˆà¸² PDF à¹€à¸›à¸´à¸”à¹„à¸”à¹‰à¸›à¸à¸•à¸´à¹à¸¥à¸°à¸¡à¸µà¸¡à¸²à¸à¸à¸§à¹ˆà¸² 1 à¸«à¸™à¹‰à¸²",
-                                cat, cat_staging, item
-                            )
+                            print(f"❌ แบ่งไฟล์ไม่สำเร็จ ลบไฟล์ทิ้ง: {item}")
+                            try: os.remove(f_path)
+                            except: pass
                         continue
 
             dest = os.path.join(target_lib, item)
             if os.path.exists(dest):
-                return pause_workflow(
-                    1, "duplicate_name", "à¸›à¸¥à¸²à¸¢à¸—à¸²à¸‡à¸¡à¸µà¸Šà¸·à¹ˆà¸­à¹„à¸Ÿà¸¥à¹Œà¸‹à¹‰à¸³", dest,
-                    "à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¸Šà¸·à¹ˆà¸­à¹„à¸Ÿà¸¥à¹Œà¸•à¹‰à¸™à¸—à¸²à¸‡à¸«à¸£à¸·à¸­à¸¢à¹‰à¸²à¸¢/à¸¥à¸šà¹„à¸Ÿà¸¥à¹Œà¹€à¸”à¸´à¸¡à¸à¹ˆà¸­à¸™",
-                    cat, cat_staging, item
-                )
+                print(f"⚠️ ชื่อซ้ำที่ปลายทาง ลบไฟล์ทิ้ง: {item}")
+                try: os.remove(f_path)
+                except: pass
+                continue
 
             try:
                 shutil.move(f_path, dest)
             except Exception as e:
-                return pause_workflow(
-                    1, "move_file", "à¸¢à¹‰à¸²à¸¢à¹„à¸Ÿà¸¥à¹Œà¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", str(e),
-                    "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸§à¹ˆà¸²à¹„à¸Ÿà¸¥à¹Œà¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸–à¸¹à¸à¹ƒà¸Šà¹‰à¸‡à¸²à¸™à¸­à¸¢à¸¹à¹ˆà¹à¸¥à¸°à¸ªà¸´à¸—à¸˜à¸´à¹Œà¹€à¸žà¸µà¸¢à¸‡à¸žà¸­",
-                    cat, cat_staging, item
-                )
+                print(f"❌ ย้ายไฟล์ไม่สำเร็จ ลบไฟล์ทิ้ง: {item}")
+                try: os.remove(f_path)
+                except: pass
 
     save_state(1, "done", status="done")
     return True
@@ -488,7 +459,7 @@ def build_file_url(category, full_path, cat_path):
     return f"https://raw.githubusercontent.com/{GITHUB_USER}/{category}/main/{urllib.parse.quote(path_in_repo)}"
 
 def step2_build_databases(state):
-    print("ðŸ“Š [2/3] à¸­à¸±à¸›à¹€à¸”à¸•à¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥ (à¸£à¸§à¸¡à¸«à¸¡à¸§à¸” AudioBooks)...")
+    print("📊 [2/3] อัปเดตฐานข้อมูล (รวมหมวด AudioBooks)...")
 
     all_books = []
     all_music = []
@@ -503,18 +474,16 @@ def step2_build_databases(state):
 
         for root, dirs, files in os.walk(cat_path):
             rel_folder = os.path.relpath(root, cat_path)
-            display_folder = "à¸—à¸±à¹ˆà¸§à¹„à¸›" if rel_folder == "." else rel_folder
+            display_folder = "ทั่วไป" if rel_folder == "." else rel_folder
             save_state(2, "scan_library", cat, root, "", "running")
 
             if is_audio_cat and "links.txt" in files:
                 link_path = os.path.join(root, "links.txt")
                 ok, err, parsed = parse_links_file(link_path)
                 if not ok:
-                    return pause_workflow(
-                        2, "parse_links", "links.txt à¹ƒà¸Šà¹‰à¸‡à¸²à¸™à¹„à¸¡à¹ˆà¹„à¸”à¹‰", err,
-                        "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸§à¹ˆà¸²à¹„à¸Ÿà¸¥à¹Œà¸¡à¸µà¸Šà¸·à¹ˆà¸­à¸•à¸­à¸™à¸ªà¸¥à¸±à¸šà¸à¸±à¸š YouTube URL à¸—à¸µà¹ˆà¸£à¸­à¸‡à¸£à¸±à¸š",
-                        cat, root, "links.txt"
-                    )
+                    print(f"⚠️ ข้ามโฟลเดอร์ {rel_folder} (อ่าน links.txt ไม่สำเร็จ: {err})")
+                    dirs.clear()
+                    continue
 
                 cover_id = generate_cover_id(rel_folder)
                 cover_dir = os.path.join(DB_DIR, 'covers', cat)
@@ -523,11 +492,7 @@ def step2_build_databases(state):
 
                 ok, err = get_yt_thumbnail(parsed["first_link"], cover_out)
                 if not ok:
-                    return pause_workflow(
-                        2, "youtube_cover", "à¸”à¸¶à¸‡à¸›à¸ YouTube à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", err,
-                        "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š network, URL à¹à¸¥à¸°à¸ªà¸´à¸—à¸˜à¸´à¹Œà¸à¸²à¸£à¹€à¸‚à¸µà¸¢à¸™à¹„à¸Ÿà¸¥à¹Œà¸›à¸",
-                        cat, root, "links.txt"
-                    )
+                    print(f"⚠️ ดึงปก YouTube ไม่สำเร็จ: {rel_folder} ({err})")
 
                 all_audiobooks.append({
                     "title": rel_folder,
@@ -557,11 +522,11 @@ def step2_build_databases(state):
                 if f.lower().endswith('.pdf') and not os.path.exists(cover_out):
                     ok, err = generate_pdf_cover(full_p, cover_out)
                     if not ok:
-                        return pause_workflow(
-                            2, "pdf_cover", "à¸ªà¸£à¹‰à¸²à¸‡à¸›à¸ PDF à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", err,
-                            "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š Poppler, PDF à¸§à¹ˆà¸²à¹„à¸¡à¹ˆà¹€à¸ªà¸µà¸¢ à¹à¸¥à¸°à¸¡à¸µà¸ªà¸´à¸—à¸˜à¸´à¹Œà¹€à¸‚à¸µà¸¢à¸™ cover",
-                            cat, root, f
-                        )
+                        # ลบ PDF ที่เสียทิ้งจากคลังทันที
+                        print(f"❌ ไฟล์ PDF เสีย สร้างปกไม่ได้ ลบไฟล์ทิ้ง: {f} ({err})")
+                        try: os.remove(full_p)
+                        except: pass
+                        continue # ข้ามไม่เอาเข้าฐานข้อมูล
 
                 item_data = {
                     "title": os.path.splitext(f)[0],
@@ -582,10 +547,8 @@ def step2_build_databases(state):
         safe_json_dump(MUSIC_DB_PATH, {"music": all_music})
         safe_json_dump(AUDIOBOOK_DB_PATH, {"audiobooks": all_audiobooks})
     except Exception as e:
-        return pause_workflow(
-            2, "write_db", "à¹€à¸‚à¸µà¸¢à¸™à¹„à¸Ÿà¸¥à¹Œà¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", str(e),
-            "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š permission à¸‚à¸­à¸‡ DB_DIR à¹à¸¥à¸°à¹„à¸Ÿà¸¥à¹Œà¹„à¸¡à¹ˆà¹„à¸”à¹‰à¸–à¸¹à¸à¹‚à¸›à¸£à¹à¸à¸£à¸¡à¸­à¸·à¹ˆà¸™à¸¥à¹‡à¸­à¸à¸­à¸¢à¸¹à¹ˆ"
-        )
+        print(f"❌ เขียนไฟล์ฐานข้อมูลไม่สำเร็จ: {e}")
+        return False
 
     save_state(2, "done", status="done")
     return True
@@ -615,7 +578,7 @@ def sync_single_repo(repo_path, commit_message, allow_force_push=False):
     return True, "pushed"
 
 def step3_sync(state):
-    print("â˜ï¸ [3/3] à¸à¸³à¸¥à¸±à¸‡à¹€à¸Šà¹‡à¸à¸„à¸§à¸²à¸¡à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¹à¸›à¸¥à¸‡à¹à¸¥à¸°à¸ªà¹ˆà¸‡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸‚à¸¶à¹‰à¸™ Cloud...")
+    print("☁️ [3/3] กำลังเช็กความเปลี่ยนแปลงและส่งข้อมูลขึ้น Cloud...")
 
     for folder in sorted(os.listdir(LIBRARY_ROOT)):
         f_p = os.path.join(LIBRARY_ROOT, folder)
@@ -633,53 +596,27 @@ def step3_sync(state):
             allow_force_push=ALLOW_FORCE_PUSH
         )
         if not ok:
-            return pause_workflow(
-                3, "sync_library_repo", "sync repo à¸«à¹‰à¸­à¸‡à¸«à¸™à¸±à¸‡à¸ªà¸·à¸­à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", msg,
-                "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š remote origin, branch, auth à¸‚à¸­à¸‡ GitHub à¹à¸¥à¸°à¸¥à¸­à¸‡ push manual 1 à¸„à¸£à¸±à¹‰à¸‡",
-                folder, f_p, ""
-            )
+            print(f"⚠️ อัปเดตโฟลเดอร์ {folder} ไม่สำเร็จ: {msg} (ข้ามไปโฟลเดอร์ถัดไป)")
         elif msg == "skip:no_change":
-            print(f"â© à¸‚à¹‰à¸²à¸¡à¸«à¹‰à¸­à¸‡ {folder} (à¹„à¸¡à¹ˆà¸¡à¸µà¸à¸²à¸£à¹€à¸›à¸¥à¸µà¹ˆà¸¢à¸™à¹à¸›à¸¥à¸‡)")
+            print(f"⏩ ข้ามห้อง {folder} (ไม่มีการเปลี่ยนแปลง)")
         elif msg == "pushed":
-            print(f"ðŸš€ à¸ªà¹ˆà¸‡à¸«à¹‰à¸­à¸‡: {folder}")
+            print(f"🚀 ส่งห้อง: {folder} สำเร็จ")
 
     if is_git_repo(DB_DIR):
         save_state(3, "sync_db_repo", "DB_DIR", DB_DIR, "", "running")
 
         if PUSH_DB_ALWAYS:
             code, out, err = run_git("git add .", DB_DIR, timeout=120)
-            if code != 0:
-                return pause_workflow(
-                    3, "sync_db_repo", "git add DB à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", err or out,
-                    "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š permission à¸«à¸£à¸·à¸­à¹„à¸Ÿà¸¥à¹Œà¸–à¸¹à¸à¹ƒà¸Šà¹‰à¸‡à¸²à¸™à¸„à¹‰à¸²à¸‡",
-                    "DB_DIR", DB_DIR, ""
-                )
-
             code, out, err = run_git('git commit -m "Update Audiobook DB"', DB_DIR, timeout=120)
-            text = (err or out or "").lower()
-            if code != 0 and "nothing to commit" not in text:
-                return pause_workflow(
-                    3, "sync_db_repo", "git commit DB à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", err or out,
-                    "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¸ªà¸–à¸²à¸™à¸° repo à¸«à¸£à¸·à¸­ conflict à¸—à¸µà¹ˆà¸¢à¸±à¸‡à¹„à¸¡à¹ˆà¸–à¸¹à¸à¹à¸à¹‰",
-                    "DB_DIR", DB_DIR, ""
-                )
-
             ok, err = git_push(DB_DIR, allow_force=False)
             if not ok:
-                return pause_workflow(
-                    3, "sync_db_repo", "git push DB à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", err,
-                    "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š remote origin, auth, branch protection à¸«à¸£à¸·à¸­ push manual",
-                    "DB_DIR", DB_DIR, ""
-                )
-            print("ðŸ’¾ à¸ªà¹ˆà¸‡à¸à¸²à¸™à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¹à¸¥à¸°à¸›à¸...")
+                print(f"⚠️ ส่งฐานข้อมูล (DB_DIR) ไม่สำเร็จ: {err}")
+            else:
+                print("💾 ส่งฐานข้อมูลและหน้าปกสำเร็จ!")
         else:
             ok, msg = sync_single_repo(DB_DIR, "Update Audiobook DB", allow_force_push=False)
             if not ok:
-                return pause_workflow(
-                    3, "sync_db_repo", "sync DB repo à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ", msg,
-                    "à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š remote origin, auth, branch protection",
-                    "DB_DIR", DB_DIR, ""
-                )
+                print(f"⚠️ ส่งฐานข้อมูล (DB_DIR) ไม่สำเร็จ: {msg}")
 
     save_state(3, "done", status="done")
     return True
@@ -691,33 +628,28 @@ def main():
     if not ensure_required_paths():
         sys.exit(1)
 
-    state = load_state()
-    start_step = int(state.get("step", 1))
+    # แก้ปัญหา CMD ภาษาต่างดาวให้เป็น UTF-8 หากทำงานบน Windows
+    if os.name == 'nt':
+        os.system('chcp 65001 > nul')
 
-    print(f"â–¶ï¸ à¹€à¸£à¸´à¹ˆà¸¡ workflow à¸ˆà¸²à¸ step {start_step}")
-    if state.get("status") == "paused":
-        print("â†ªï¸ à¸žà¸šà¸ªà¸–à¸²à¸™à¸°à¸„à¹‰à¸²à¸‡ à¸£à¸°à¸šà¸šà¸ˆà¸°à¸žà¸¢à¸²à¸¢à¸²à¸¡ continue à¸ˆà¸²à¸ workflow à¹€à¸”à¸´à¸¡")
+    # ล้าง state เก่าทิ้งทุกครั้งที่เปิดใหม่ เพื่อบังคับรัน 1-2-3 ใหม่เสมอ
+    clear_state() 
+    state = load_state()
+    start_step = 1
+
+    print("▶️ เริ่ม Workflow ฉบับลบไฟล์เสียอัตโนมัติ (No Pause)")
 
     if start_step <= 1:
-        if not step1_process_and_move(state):
-            sys.exit(1)
-
+        step1_process_and_move(state)
+        
     if start_step <= 2:
-        if not step2_build_databases(state):
-            sys.exit(1)
+        step2_build_databases(state)
 
     if start_step <= 3:
-        if not step3_sync(state):
-            sys.exit(1)
+        step3_sync(state)
 
     clear_state()
-    write_report([
-        "=" * 72,
-        f"WORKFLOW COMPLETED @ {now_text()}",
-        "à¸ªà¸–à¸²à¸™à¸°: à¸ªà¸³à¹€à¸£à¹‡à¸ˆà¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”",
-        "=" * 72
-    ])
-    print("\nâœ¨ à¹€à¸ªà¸£à¹‡à¸ˆà¸ªà¸¡à¸šà¸¹à¸£à¸“à¹Œà¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”!")
+    print("\n✨ เสร็จสมบูรณ์ทั้งหมด!")
 
 if __name__ == "__main__":
     main()

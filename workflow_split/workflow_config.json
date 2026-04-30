@@ -1,0 +1,28 @@
+{
+  "process_root": "C:\\Process_Zone",
+  "library_root": "C:\\MyLibrary",
+  "site_root": "C:\\MyBook_Test",
+  "covers_root": "C:\\MyBook_Test\\covers",
+  "logs_root": "C:\\MyBook_Test\\logs",
+  "database_json": "C:\\MyBook_Test\\database.json",
+  "music_db_json": "C:\\MyBook_Test\\music_db.json",
+  "audiobook_db_json": "C:\\MyBook_Test\\audiobook_db.json",
+  "github_branch": "main",
+  "git_remote": "origin",
+  "github_account": "Rung-sup",
+  "max_pdf_mb": 99.5,
+  "rooms": {
+    "1_PetchPraUma": {"type": "books"},
+    "2_Thai_Novel": {"type": "books"},
+    "2_Thai_Novel_Vol2": {"type": "books"},
+    "3_English_Translated": {"type": "books"},
+    "3_English_Translated_Vol2": {"type": "books"},
+    "4_Chinese_Novel": {"type": "books"},
+    "4_Chinese_Novel_Vol2": {"type": "books"},
+    "5_HowTo_Religion": {"type": "books"},
+    "6_HowTo_Religion_Science": {"type": "books"},
+    "7_music": {"type": "music"},
+    "7_music_Vol2": {"type": "music"},
+    "8_AudioBooks": {"type": "audiobooks"}
+  }
+}

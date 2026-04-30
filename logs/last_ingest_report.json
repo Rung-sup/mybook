@@ -1,0 +1,126 @@
+{
+  "started_at": "2026-04-29T21:57:54",
+  "rooms": [
+    {
+      "room": "1_PetchPraUma",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "2_Thai_Novel",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "2_Thai_Novel_Vol2",
+      "ingested": 0,
+      "skipped_unchanged": 16,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "3_English_Translated",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "3_English_Translated_Vol2",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "4_Chinese_Novel",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "4_Chinese_Novel_Vol2",
+      "ingested": 0,
+      "skipped_unchanged": 30,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "5_HowTo_Religion",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "6_HowTo_Religion_Science",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "7_music",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "7_music_Vol2",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    },
+    {
+      "room": "8_AudioBooks",
+      "ingested": 0,
+      "skipped_unchanged": 0,
+      "skipped_invalid": 0,
+      "skipped_duplicate_cross_library": 0,
+      "compressed": 0,
+      "skipped_too_large_after_process": 0,
+      "errors": []
+    }
+  ],
+  "changed_rooms": []
+}

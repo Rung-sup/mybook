@@ -1,284 +1,308 @@
 {
-    "audiobooks": [
+  "audiobooks": [
+    {
+      "title": "กระบี่ไร้เทียมทาน",
+      "cover_id": "69b60f783ce7e84bcb4443e89e630740",
+      "category": "8_AudioBooks",
+      "episodes": [
         {
-            "title": "กระบี่ไร้เทียมทาน",
-            "cover_id": "69b60f783ce7e84bcb4443e89e630740",
-            "category": "8_AudioBooks",
-            "episodes": [
-                {
-                    "ep_title": "บทที่ 1: เป้ามีชีวิต (การฝึกฝนอันแสนรันทดของฮุ้นปวยเอี้ยง)",
-                    "ep_url": "https://www.youtube.com/watch?v=hzq-caUmYx4"
-                },
-                {
-                    "ep_title": "บทที่ 2: วาสนาในคอกกระบือ (การพบพานความลับในสำนักบู๊ตึ๊ง)",
-                    "ep_url": "https://www.youtube.com/watch?v=A8wzD2S5y6E"
-                },
-                {
-                    "ep_title": "บทที่ 3: เคล็ดวิชาไหมฟ้า (จุดเริ่มต้นของยอดวิชาที่เปลี่ยนชีวิต)",
-                    "ep_url": "https://www.youtube.com/watch?v=Y_mY9Q-Xv0E"
-                },
-                {
-                    "ep_title": "บทที่ 4-10: การเผชิญหน้ากับพรรคมารและศัตรูรอบทิศ",
-                    "ep_url": "https://www.youtube.com/watch?v=L9K7R5-G4nE"
-                },
-                {
-                    "ep_title": "บทที่ 11-20: ฮุ้นปวยเอี้ยงและการปรากฏกายในยุทธจักร",
-                    "ep_url": "https://www.youtube.com/watch?v=P2vN-U_fC3Q"
-                },
-                {
-                    "ep_title": "บทที่ 21-35: ศึกชิงความเป็นใหญ่และการทำลายล้างสำนัก",
-                    "ep_url": "https://www.youtube.com/watch?v=mQ6T-Y_XwR8"
-                },
-                {
-                    "ep_title": "บทที่ 36-จบ: บทสรุปวิชาไหมฟ้าและการเป็นหนึ่งในใต้หล้า",
-                    "ep_url": "https://www.youtube.com/watch?v=X9D_vV7G2lE"
-                }
-            ],
-            "type": "audiobook_playlist"
+          "ep_title": "บทที่ 1: เป้ามีชีวิต (การฝึกฝนอันแสนรันทดของฮุ้นปวยเอี้ยง)",
+          "ep_url": "https://www.youtube.com/watch?v=hzq-caUmYx4"
         },
         {
-            "title": "ดาบมังกรหยก (ฉบับเสียงอ่าน โดย เจียะป้า บ่อสื่อ)",
-            "cover_id": "38e123e7bf3a78e7109112045d802dc1",
-            "category": "8_AudioBooks",
-            "episodes": [
-                {
-                    "ep_title": "บทที่ 1: แม้นสุดขอบฟ้า ยากลืมเลือน (การปรากฏตัวของก๊วยเซียง)",
-                    "ep_url": "https://www.youtube.com/watch?v=jfZxlb0lBsY"
-                },
-                {
-                    "ep_title": "บทที่ 2: บรรพตเส้า室ซิกซัว (ก๊วยเซียงปะทะเหล่าหลวงจีนเส้าหลิน)",
-                    "ep_url": "https://www.youtube.com/watch?v=FOf6hR-X3qI"
-                },
-                {
-                    "ep_title": "บทที่ 3: สองวีรบุรุษแห่งเขาวูตัง (เตียซำฮงในวัยหนุ่ม)",
-                    "ep_url": "https://www.youtube.com/watch?v=xZ_pY_mD49M"
-                },
-                {
-                    "ep_title": "บทที่ 4: ความแค้นท่ามกลางคลื่นคลั่ง (การชิงดาบฆ่ามังกร)",
-                    "ep_url": "https://www.youtube.com/watch?v=7uV8h8W9oGk"
-                },
-                {
-                    "ep_title": "บทที่ 5: เกาะเพลิงน้ำแข็ง (การใช้ชีวิตของเตียชุ่ยซัวและฮึงซู่ซู่)",
-                    "ep_url": "https://www.youtube.com/watch?v=vV9XlG7E2kE"
-                },
-                {
-                    "ep_title": "บทที่ 10-15: การกลับสู่จงหยวนและการจากไปของบุพการี",
-                    "ep_url": "https://www.youtube.com/watch?v=kY6T-N8V5zU"
-                },
-                {
-                    "ep_title": "บทที่ 20-30: เตียบ่อกี้และการฝึกวิชาคัมภีร์เก้าเอี้ยง",
-                    "ep_url": "https://www.youtube.com/watch?v=mH5R9U2X1A8 [03:10:00]"
-                },
-                {
-                    "ep_title": "บทที่ 40-จบ: ศึกตัดสินยอดเขาจงน้ำและบทสรุปแห่งดาบและกระบี่",
-                    "ep_url": "https://www.youtube.com/watch?v=B8N9W_L7S9Y"
-                },
-                {
-                    "ep_title": "บทที่ 1: เทพบุตรสุดสำอาง (แนะนำ กังปัง และอี้หน่ำเทียน)",
-                    "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=42s"
-                },
-                {
-                    "ep_title": "บทที่ 2: กำพร้าใต้คมมีด (เหตุการณ์สะเทือนขวัญและการกำเนิดเด็กแฝด)",
-                    "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=2118s"
-                },
-                {
-                    "ep_title": "บทที่ 3: มุสิกขุดดิน (การปรากฏตัวของสิบเหล่าโฉด)",
-                    "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=0s"
-                },
-                {
-                    "ep_title": "บทที่ 4: กระบี่เทวดาอี้หน่ำเทียน (ความแค้นในหุบเขาคนโฉด)",
-                    "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=2018s"
-                },
-                {
-                    "ep_title": "บทที่ 5: หุบเขาคนโฉด (การเติบโตของเซียวฮื้อยี้)",
-                    "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=0s"
-                },
-                {
-                    "ep_title": "บทที่ 6: ฆาตกรรมกลางหุบเขา",
-                    "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=2594s"
-                },
-                {
-                    "ep_title": "บทที่ 7-10: การผจญภัยในโลกกว้างครั้งแรก",
-                    "ep_url": "https://www.youtube.com/watch?v=8M0C_k9Wf-E"
-                },
-                {
-                    "ep_title": "บทที่ 11-15: พบพานทิปิงกูและปริศนาลายแทงสมบัติ",
-                    "ep_url": "https://www.youtube.com/watch?v=pD9_k-uO7r8"
-                },
-                {
-                    "ep_title": "บทที่ 16-20: ความลับของพรรคกระยาจกและพรรคมังกรแดง",
-                    "ep_url": "https://www.youtube.com/watch?v=BfX2R9XvQeA"
-                },
-                {
-                    "ep_title": "บทที่ 21-25: การเผชิญหน้ากับสตรีลึกลับแห่งวังบุปผา",
-                    "ep_url": "https://www.youtube.com/watch?v=I9rrz0Arm3E"
-                },
-                {
-                    "ep_title": "บทที่ 26-30: แผนร้ายใต้วังบุปผาและการพบกันของพี่น้อง",
-                    "ep_url": "https://www.youtube.com/watch?v=nEZMxPDpJ3Y"
-                },
-                {
-                    "ep_title": "บทที่ 31-40: ปริศนาขุมทรัพย์และยอดคนแห่งยุทธจักร",
-                    "ep_url": "https://www.youtube.com/watch?v=z8fG5Kx7X7A"
-                },
-                {
-                    "ep_title": "บทที่ 41-55: การประลองยุทธ์และมิตรภาพที่ซับซ้อน",
-                    "ep_url": "https://www.youtube.com/watch?v=VlW9W7XyR1E"
-                },
-                {
-                    "ep_title": "บทที่ 56-75: ความจริงที่เริ่มปรากฏและแผนซ้อนแผน",
-                    "ep_url": "https://www.youtube.com/watch?v=mD9rX_YV5_w"
-                },
-                {
-                    "ep_title": "บทที่ 76-90: วิกฤตการณ์ยุทธจักรและจุดจบของเหล่าคนโฉด",
-                    "ep_url": "https://www.youtube.com/watch?v=tqDikS-nGw0"
-                },
-                {
-                    "ep_title": "บทที่ 91-103: ศึกตัดสินครั้งสุดท้ายและบทสรุปของสายเลือด",
-                    "ep_url": "https://www.youtube.com/watch?v=G6E_6Tf5E98"
-                }
-            ],
-            "type": "audiobook_playlist"
+          "ep_title": "บทที่ 2: วาสนาในคอกกระบือ (การพบพานความลับในสำนักบู๊ตึ๊ง)",
+          "ep_url": "https://www.youtube.com/watch?v=A8wzD2S5y6E"
         },
         {
-            "title": "พจมาน สว่างวงศ์ (นิยายเสียง โดย อ่านให้ฟังชาแนล)",
-            "cover_id": "a6c9201e8e985c8a477989d856fdc9a9",
-            "category": "8_AudioBooks",
-            "episodes": [
-                {
-                    "ep_title": "บทที่ 01: ข่าวการแต่งงานของพจมาน (เพื่อนๆ ที่บ้านคลายกังวลตกใจกับข่าวนี้)",
-                    "ep_url": "https://www.youtube.com/watch?v=7VL0AruRIBE"
-                },
-                {
-                    "ep_title": "บทที่ 52: ชายกลางตามง้อพจมานที่บ้านสวน (ความเข้าใจผิดเริ่มคลี่คลาย)",
-                    "ep_url": "https://www.youtube.com/watch?v=wczUcxdOHMw"
-                },
-                {
-                    "ep_title": "พจมาน สว่างวงศ์ ตอนที่ 52 (ชายกลางตามง้อพจมานที่บ้านสวน)",
-                    "ep_url": "https://www.youtube.com/watch?v=wczUcxdOHMw"
-                },
-                {
-                    "ep_title": "พจมาน สว่างวงศ์ ตอนที่ 53 (ความสุขที่คืนกลับมาสู่สว่างวงศ์)",
-                    "ep_url": "https://www.youtube.com/watch?v=A8wzD2S5y6E"
-                },
-                {
-                    "ep_title": "พจมาน สว่างวงศ์ ตอนที่ 54 [จบ] (บทสรุปแห่งรักและบ้านทรายทอง)",
-                    "ep_url": "https://www.youtube.com/watch?v=Y_mY9Q-Xv0E"
-                }
-            ],
-            "type": "audiobook_playlist"
+          "ep_title": "บทที่ 3: เคล็ดวิชาไหมฟ้า (จุดเริ่มต้นของยอดวิชาที่เปลี่ยนชีวิต)",
+          "ep_url": "https://www.youtube.com/watch?v=Y_mY9Q-Xv0E"
         },
         {
-            "title": "ล่องไพร (ฟังยาวๆ)",
-            "cover_id": "be3c86944fe71e24342947ef57e7b307",
-            "category": "8_AudioBooks",
-            "episodes": [
-                {
-                    "ep_title": "ล่องไพร (มาลัย ชูพินิจ) โดย ป่ักหมุด เล่าให้รู้",
-                    "ep_url": "https://www.youtube.com/watch?v=P6JD3uDHnz8"
-                }
-            ],
-            "type": "audiobook_playlist"
+          "ep_title": "บทที่ 4-10: การเผชิญหน้ากับพรรคมารและศัตรูรอบทิศ",
+          "ep_url": "https://www.youtube.com/watch?v=L9K7R5-G4nE"
         },
         {
-            "title": "ล่ารักสองชาติภพ (นิยายชุดฟงอวิ๋น โดย เจียะป้า บ่อสื่อ)",
-            "cover_id": "474d089dcc0ecce79405c9a001254b46",
-            "category": "8_AudioBooks",
-            "episodes": [
-                {
-                    "ep_title": "บทที่ 1: อาทิตย์สนธยาและความทรงจำที่สาบสูญ",
-                    "ep_url": "https://www.youtube.com/watch?v=DluYcVDlxXI"
-                },
-                {
-                    "ep_title": "บทที่ 2: การปรากฏตัวของโป่วเกี้ยฮุ้น (ในนามอาทิ)",
-                    "ep_url": "https://www.youtube.com/watch?v=n-2f_8S_fQU"
-                },
-                {
-                    "ep_title": "บทที่ 3: ความลับแห่งตำหนักรวมเทพ",
-                    "ep_url": "https://www.youtube.com/watch?v=Zk9Xy_O8wR8"
-                },
-                {
-                    "ep_title": "บทที่ 4-10: ศึกชิงบาทปรมัตถ์และการพบพานเนี่ยพวง",
-                    "ep_url": "https://www.youtube.com/watch?v=kR5V9Y-L8mE"
-                },
-                {
-                    "ep_title": "บทที่ 11-20: มหาสงครามสองชาติภพและบทสรุปแห่งรัก",
-                    "ep_url": "https://www.youtube.com/watch?v=mQ6T-Y_XwR8"
-                }
-            ],
-            "type": "audiobook_playlist"
+          "ep_title": "บทที่ 11-20: ฮุ้นปวยเอี้ยงและการปรากฏกายในยุทธจักร",
+          "ep_url": "https://www.youtube.com/watch?v=P2vN-U_fC3Q"
         },
         {
-            "title": "เซียวฮื้อยี้",
-            "cover_id": "bbe4e441474b9e8b785bedf246cb5f7b",
-            "category": "8_AudioBooks",
-            "episodes": [
-                {
-                    "ep_title": "บทที่ 1: เทพบุตรสุดสำอาง (แนะนำ กังปัง และอี้หน่ำเทียน)",
-                    "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=42s"
-                },
-                {
-                    "ep_title": "บทที่ 2: กำพร้าใต้คมมีด (เหตุการณ์สะเทือนขวัญและการกำเนิดเด็กแฝด)",
-                    "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=2118s"
-                },
-                {
-                    "ep_title": "บทที่ 3: มุสิกขุดดิน (การปรากฏตัวของสิบเหล่าโฉด)",
-                    "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=0s"
-                },
-                {
-                    "ep_title": "บทที่ 4: กระบี่เทวดาอี้หน่ำเทียน (ความแค้นในหุบเขาคนโฉด)",
-                    "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=2018s"
-                },
-                {
-                    "ep_title": "บทที่ 5: หุบเขาคนโฉด (การเติบโตของเซียวฮื้อยี้)",
-                    "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=0s"
-                },
-                {
-                    "ep_title": "บทที่ 6: ฆาตกรรมกลางหุบเขา",
-                    "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=2594s"
-                },
-                {
-                    "ep_title": "บทที่ 7-10: การผจญภัยในโลกกว้างครั้งแรก",
-                    "ep_url": "https://www.youtube.com/watch?v=8M0C_k9Wf-E"
-                },
-                {
-                    "ep_title": "บทที่ 11-15: พบพานทิปิงกูและปริศนาลายแทงสมบัติ",
-                    "ep_url": "https://www.youtube.com/watch?v=pD9_k-uO7r8"
-                },
-                {
-                    "ep_title": "บทที่ 16-20: ความลับของพรรคกระยาจกและพรรคมังกรแดง",
-                    "ep_url": "https://www.youtube.com/watch?v=BfX2R9XvQeA"
-                },
-                {
-                    "ep_title": "บทที่ 21-25: การเผชิญหน้ากับสตรีลึกลับแห่งวังบุปผา",
-                    "ep_url": "https://www.youtube.com/watch?v=I9rrz0Arm3E"
-                },
-                {
-                    "ep_title": "บทที่ 26-30: แผนร้ายใต้วังบุปผาและการพบกันของพี่น้อง",
-                    "ep_url": "https://www.youtube.com/watch?v=nEZMxPDpJ3Y"
-                },
-                {
-                    "ep_title": "บทที่ 31-40: ปริศนาขุมทรัพย์และยอดคนแห่งยุทธจักร",
-                    "ep_url": "https://www.youtube.com/watch?v=z8fG5Kx7X7A"
-                },
-                {
-                    "ep_title": "บทที่ 41-55: การประลองยุทธ์และมิตรภาพที่ซับซ้อน",
-                    "ep_url": "https://www.youtube.com/watch?v=VlW9W7XyR1E"
-                },
-                {
-                    "ep_title": "บทที่ 56-75: ความจริงที่เริ่มปรากฏและแผนซ้อนแผน",
-                    "ep_url": "https://www.youtube.com/watch?v=mD9rX_YV5_w"
-                },
-                {
-                    "ep_title": "บทที่ 76-90: วิกฤตการณ์ยุทธจักรและจุดจบของเหล่าคนโฉด",
-                    "ep_url": "https://www.youtube.com/watch?v=tqDikS-nGw0"
-                },
-                {
-                    "ep_title": "บทที่ 91-103: ศึกตัดสินครั้งสุดท้ายและบทสรุปของสายเลือด",
-                    "ep_url": "https://www.youtube.com/watch?v=G6E_6Tf5E98"
-                }
-            ],
-            "type": "audiobook_playlist"
+          "ep_title": "บทที่ 21-35: ศึกชิงความเป็นใหญ่และการทำลายล้างสำนัก",
+          "ep_url": "https://www.youtube.com/watch?v=mQ6T-Y_XwR8"
+        },
+        {
+          "ep_title": "บทที่ 36-จบ: บทสรุปวิชาไหมฟ้าและการเป็นหนึ่งในใต้หล้า",
+          "ep_url": "https://www.youtube.com/watch?v=X9D_vV7G2lE"
         }
-    ]
+      ],
+      "type": "audiobook_playlist"
+    },
+    {
+      "title": "ดาบมังกรหยก (ฉบับเสียงอ่าน โดย เจียะป้า บ่อสื่อ)",
+      "cover_id": "38e123e7bf3a78e7109112045d802dc1",
+      "category": "8_AudioBooks",
+      "episodes": [
+        {
+          "ep_title": "บทที่ 1: แม้นสุดขอบฟ้า ยากลืมเลือน (การปรากฏตัวของก๊วยเซียง)",
+          "ep_url": "https://www.youtube.com/watch?v=jfZxlb0lBsY"
+        },
+        {
+          "ep_title": "บทที่ 2: บรรพตเส้า室ซิกซัว (ก๊วยเซียงปะทะเหล่าหลวงจีนเส้าหลิน)",
+          "ep_url": "https://www.youtube.com/watch?v=FOf6hR-X3qI"
+        },
+        {
+          "ep_title": "บทที่ 3: สองวีรบุรุษแห่งเขาวูตัง (เตียซำฮงในวัยหนุ่ม)",
+          "ep_url": "https://www.youtube.com/watch?v=xZ_pY_mD49M"
+        },
+        {
+          "ep_title": "บทที่ 4: ความแค้นท่ามกลางคลื่นคลั่ง (การชิงดาบฆ่ามังกร)",
+          "ep_url": "https://www.youtube.com/watch?v=7uV8h8W9oGk"
+        },
+        {
+          "ep_title": "บทที่ 5: เกาะเพลิงน้ำแข็ง (การใช้ชีวิตของเตียชุ่ยซัวและฮึงซู่ซู่)",
+          "ep_url": "https://www.youtube.com/watch?v=vV9XlG7E2kE"
+        },
+        {
+          "ep_title": "บทที่ 10-15: การกลับสู่จงหยวนและการจากไปของบุพการี",
+          "ep_url": "https://www.youtube.com/watch?v=kY6T-N8V5zU"
+        },
+        {
+          "ep_title": "บทที่ 20-30: เตียบ่อกี้และการฝึกวิชาคัมภีร์เก้าเอี้ยง",
+          "ep_url": "https://www.youtube.com/watch?v=mH5R9U2X1A8 [03:10:00]"
+        },
+        {
+          "ep_title": "บทที่ 40-จบ: ศึกตัดสินยอดเขาจงน้ำและบทสรุปแห่งดาบและกระบี่",
+          "ep_url": "https://www.youtube.com/watch?v=B8N9W_L7S9Y"
+        },
+        {
+          "ep_title": "บทที่ 1: เทพบุตรสุดสำอาง (แนะนำ กังปัง และอี้หน่ำเทียน)",
+          "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=42s"
+        },
+        {
+          "ep_title": "บทที่ 2: กำพร้าใต้คมมีด (เหตุการณ์สะเทือนขวัญและการกำเนิดเด็กแฝด)",
+          "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=2118s"
+        },
+        {
+          "ep_title": "บทที่ 3: มุสิกขุดดิน (การปรากฏตัวของสิบเหล่าโฉด)",
+          "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=0s"
+        },
+        {
+          "ep_title": "บทที่ 4: กระบี่เทวดาอี้หน่ำเทียน (ความแค้นในหุบเขาคนโฉด)",
+          "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=2018s"
+        },
+        {
+          "ep_title": "บทที่ 5: หุบเขาคนโฉด (การเติบโตของเซียวฮื้อยี้)",
+          "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=0s"
+        },
+        {
+          "ep_title": "บทที่ 6: ฆาตกรรมกลางหุบเขา",
+          "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=2594s"
+        },
+        {
+          "ep_title": "บทที่ 7-10: การผจญภัยในโลกกว้างครั้งแรก",
+          "ep_url": "https://www.youtube.com/watch?v=8M0C_k9Wf-E"
+        },
+        {
+          "ep_title": "บทที่ 11-15: พบพานทิปิงกูและปริศนาลายแทงสมบัติ",
+          "ep_url": "https://www.youtube.com/watch?v=pD9_k-uO7r8"
+        },
+        {
+          "ep_title": "บทที่ 16-20: ความลับของพรรคกระยาจกและพรรคมังกรแดง",
+          "ep_url": "https://www.youtube.com/watch?v=BfX2R9XvQeA"
+        },
+        {
+          "ep_title": "บทที่ 21-25: การเผชิญหน้ากับสตรีลึกลับแห่งวังบุปผา",
+          "ep_url": "https://www.youtube.com/watch?v=I9rrz0Arm3E"
+        },
+        {
+          "ep_title": "บทที่ 26-30: แผนร้ายใต้วังบุปผาและการพบกันของพี่น้อง",
+          "ep_url": "https://www.youtube.com/watch?v=nEZMxPDpJ3Y"
+        },
+        {
+          "ep_title": "บทที่ 31-40: ปริศนาขุมทรัพย์และยอดคนแห่งยุทธจักร",
+          "ep_url": "https://www.youtube.com/watch?v=z8fG5Kx7X7A"
+        },
+        {
+          "ep_title": "บทที่ 41-55: การประลองยุทธ์และมิตรภาพที่ซับซ้อน",
+          "ep_url": "https://www.youtube.com/watch?v=VlW9W7XyR1E"
+        },
+        {
+          "ep_title": "บทที่ 56-75: ความจริงที่เริ่มปรากฏและแผนซ้อนแผน",
+          "ep_url": "https://www.youtube.com/watch?v=mD9rX_YV5_w"
+        },
+        {
+          "ep_title": "บทที่ 76-90: วิกฤตการณ์ยุทธจักรและจุดจบของเหล่าคนโฉด",
+          "ep_url": "https://www.youtube.com/watch?v=tqDikS-nGw0"
+        },
+        {
+          "ep_title": "บทที่ 91-103: ศึกตัดสินครั้งสุดท้ายและบทสรุปของสายเลือด",
+          "ep_url": "https://www.youtube.com/watch?v=G6E_6Tf5E98"
+        }
+      ],
+      "type": "audiobook_playlist"
+    },
+    {
+      "title": "พจมาน สว่างวงศ์ (นิยายเสียง โดย อ่านให้ฟังชาแนล)",
+      "cover_id": "a6c9201e8e985c8a477989d856fdc9a9",
+      "category": "8_AudioBooks",
+      "episodes": [
+        {
+          "ep_title": "บทที่ 01: ข่าวการแต่งงานของพจมาน (เพื่อนๆ ที่บ้านคลายกังวลตกใจกับข่าวนี้)",
+          "ep_url": "https://www.youtube.com/watch?v=7VL0AruRIBE"
+        },
+        {
+          "ep_title": "บทที่ 52: ชายกลางตามง้อพจมานที่บ้านสวน (ความเข้าใจผิดเริ่มคลี่คลาย)",
+          "ep_url": "https://www.youtube.com/watch?v=wczUcxdOHMw"
+        },
+        {
+          "ep_title": "พจมาน สว่างวงศ์ ตอนที่ 52 (ชายกลางตามง้อพจมานที่บ้านสวน)",
+          "ep_url": "https://www.youtube.com/watch?v=wczUcxdOHMw"
+        },
+        {
+          "ep_title": "พจมาน สว่างวงศ์ ตอนที่ 53 (ความสุขที่คืนกลับมาสู่สว่างวงศ์)",
+          "ep_url": "https://www.youtube.com/watch?v=A8wzD2S5y6E"
+        },
+        {
+          "ep_title": "พจมาน สว่างวงศ์ ตอนที่ 54 [จบ] (บทสรุปแห่งรักและบ้านทรายทอง)",
+          "ep_url": "https://www.youtube.com/watch?v=Y_mY9Q-Xv0E"
+        }
+      ],
+      "type": "audiobook_playlist"
+    },
+    {
+      "title": "ร้อยป่า ภาคสมบูรณ์",
+      "cover_id": "490064004fe8f7c197f34d4b9704ca55",
+      "category": "8_AudioBooks",
+      "episodes": [
+        {
+          "ep_title": "ร้อยป่า ภาคสมบูรณ์ ลำดับที่ 1 (จบสมบูรณ์)",
+          "ep_url": "https://www.youtube.com/watch?v=amvxV45a8xU"
+        }
+      ],
+      "type": "audiobook_playlist"
+    },
+    {
+      "title": "ล่องไพร (ฟังยาวๆ)",
+      "cover_id": "be3c86944fe71e24342947ef57e7b307",
+      "category": "8_AudioBooks",
+      "episodes": [
+        {
+          "ep_title": "ล่องไพร (มาลัย ชูพินิจ) โดย ป่ักหมุด เล่าให้รู้",
+          "ep_url": "https://www.youtube.com/watch?v=P6JD3uDHnz8"
+        }
+      ],
+      "type": "audiobook_playlist"
+    },
+    {
+      "title": "ล่ารักสองชาติภพ (นิยายชุดฟงอวิ๋น โดย เจียะป้า บ่อสื่อ)",
+      "cover_id": "474d089dcc0ecce79405c9a001254b46",
+      "category": "8_AudioBooks",
+      "episodes": [
+        {
+          "ep_title": "บทที่ 1: อาทิตย์สนธยาและความทรงจำที่สาบสูญ",
+          "ep_url": "https://www.youtube.com/watch?v=DluYcVDlxXI"
+        },
+        {
+          "ep_title": "บทที่ 2: การปรากฏตัวของโป่วเกี้ยฮุ้น (ในนามอาทิ)",
+          "ep_url": "https://www.youtube.com/watch?v=n-2f_8S_fQU"
+        },
+        {
+          "ep_title": "บทที่ 3: ความลับแห่งตำหนักรวมเทพ",
+          "ep_url": "https://www.youtube.com/watch?v=Zk9Xy_O8wR8"
+        },
+        {
+          "ep_title": "บทที่ 4-10: ศึกชิงบาทปรมัตถ์และการพบพานเนี่ยพวง",
+          "ep_url": "https://www.youtube.com/watch?v=kR5V9Y-L8mE"
+        },
+        {
+          "ep_title": "บทที่ 11-20: มหาสงครามสองชาติภพและบทสรุปแห่งรัก",
+          "ep_url": "https://www.youtube.com/watch?v=mQ6T-Y_XwR8"
+        }
+      ],
+      "type": "audiobook_playlist"
+    },
+    {
+      "title": "เซียวฮื้อยี้",
+      "cover_id": "bbe4e441474b9e8b785bedf246cb5f7b",
+      "category": "8_AudioBooks",
+      "episodes": [
+        {
+          "ep_title": "บทที่ 1: เทพบุตรสุดสำอาง (แนะนำ กังปัง และอี้หน่ำเทียน)",
+          "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=42s"
+        },
+        {
+          "ep_title": "บทที่ 2: กำพร้าใต้คมมีด (เหตุการณ์สะเทือนขวัญและการกำเนิดเด็กแฝด)",
+          "ep_url": "https://www.youtube.com/watch?v=-jBAOTA_Msc&t=2118s"
+        },
+        {
+          "ep_title": "บทที่ 3: มุสิกขุดดิน (การปรากฏตัวของสิบเหล่าโฉด)",
+          "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=0s"
+        },
+        {
+          "ep_title": "บทที่ 4: กระบี่เทวดาอี้หน่ำเทียน (ความแค้นในหุบเขาคนโฉด)",
+          "ep_url": "https://www.youtube.com/watch?v=kG7B4I_oK-k&t=2018s"
+        },
+        {
+          "ep_title": "บทที่ 5: หุบเขาคนโฉด (การเติบโตของเซียวฮื้อยี้)",
+          "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=0s"
+        },
+        {
+          "ep_title": "บทที่ 6: ฆาตกรรมกลางหุบเขา",
+          "ep_url": "https://www.youtube.com/watch?v=F0S_v7R5S_g&t=2594s"
+        },
+        {
+          "ep_title": "บทที่ 7-10: การผจญภัยในโลกกว้างครั้งแรก",
+          "ep_url": "https://www.youtube.com/watch?v=8M0C_k9Wf-E"
+        },
+        {
+          "ep_title": "บทที่ 11-15: พบพานทิปิงกูและปริศนาลายแทงสมบัติ",
+          "ep_url": "https://www.youtube.com/watch?v=pD9_k-uO7r8"
+        },
+        {
+          "ep_title": "บทที่ 16-20: ความลับของพรรคกระยาจกและพรรคมังกรแดง",
+          "ep_url": "https://www.youtube.com/watch?v=BfX2R9XvQeA"
+        },
+        {
+          "ep_title": "บทที่ 21-25: การเผชิญหน้ากับสตรีลึกลับแห่งวังบุปผา",
+          "ep_url": "https://www.youtube.com/watch?v=I9rrz0Arm3E"
+        },
+        {
+          "ep_title": "บทที่ 26-30: แผนร้ายใต้วังบุปผาและการพบกันของพี่น้อง",
+          "ep_url": "https://www.youtube.com/watch?v=nEZMxPDpJ3Y"
+        },
+        {
+          "ep_title": "บทที่ 31-40: ปริศนาขุมทรัพย์และยอดคนแห่งยุทธจักร",
+          "ep_url": "https://www.youtube.com/watch?v=z8fG5Kx7X7A"
+        },
+        {
+          "ep_title": "บทที่ 41-55: การประลองยุทธ์และมิตรภาพที่ซับซ้อน",
+          "ep_url": "https://www.youtube.com/watch?v=VlW9W7XyR1E"
+        },
+        {
+          "ep_title": "บทที่ 56-75: ความจริงที่เริ่มปรากฏและแผนซ้อนแผน",
+          "ep_url": "https://www.youtube.com/watch?v=mD9rX_YV5_w"
+        },
+        {
+          "ep_title": "บทที่ 76-90: วิกฤตการณ์ยุทธจักรและจุดจบของเหล่าคนโฉด",
+          "ep_url": "https://www.youtube.com/watch?v=tqDikS-nGw0"
+        },
+        {
+          "ep_title": "บทที่ 91-103: ศึกตัดสินครั้งสุดท้ายและบทสรุปของสายเลือด",
+          "ep_url": "https://www.youtube.com/watch?v=G6E_6Tf5E98"
+        }
+      ],
+      "type": "audiobook_playlist"
+    },
+    {
+      "title": "เพชรพระอุมา ภาคจอมพราน",
+      "cover_id": "2679253d3e8f0d0d3ff2c80ad34d55a7",
+      "category": "8_AudioBooks",
+      "episodes": [
+        {
+          "ep_title": "เพชรพระอุมา ภาคสมบูรณ์ (จอมพราน)",
+          "ep_url": "https://youtu.be/2jF0v-zzKtw?si=yryWG0VEXEiIEYI-"
+        }
+      ],
+      "type": "audiobook_playlist"
+    }
+  ]
 }

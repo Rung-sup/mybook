@@ -1,0 +1,18 @@
+========================================================================
+WORKFLOW PAUSED @ 2026-04-30 21:49:20
+STEP      : 2
+PHASE     : pdf_cover
+CATEGORY  : 2_Thai_Novel_Vol2
+ROOT      : C:\MyLibrary\2_Thai_Novel_Vol2\นิยายวาย 2
+FILE      : Once ครั้งหนึ่ง....pdf
+------------------------------------------------------------------------
+ISSUE     : à¸ªà¸£à¹‰à¸²à¸‡à¸›à¸ PDF à¹„à¸¡à¹ˆà¸ªà¸³à¹€à¸£à¹‡à¸ˆ
+DETAIL    : Unable to get page count.
+Syntax Warning: May not be a PDF file (continuing anyway)
+Syntax Error: Couldn't find trailer dictionary
+Syntax Error: Couldn't find trailer dictionary
+Syntax Error: Couldn't read xref table
+
+SUGGEST   : à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸š Poppler, PDF à¸§à¹ˆà¸²à¹„à¸¡à¹ˆà¹€à¸ªà¸µà¸¢ à¹à¸¥à¸°à¸¡à¸µà¸ªà¸´à¸—à¸˜à¸´à¹Œà¹€à¸‚à¸µà¸¢à¸™ cover
+========================================================================
+à¹à¸à¹‰à¹„à¸‚à¹€à¸ªà¸£à¹‡à¸ˆà¹à¸¥à¹‰à¸§à¹ƒà¸«à¹‰à¸£à¸±à¸™à¹„à¸Ÿà¸¥à¹Œà¸™à¸µà¹‰à¸‹à¹‰à¸³à¸­à¸µà¸à¸„à¸£à¸±à¹‰à¸‡ à¸£à¸°à¸šà¸šà¸ˆà¸°à¸žà¸¢à¸²à¸¢à¸²à¸¡ continue à¸ˆà¸²à¸à¸ˆà¸¸à¸”à¸„à¹‰à¸²à¸‡

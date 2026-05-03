@@ -2,8 +2,8 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>หมวดหมู่ - Reader App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>หมวดหมู่ - หอสมุดส่วนตัว</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
@@ -17,7 +17,31 @@
             padding: 40px 20px;
             padding-bottom: 100px;
         }
-        .header { text-align: center; color: white; margin-bottom: 40px; }
+
+        /* แก้ไขส่วน Header เพื่อโชว์รูป app-icon.png */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .app-logo-container {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 15px;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            background: white; /* กันพลาดถ้าหารูปไม่เจอ */
+        }
+        .app-logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         .grid-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -25,26 +49,38 @@
             width: 100%;
             max-width: 900px;
         }
+
         .category-card {
-            background: white; border-radius: 20px; padding: 30px 10px;
-            text-align: center; cursor: pointer; transition: all 0.25s ease;
+            background: white;
+            border-radius: 20px;
+            padding: 25px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            text-decoration: none; color: #333; min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #333;
+            min-height: 160px;
         }
+
         .category-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
-        .category-card .icon { font-size: 40px; margin-bottom: 15px; }
-        .category-card .name { font-weight: 600; font-size: 16px; color: #4a148c; }
+        .category-card .icon { font-size: 40px; margin-bottom: 12px; }
+        .category-card img.card-logo { width: 60px; height: 60px; margin-bottom: 12px; object-fit: contain; }
+        .category-card .name { font-weight: 600; font-size: 15px; color: #4a148c; line-height: 1.3; }
         
-        /* สไตล์ขอบล่างตามหมวดหมู่ */
-        .music-card { border-bottom: 5px solid #ff4081; }
-        .audio-card { border-bottom: 5px solid #d4af37; }
+        /* สไตล์ขอบล่างแยกตามหมวดหมู่ */
         .book-card  { border-bottom: 5px solid #7c4dff; }
         .howto-card { border-bottom: 5px solid #00b894; }
         .waiting-card { border-bottom: 5px solid #ff9800; }
+        .music-card { border-bottom: 5px solid #ff4081; }
+        .audio-card { border-bottom: 5px solid #d4af37; }
         .construction-card { border-bottom: 5px solid #1877f2; }
 
-        /* ปุ่มสนับสนุนลอยตัว (แนวทางที่ 1) */
+        /* ปุ่มสนับสนุนลอยตัว */
         .btn-donate-fixed {
             position: fixed; bottom: 20px; right: 20px;
             background: #d4af37; color: #000; border: none;
@@ -54,7 +90,7 @@
             display: flex; align-items: center; gap: 8px; z-index: 1000;
         }
 
-        /* Modal QR Code */
+        /* Modal สำหรับ QR Code */
         .modal-overlay {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
             z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);
@@ -67,33 +103,34 @@
     </style>
 </head>
 <body>
+
     <div class="header">
-    <!-- ใส่รูปภาพหน้าปกแอปของคุณปุ๊กแทนที่ข้อความเดิม -->
-    <img src="app-icon.png" alt="App Logo" style="width: 120px; height: auto; border-radius: 20px; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-    <h1 style="font-size: 24px; margin-top: 10px;">หอสมุดส่วนตัว</h1>
-</div>
+        <div class="app-logo-container">
+            <!-- แสดงรูป Lyre จากไฟล์ app-icon.png -->
+            <img src="app-icon.png" alt="App Logo" onerror="this.parentElement.innerHTML='<h1 style=\'font-size:60px; margin:20px 0;\'>📚</h1>'">
+        </div>
+        <h1 style="margin: 0; font-size: 24px;">หอสมุดส่วนตัว</h1>
+    </div>
 
     <div class="grid-container">
-        <!-- หมวดหมู่เดิม[cite: 3] -->
+        <!-- หมวดหมู่หนังสือต่างๆ -->
         <a href="library.html?cat=1_PetchPraUma" class="category-card book-card"><div class="icon">🐘</div><div class="name">เพชรพระอุมา</div></a>
         <a href="library.html?cat=2_Thai_Novel" class="category-card book-card"><div class="icon">📖</div><div class="name">นิยายไทย</div></a>
         <a href="library.html?cat=3_English_Translated" class="category-card book-card"><div class="icon">🌍</div><div class="name">นิยายแปล</div></a>
         <a href="library.html?cat=4_Chinese_Novel" class="category-card book-card"><div class="icon">🏮</div><div class="name">นิยายจีน</div></a>
-        <a href="library.html?cat=5_HowTo_Religion" class="category-card howto-card"><div class="icon">🧠</div><div class="name">How-to</div></a>
+        <a href="library.html?cat=5_HowTo_Religion" class="category-card howto-card"><div class="icon">🧠</div><div class="name">How-to / ธรรมะ</div></a>
         <a href="library.html?cat=6_HowTo_Religion_Science" class="category-card waiting-card"><div class="icon">🗂️</div><div class="name">หมวดรอแยก</div></a>
         <a href="music_room.html" class="category-card music-card"><div class="icon">🎵</div><div class="name">ห้องฟังเพลง</div></a>
         <a href="library.html?cat=8_AudioBooks" class="category-card audio-card"><div class="icon">🎧</div><div class="name">หนังสือเสียง</div></a>
         
-        <!-- กล่องเมนูใหม่สำหรับงานรับเหมา[cite: 3] -->
+        <!-- กล่อง K2 Home พร้อมโลโก้บริษัท -->
         <a href="construction_page.html" class="category-card construction-card">
-    <!-- ใส่รูปโลโก้แทนไอคอนเดิม -->
-    <img src="k2-logo.jpg" alt="K2 Home Logo" style="width: 60px; height: 60px; margin-bottom: 15px; object-fit: contain;">
-    
-    <div class="name" style="color:#1877f2; font-size: 14px;">สร้างบ้านดีต้องมีเรา<br>ผลงานและเกร็ดความรู้เรื่องบ้าน</div>
-</a>
+            <img src="app-icon.png" alt="K2 Logo" class="card-logo" onerror="this.src='https://via.placeholder.com/60?text=K2'">
+            <div class="name" style="color:#1877f2; font-size: 13px;">K2 Home สร้างบ้านดีต้องมีเรา<br>ผลงานและเกร็ดความรู้</div>
+        </a>
     </div>
 
-    <!-- ปุ่มเลี้ยงกาแฟลอยตัว -->
+    <!-- ปุ่มสนับสนุน -->
     <button class="btn-donate-fixed" onclick="document.getElementById('donation-modal').style.display='flex'">
         ☕ เลี้ยงกาแฟผู้พัฒนา
     </button>
@@ -101,11 +138,12 @@
     <div id="donation-modal" class="modal-overlay" onclick="this.style.display='none'">
         <div class="modal-box" onclick="event.stopPropagation()">
             <h3 style="margin:0; color:#4a148c;">🙏 ขอบคุณที่สนับสนุน</h3>
-            <p style="font-size: 13px; color: #666; margin: 10px 0;">สนับสนุนค่ากาแฟและค่าเซิร์ฟเวอร์เพื่อให้แอปพัฒนาต่อไปครับ</p>
+            <p style="font-size: 13px; color: #666; margin: 10px 0;">เพื่อเป็นกำลังใจในการพัฒนาแอปต่อไปครับ</p>
             <img src="donate-qr.jpg" class="qr-img"> 
-            <p style="font-weight: 600; color: #d4af37;">พร้อมเพย์: [0625675506]</p>
-            <button onclick="document.getElementById('donation-modal').style.display='none'" style="width:100%; padding:10px; border-radius:10px; border:none; background:#eee; cursor:pointer;">ปิด</button>
+            <p style="font-weight: 600; color: #d4af37;">พร้อมเพย์: 0XX-XXX-XXXX</p>
+            <button onclick="document.getElementById('donation-modal').style.display='none'" style="width:100%; padding:10px; border-radius:10px; border:none; background:#eee; cursor:pointer;">ไว้คราวหน้าครับ</button>
         </div>
     </div>
+
 </body>
 </html>

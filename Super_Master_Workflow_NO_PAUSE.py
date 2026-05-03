@@ -96,7 +96,6 @@ def pause_workflow(step, phase, title, issue, suggestion, current_category="", c
         f"SUGGEST   : {suggestion}",
         "=" * 72
     ]
-    # เขียนลงไฟล์ Log แต่ไม่หยุดโปรแกรม (No Pause Version)
     print(f"⚠️ ตรวจพบข้อผิดพลาด: {title} (บันทึกลง Log แล้ว ข้ามการทำงานส่วนนี้...)")
     with open(REPORT_PATH, "a", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
@@ -219,7 +218,7 @@ def generate_pdf_cover(pdf_path, cover_out):
         return False, str(e)
 
 # ==========================================
-# YOUTUBE / AUDIOBOOK
+# YOUTUBE / AUDIOBOOK / FACEBOOK
 # ==========================================
 def extract_youtube_video_id(url):
     if "v=" in url:
@@ -228,13 +227,17 @@ def extract_youtube_video_id(url):
         return url.split("youtu.be/")[1].split("?")[0].strip()
     return ""
 
-def get_yt_thumbnail(url, save_path):
+def get_video_thumbnail(url, save_path):
     if os.path.exists(save_path):
         return True, None
 
+    # หากเป็นลิงก์ Facebook ให้ข้ามการดึงปกอัตโนมัติไปเลย
+    if "facebook.com" in url.lower() or "fb.watch" in url.lower():
+        return False, "Facebook thumbnail auto-fetch not supported. Please use UI default cover."
+
     video_id = extract_youtube_video_id(url)
     if not video_id:
-        return False, "unsupported youtube url format"
+        return False, "unsupported url format"
 
     img_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
     try:
@@ -277,9 +280,16 @@ def parse_links_file(link_path):
     if not urls:
         return False, "no URL found in links.txt", None
 
-    invalid = [u for u in urls if not extract_youtube_video_id(u)]
+    # ตรวจสอบว่าต้องเป็น YouTube หรือ Facebook
+    invalid = []
+    for u in urls:
+        is_yt = bool(extract_youtube_video_id(u))
+        is_fb = "facebook.com" in u.lower() or "fb.watch" in u.lower()
+        if not is_yt and not is_fb:
+            invalid.append(u)
+
     if invalid:
-        return False, f"unsupported youtube url(s): {invalid[:3]}", None
+        return False, f"unsupported url(s): {invalid[:3]}", None
 
     return True, "", {
         "episodes": episodes,
@@ -490,9 +500,9 @@ def step2_build_databases(state):
                 os.makedirs(cover_dir, exist_ok=True)
                 cover_out = os.path.join(cover_dir, f"{cover_id}.jpg")
 
-                ok, err = get_yt_thumbnail(parsed["first_link"], cover_out)
+                ok, err = get_video_thumbnail(parsed["first_link"], cover_out)
                 if not ok:
-                    print(f"⚠️ ดึงปก YouTube ไม่สำเร็จ: {rel_folder} ({err})")
+                    print(f"⚠️ ดึงปกอัตโนมัติไม่สำเร็จ (อาจเป็นลิงก์ FB): {rel_folder} ({err})")
 
                 all_audiobooks.append({
                     "title": rel_folder,
@@ -522,11 +532,10 @@ def step2_build_databases(state):
                 if f.lower().endswith('.pdf') and not os.path.exists(cover_out):
                     ok, err = generate_pdf_cover(full_p, cover_out)
                     if not ok:
-                        # ลบ PDF ที่เสียทิ้งจากคลังทันที
                         print(f"❌ ไฟล์ PDF เสีย สร้างปกไม่ได้ ลบไฟล์ทิ้ง: {f} ({err})")
                         try: os.remove(full_p)
                         except: pass
-                        continue # ข้ามไม่เอาเข้าฐานข้อมูล
+                        continue
 
                 item_data = {
                     "title": os.path.splitext(f)[0],
@@ -628,11 +637,9 @@ def main():
     if not ensure_required_paths():
         sys.exit(1)
 
-    # แก้ปัญหา CMD ภาษาต่างดาวให้เป็น UTF-8 หากทำงานบน Windows
     if os.name == 'nt':
         os.system('chcp 65001 > nul')
 
-    # ล้าง state เก่าทิ้งทุกครั้งที่เปิดใหม่ เพื่อบังคับรัน 1-2-3 ใหม่เสมอ
     clear_state() 
     state = load_state()
     start_step = 1

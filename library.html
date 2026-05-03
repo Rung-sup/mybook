@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <!-- เก็บ YouTube API ไว้เผื่อใช้ในอนาคต แต่ไม่ได้เรียกใช้กับระบบเสียงแล้ว -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -20,6 +21,11 @@
         .view-controls { display: flex; gap: 5px; margin-left: 5px; }
         .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .btn-view.active { background: #d4af37; color: #000; border-color: #d4af37; }
+
+        /* Premium Notice สำหรับหนังสือเสียง */
+        .premium-notice { display: none; background: #fff; border-left: 4px solid #d4af37; padding: 15px; margin: 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .premium-notice strong { color: #8b6d00; }
+        .premium-notice .highlight { color: #d4af37; font-weight: 600; display: block; margin-top: 5px; }
 
         .container { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
         .container.list-mode { display: flex; flex-direction: column; gap: 8px; }
@@ -40,21 +46,6 @@
 
         .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
 
-        .glass-player {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 400px; background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border-radius: 20px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-            z-index: 9999; border: 1px solid rgba(255,255,255,0.3);
-            display: none; align-items: center; gap: 12px;
-        }
-        .player-cover { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; }
-        .player-info-text { flex-grow: 1; overflow: hidden; }
-        .player-info-text h4 { margin: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .player-info-text p { margin: 0; font-size: 11px; color: #666; }
-        .player-btns { display: flex; gap: 10px; align-items: center; }
-        .btn-circle { width: 35px; height: 35px; border-radius: 50%; border: none; background: #333; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-
         #episode-modal {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000;
             align-items: flex-end;
@@ -66,8 +57,9 @@
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .episode-item {
             padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer;
+            cursor: pointer; transition: background 0.2s;
         }
+        .episode-item:hover { background: #f9f9f9; }
 
         #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
         #pdf-render-container { flex-grow: 1; overflow: auto; background: #1a1a1a; position: relative; }
@@ -92,6 +84,12 @@
     </div>
 </div>
 
+<div id="premium-notice" class="premium-notice">
+    💡 <strong>คำแนะนำการฟังหนังสือเสียง:</strong><br>
+    ระบบจะพาคุณไปเปิดคลิปที่แอปต้นฉบับ (YouTube / Facebook) <br>
+    <span class="highlight">✔ แนะนำให้รับฟังผ่านบัญชี YouTube Premium เพื่อให้สามารถปิดหน้าจอโทรศัพท์ขณะฟังได้ครับ</span>
+</div>
+
 <div id="continue-reading-section" style="display: none; padding: 15px; background: #e9e4d9; border-bottom: 2px solid #d4af37;">
     <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #8b6d00;">📚 อ่านค้างไว้ล่าสุด</h3>
     <div id="continue-list" style="display: flex; overflow-x: auto; gap: 10px; padding-bottom: 5px;"></div>
@@ -106,22 +104,6 @@
         <button onclick="document.getElementById('episode-modal').style.display='none'" style="width:100%; padding:15px; margin-top:10px; border:none; border-radius:10px; background:#eee;">ปิด</button>
     </div>
 </div>
-
-<div id="audio-player-ui" class="glass-player">
-    <img id="player-img" src="" class="player-cover">
-    <div class="player-info-text">
-        <h4 id="player-title">กำลังเล่น...</h4>
-        <p id="player-ep">ตอนที่ 1</p>
-    </div>
-    <div class="player-btns">
-        <button class="btn-circle" onclick="seek(-10)">-10</button>
-        <button id="master-play-btn" class="btn-circle" style="background:#d4af37; color:#000;" onclick="toggleYT()">▶</button>
-        <button class="btn-circle" onclick="seek(30)">+30</button>
-        <button class="btn-circle" style="background:#eee; color:#333;" onclick="closePlayer()">✕</button>
-    </div>
-</div>
-
-<div id="yt-player-hidden" style="position:fixed; top:-999px;"></div>
 
 <div id="reader-overlay">
     <div style="padding:10px; background:#222; display:flex; justify-content:space-between; align-items:center;">
@@ -154,10 +136,6 @@ let currentCategory = "";
 let currentCategorySet = [];
 let pdfDoc = null;
 
-let ytPlayer = null;
-let isYTReady = false;
-let currentAudioId = "";
-
 const categoryMap = {
     "1_PetchPraUma": ["1_PetchPraUma"],
     "2_Thai_Novel": ["2_Thai_Novel", "2_Thai_Novel_Vol2"],
@@ -169,21 +147,17 @@ const categoryMap = {
     "8_AudioBooks": ["8_AudioBooks"]
 };
 
-function onYouTubeIframeAPIReady() {
-    ytPlayer = new YT.Player('yt-player-hidden', {
-        height: '0',
-        width: '0',
-        events: {
-            'onReady': () => { isYTReady = true; },
-            'onStateChange': onPlayerStateChange
-        }
-    });
-}
-
 async function loadData() {
     const params = new URLSearchParams(window.location.search);
     currentCategory = (params.get('cat') || '').trim();
     currentCategorySet = categoryMap[currentCategory] || [currentCategory];
+
+    // แสดงคำแนะนำการฟังเฉพาะเมื่ออยู่ในหมวดหนังสือเสียง
+    if (currentCategory === "8_AudioBooks") {
+        document.getElementById('premium-notice').style.display = 'block';
+    } else {
+        document.getElementById('premium-notice').style.display = 'none';
+    }
 
     try {
         const res = await fetch(`database.json?v=${Date.now()}`);
@@ -326,72 +300,31 @@ function openEpisodeModal(book) {
     list.innerHTML = '';
 
     book.episodes.forEach(ep => {
+        // ตรวจสอบว่าเป็น Facebook หรือ YouTube เพื่อปรับสีและข้อความ
+        const isFB = ep.ep_url.includes('facebook.com') || ep.ep_url.includes('fb.watch');
+        const icon = isFB ? '🔵 เปิดที่ Facebook' : '▶️ เปิดที่ YouTube';
+        const btnColor = isFB ? '#1877f2' : '#ff4444';
+        const bgColor = isFB ? 'rgba(24, 119, 242, 0.1)' : 'rgba(255, 68, 68, 0.1)';
+
         const div = document.createElement('div');
         div.className = 'episode-item';
-        const progress = localStorage.getItem(`audio_pos_${btoa(ep.ep_url)}`) ? "✓ ฟังค้างไว้" : "";
-        div.innerHTML = `<span>${ep.ep_title}</span><small style="color:#d4af37">${progress}</small>`;
-        div.onclick = () => playAudio(ep, book);
+        div.innerHTML = `
+            <span style="font-size: 14px; flex: 1; padding-right: 10px;">${ep.ep_title}</span>
+            <a href="${ep.ep_url}" target="_blank" rel="noopener noreferrer" style="background:${bgColor}; color:${btnColor}; padding:6px 12px; border-radius:20px; font-size:11px; font-weight:bold; text-decoration:none; white-space:nowrap;">
+                ${icon}
+            </a>
+        `;
+        
+        // ทำให้คลิกตรงไหนในแถวก็เปิดลิงก์ได้เลย
+        div.onclick = (e) => {
+            if(e.target.tagName !== 'A') {
+                window.open(ep.ep_url, '_blank');
+            }
+        };
         list.appendChild(div);
     });
 
     modal.style.display = 'flex';
-}
-
-function playAudio(ep, book) {
-    if (!isYTReady) return alert("เครื่องเล่นยังไม่พร้อม กรุณารอสักครู่");
-    document.getElementById('episode-modal').style.display = 'none';
-
-    const videoId = ep.ep_url.split('v=')[1]?.split('&')[0];
-    if (!videoId) return alert("ลิงก์ YouTube ไม่ถูกต้อง");
-
-    const audioId = btoa(ep.ep_url);
-    currentAudioId = audioId;
-    const savedTime = localStorage.getItem(`audio_pos_${audioId}`) || 0;
-
-    ytPlayer.loadVideoById({ videoId, startSeconds: parseFloat(savedTime) });
-
-    document.getElementById('audio-player-ui').style.display = 'flex';
-    document.getElementById('player-img').src = getCoverUrl(book);
-    document.getElementById('player-title').innerText = book.title;
-    document.getElementById('player-ep').innerText = ep.ep_title;
-    document.getElementById('master-play-btn').innerText = '⏸';
-
-    if (window.audioInterval) clearInterval(window.audioInterval);
-    window.audioInterval = setInterval(() => {
-        if (ytPlayer && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-            localStorage.setItem(`audio_pos_${currentAudioId}`, ytPlayer.getCurrentTime());
-        }
-    }, 10000);
-}
-
-function toggleYT() {
-    if (!ytPlayer) return;
-    const state = ytPlayer.getPlayerState();
-    if (state === YT.PlayerState.PLAYING) {
-        ytPlayer.pauseVideo();
-        document.getElementById('master-play-btn').innerText = '▶';
-    } else {
-        ytPlayer.playVideo();
-        document.getElementById('master-play-btn').innerText = '⏸';
-    }
-}
-
-function seek(sec) {
-    if (!ytPlayer) return;
-    ytPlayer.seekTo(ytPlayer.getCurrentTime() + sec, true);
-}
-
-function closePlayer() {
-    if (ytPlayer) ytPlayer.stopVideo();
-    document.getElementById('audio-player-ui').style.display = 'none';
-    clearInterval(window.audioInterval);
-}
-
-function onPlayerStateChange(event) {
-    if (event.data === YT.PlayerState.ENDED) {
-        localStorage.removeItem(`audio_pos_${currentAudioId}`);
-        document.getElementById('master-play-btn').innerText = '▶';
-    }
 }
 
 async function openBook(url) {

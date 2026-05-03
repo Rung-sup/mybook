@@ -146,5 +146,30 @@
         window.location.href = 'categories.html';[cite: 1]
     }
     </script>
+<!-- ส่วนท้ายของไฟล์ terms.html -->
+<script>
+    // 1. ฟังก์ชันเปิด-ปิดปุ่มเมื่อติ๊กถูก
+    function toggleButton() {
+        const checkbox = document.getElementById('acceptCheckbox');
+        const button = document.getElementById('continueBtn');
+        button.disabled = !checkbox.checked;
+    }
+
+    // 2. ฟังก์ชันเมื่อกดปุ่ม "ยอมรับและเข้าสู่แอปพลิเคชัน"
+    function goToWelcome() {
+        // บันทึกสถานะว่ายอมรับเงื่อนไขแล้วลงในเครื่อง
+        localStorage.setItem('terms_accepted', 'true');
+        
+        // พาผู้ใช้ไปที่หน้าหมวดหมู่หนังสือทันที
+        window.location.href = 'categories.html';
+    }
+
+    // 3. ป้องกันคนแอบเข้าหน้านี้โดยตรง (ถ้าเคยยอมรับแล้วให้ไปหน้าหลักเลย)
+    window.onload = function() {
+        if (localStorage.getItem('terms_accepted') === 'true') {
+            window.location.href = 'categories.html';
+        }
+    };
+</script>
 </body>
 </html>

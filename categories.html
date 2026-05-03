@@ -15,17 +15,9 @@
             flex-direction: column;
             align-items: center;
             padding: 40px 20px;
+            padding-bottom: 100px;
         }
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 40px;
-        }
-        .header h1 {
-            font-size: 28px;
-            margin: 0;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
+        .header { text-align: center; color: white; margin-bottom: 40px; }
         .grid-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -34,86 +26,80 @@
             max-width: 900px;
         }
         .category-card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.25s ease;
+            background: white; border-radius: 20px; padding: 30px 10px;
+            text-align: center; cursor: pointer; transition: all 0.25s ease;
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #333;
-            min-height: 150px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-decoration: none; color: #333; min-height: 150px;
         }
-        .category-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
-        }
-        .category-card .icon {
-            font-size: 40px;
-            margin-bottom: 15px;
-        }
-        .category-card .name {
-            font-weight: 600;
-            font-size: 16px;
-            color: #4a148c;
-        }
+        .category-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+        .category-card .icon { font-size: 40px; margin-bottom: 15px; }
+        .category-card .name { font-weight: 600; font-size: 16px; color: #4a148c; }
+        
+        /* สไตล์ขอบล่างตามหมวดหมู่ */
         .music-card { border-bottom: 5px solid #ff4081; }
         .audio-card { border-bottom: 5px solid #d4af37; }
         .book-card  { border-bottom: 5px solid #7c4dff; }
         .howto-card { border-bottom: 5px solid #00b894; }
         .waiting-card { border-bottom: 5px solid #ff9800; }
+        .construction-card { border-bottom: 5px solid #1877f2; }
+
+        /* ปุ่มสนับสนุนลอยตัว (แนวทางที่ 1) */
+        .btn-donate-fixed {
+            position: fixed; bottom: 20px; right: 20px;
+            background: #d4af37; color: #000; border: none;
+            padding: 12px 18px; border-radius: 50px;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex; align-items: center; gap: 8px; z-index: 1000;
+        }
+
+        /* Modal QR Code */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: white; width: 90%; max-width: 360px;
+            padding: 25px; border-radius: 20px; text-align: center;
+        }
+        .qr-img { width: 100%; border-radius: 15px; margin: 15px 0; border: 1px solid #eee; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>📚 หอสมุดส่วนตัว</h1>
-    </div>
+    <div class="header"><h1>📚 หอสมุดส่วนตัว</h1></div>
 
     <div class="grid-container">
-        <a href="library.html?cat=1_PetchPraUma" class="category-card book-card">
-            <div class="icon">🐘</div>
-            <div class="name">เพชรพระอุมา</div>
+        <!-- หมวดหมู่เดิม[cite: 3] -->
+        <a href="library.html?cat=1_PetchPraUma" class="category-card book-card"><div class="icon">🐘</div><div class="name">เพชรพระอุมา</div></a>
+        <a href="library.html?cat=2_Thai_Novel" class="category-card book-card"><div class="icon">📖</div><div class="name">นิยายไทย</div></a>
+        <a href="library.html?cat=3_English_Translated" class="category-card book-card"><div class="icon">🌍</div><div class="name">นิยายแปล</div></a>
+        <a href="library.html?cat=4_Chinese_Novel" class="category-card book-card"><div class="icon">🏮</div><div class="name">นิยายจีน</div></a>
+        <a href="library.html?cat=5_HowTo_Religion" class="category-card howto-card"><div class="icon">🧠</div><div class="name">How-to</div></a>
+        <a href="library.html?cat=6_HowTo_Religion_Science" class="category-card waiting-card"><div class="icon">🗂️</div><div class="name">หมวดรอแยก</div></a>
+        <a href="music_room.html" class="category-card music-card"><div class="icon">🎵</div><div class="name">ห้องฟังเพลง</div></a>
+        <a href="library.html?cat=8_AudioBooks" class="category-card audio-card"><div class="icon">🎧</div><div class="name">หนังสือเสียง</div></a>
+        
+        <!-- กล่องเมนูใหม่สำหรับงานรับเหมา[cite: 3] -->
+        <a href="construction_page.html" class="category-card construction-card">
+            <div class="icon">🏠</div>
+            <div class="name" style="color:#1877f2;">งานช่าง & ความรู้เรื่องบ้าน</div>
         </a>
+    </div>
 
-        <a href="library.html?cat=2_Thai_Novel" class="category-card book-card">
-            <div class="icon">📖</div>
-            <div class="name">นิยายไทย</div>
-        </a>
+    <!-- ปุ่มเลี้ยงกาแฟลอยตัว -->
+    <button class="btn-donate-fixed" onclick="document.getElementById('donation-modal').style.display='flex'">
+        ☕ เลี้ยงกาแฟผู้พัฒนา
+    </button>
 
-        <a href="library.html?cat=3_English_Translated" class="category-card book-card">
-            <div class="icon">🌍</div>
-            <div class="name">นิยายแปล</div>
-        </a>
-
-        <a href="library.html?cat=4_Chinese_Novel" class="category-card book-card">
-            <div class="icon">🏮</div>
-            <div class="name">นิยายจีน</div>
-        </a>
-
-        <a href="library.html?cat=5_HowTo_Religion" class="category-card howto-card">
-            <div class="icon">🧠</div>
-            <div class="name">How-to</div>
-        </a>
-
-        <a href="library.html?cat=6_HowTo_Religion_Science" class="category-card waiting-card">
-            <div class="icon">🗂️</div>
-            <div class="name">หมวดรอแยก</div>
-        </a>
-
-        <a href="music_room.html" class="category-card music-card">
-    <div class="icon">🎵</div>
-    <div class="name" style="color:#ff4081;">ห้องฟังเพลง</div>
-        </a>
-
-        <a href="library.html?cat=8_AudioBooks" class="category-card audio-card">
-            <div class="icon">🎧</div>
-            <div class="name" style="color:#8b6d00;">หนังสือเสียง</div>
-        </a>
+    <div id="donation-modal" class="modal-overlay" onclick="this.style.display='none'">
+        <div class="modal-box" onclick="event.stopPropagation()">
+            <h3 style="margin:0; color:#4a148c;">🙏 ขอบคุณที่สนับสนุน</h3>
+            <p style="font-size: 13px; color: #666; margin: 10px 0;">สนับสนุนค่ากาแฟและค่าเซิร์ฟเวอร์เพื่อให้แอปพัฒนาต่อไปครับ</p>
+            <img src="donate-qr.jpg" class="qr-img"> 
+            <p style="font-weight: 600; color: #d4af37;">พร้อมเพย์: [ระบุเบอร์โทรของคุณปุ๊ก]</p>
+            <button onclick="document.getElementById('donation-modal').style.display='none'" style="width:100%; padding:10px; border-radius:10px; border:none; background:#eee; cursor:pointer;">ปิด</button>
+        </div>
     </div>
 </body>
 </html>

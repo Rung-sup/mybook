@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ผลงานและเกร็ดความรู้เรื่องบ้าน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ดีไซน์อ้างอิงจากหน้า Library และโครงสร้างเมนูเดิม[cite: 3, 4] */
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; background-color: #f4f1ea; padding-bottom: 50px; }
+        
+        .header { 
+            padding: 10px 15px; background: #fff; position: sticky; top: 0; z-index: 100; 
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .btn-back { 
+            background: #333; color: #d4af37; border: 1px solid #d4af37; 
+            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px;
+        }
+        
+        .content-container { 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 20px; gap: 20px; 
+        }
+
+        .info-banner {
+            background: #1877f2; color: white; padding: 15px; border-radius: 12px;
+            width: 100%; max-width: 500px; font-size: 13px; line-height: 1.5;
+        }
+
+        .fb-card {
+            background: white; width: 100%; max-width: 500px;
+            border-radius: 15px; overflow: hidden; border: 1px solid #ddd;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+<!-- SDK ของ Facebook -->
+<div id="fb-root"></div>
+<script async defer crossorigin="anonymous" src="https://connect.facebook.net/th_TH/sdk.js#xfbml=1&version=v18.0"></script>
+
+<div class="header">
+    <button onclick="location.href='categories.html'" class="btn-back">❮ กลับหน้าหลัก</button>
+    <div style="flex-grow: 1; text-align: center; font-weight: 600; color: #1877f2;">🏠 ผลงาน & เกร็ดความรู้</div>
+</div>
+
+<div class="content-container">
+    <div class="info-banner">
+        🏠 <strong>คลังความรู้เรื่องบ้าน:</strong><br>
+        รวบรวมเทคนิคงานช่างและการก่อสร้างจากเพจโดยตรง เพื่อให้คุณเข้าถึงเนื้อหาที่มีประโยชน์ได้ในที่เดียวครับ
+    </div>
+
+    <!-- ส่วนดึงคอนเทนต์จากเพจของคุณปุ๊กโดยตรง -->
+    <div class="fb-card">
+        <div class="fb-page" 
+             data-href="https://www.facebook.com/profile.php?id=100063960168860" 
+             data-tabs="timeline" 
+             data-width="500" 
+             data-height="800" 
+             data-small-header="false" 
+             data-adapt-container-width="true" 
+             data-hide-cover="false" 
+             data-show-facepile="true">
+            <blockquote cite="https://www.facebook.com/profile.php?id=100063960168860" class="fb-xfbml-parse-ignore">
+                <a href="https://www.facebook.com/profile.php?id=100063960168860">กำลังเชื่อมต่อข้อมูลจากเพจรับเหมา...</a>
+            </blockquote>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

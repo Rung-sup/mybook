@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ข้อตกลงการใช้งาน - Reader App</title>
+    
+    <!-- ส่วนสำหรับสร้างภาพฝังลิงก์เวลาแชร์ (Open Graph) -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rung-sup.github.io/mybook/terms.html">
+    <meta property="og:title" content="K2 Home & หอสมุดส่วนตัว">
+    <meta property="og:description" content="คลังความรู้ นิยาย หนังสือเสียง และเกร็ดความรู้เรื่องบ้านโดย K2 Home">
+    <meta property="og:image" content="https://rung-sup.github.io/mybook/app-icon.png"> <!-- ใช้รูปเดียวกับหน้าปกแอป -->
+
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     
     <style>
@@ -27,26 +35,34 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             width: 90%;
             max-width: 500px;
+            text-align: center; /* จัดให้อยู่ตรงกลางเพื่อให้โลโก้ดูสวยงาม */
+        }
+        /* เพิ่มสไตล์สำหรับโลโก้หน้าปกแอป */
+        .app-logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 22px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .title {
             font-size: 24px;
             font-weight: 600;
             color: #333;
-            text-align: center;
             margin-bottom: 20px;
         }
-        /* กล่องข้อความที่เลื่อนอ่านได้ */
         .terms-box {
             background-color: #f9f9f9;
             border: 1px solid #ddd;
             border-radius: 10px;
             padding: 15px;
             height: 250px;
-            overflow-y: auto; /* ทำให้เลื่อนขึ้นลงได้ */
+            overflow-y: auto;
             font-size: 14px;
             color: #555;
             line-height: 1.6;
             margin-bottom: 20px;
+            text-align: left; /* เนื้อหาข้อความชิดซ้ายปกติ */
         }
         .terms-box h4 {
             margin-top: 0;
@@ -58,6 +74,7 @@
             margin-bottom: 20px;
             font-size: 14px;
             color: #333;
+            text-align: left;
         }
         .checkbox-container input {
             margin-top: 4px;
@@ -80,7 +97,6 @@
         .btn-accept:hover {
             background: #667eea;
         }
-        /* สไตล์สำหรับปุ่มตอนที่ยังไม่ได้ติ๊กยอมรับ */
         .btn-accept:disabled {
             background: #cccccc;
             cursor: not-allowed;
@@ -90,6 +106,9 @@
 <body>
 
     <div class="terms-container">
+        <!-- แสดงรูปหน้าปกแอป (app-icon.png) -->
+        <img src="app-icon.png" alt="App Logo" class="app-icon">
+        
         <div class="title">📄 ข้อตกลงการใช้งาน</div>
         
         <div class="terms-box">
@@ -110,28 +129,22 @@
     </div>
 
     <script>
-    // ฟังก์ชันสำหรับเปิด-ปิดปุ่ม
     function toggleButton() {
         const checkbox = document.getElementById('acceptCheckbox');
         const button = document.getElementById('continueBtn');
         button.disabled = !checkbox.checked;
     }
 
-    // ฟังก์ชันเมื่อกดปุ่ม "ยอมรับและเข้าสู่แอป"
     function goToWelcome() {
-        // บันทึกสถานะว่ายอมรับเงื่อนไขแล้วลงในเครื่อง
         localStorage.setItem('terms_accepted', 'true');
-        
-        // ส่งผู้ใช้ไปที่หน้าเลือกหมวดหมู่หนังสือ (categories.html)
-        // หรือถ้าคุณรันนรามีหน้า welcome.html ก็เปลี่ยนกลับได้ครับ
-        window.location.href = 'categories.html';
+        window.location.href = 'categories.html'; // ส่งไปหน้าเมนูหลัก
     }
 
-    // ตรวจสอบเบื้องต้น: ถ้าเคยยอมรับแล้ว ให้ข้ามหน้านี้ไปเลยก็ได้ (Optional)
     window.onload = function() {
-        if (localStorage.getItem('terms_accepted') === 'true') {
-            // window.location.href = 'categories.html'; // เปิดใช้หากต้องการให้ข้ามหน้านี้อัตโนมัติ
-        }
+        // หากต้องการให้ข้ามหน้านี้อัตโนมัติถ้าเคยยอมรับแล้ว ให้เอาคอมเมนต์ออกด้านล่างนี้ครับ[cite: 1]
+        // if (localStorage.getItem('terms_accepted') === 'true') {
+        //    window.location.href = 'categories.html';
+        // }
     };
 </script>
 </body>

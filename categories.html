@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>หมวดหมู่ - หอสมุดส่วนตัว</title>
+
+    <!-- ส่วนสำคัญ: คำสั่งสำหรับ Safari บน iPhone/iPad เพื่อโชว์ไอคอนแทนตัว "ห" -->
+    <link rel="apple-touch-icon" href="app-icon.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="app-icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="app-icon.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="app-icon.png">
+    <meta name="apple-mobile-web-app-title" content="K2 Home">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
@@ -106,14 +115,14 @@
 
     <div class="header">
         <div class="app-logo-container">
-            <!-- แสดงรูป Lyre จากไฟล์ app-icon.png -->
+            <!-- แสดงรูปจากไฟล์ app-icon.png[cite: 1] -->
             <img src="app-icon.png" alt="App Logo" onerror="this.parentElement.innerHTML='<h1 style=\'font-size:60px; margin:20px 0;\'>📚</h1>'">
         </div>
         <h1 style="margin: 0; font-size: 24px;">หอสมุดส่วนตัว</h1>
     </div>
 
     <div class="grid-container">
-        <!-- หมวดหมู่หนังสือต่างๆ -->
+        <!-- หมวดหมู่หนังสือต่างๆ[cite: 3] -->
         <a href="library.html?cat=1_PetchPraUma" class="category-card book-card"><div class="icon">🐘</div><div class="name">เพชรพระอุมา</div></a>
         <a href="library.html?cat=2_Thai_Novel" class="category-card book-card"><div class="icon">📖</div><div class="name">นิยายไทย</div></a>
         <a href="library.html?cat=3_English_Translated" class="category-card book-card"><div class="icon">🌍</div><div class="name">นิยายแปล</div></a>
@@ -123,14 +132,14 @@
         <a href="music_room.html" class="category-card music-card"><div class="icon">🎵</div><div class="name">ห้องฟังเพลง</div></a>
         <a href="library.html?cat=8_AudioBooks" class="category-card audio-card"><div class="icon">🎧</div><div class="name">หนังสือเสียง</div></a>
         
-        <!-- กล่อง K2 Home พร้อมโลโก้บริษัท -->
+        <!-- กล่อง K2 Home พร้อมโลโก้บริษัท[cite: 3] -->
         <a href="construction_page.html" class="category-card construction-card">
             <img src="k2-logo.jpg" alt="K2 Logo" class="card-logo" onerror="this.src='https://via.placeholder.com/60?text=K2'">
             <div class="name" style="color:#1877f2; font-size: 13px;">K2 Home สร้างบ้านดีต้องมีเรา<br>ผลงานและเกร็ดความรู้</div>
         </a>
     </div>
 
-    <!-- ปุ่มสนับสนุน -->
+    <!-- ปุ่มสนับสนุน[cite: 3] -->
     <button class="btn-donate-fixed" onclick="document.getElementById('donation-modal').style.display='flex'">
         ☕ เลี้ยงกาแฟผู้พัฒนา
     </button>
@@ -140,7 +149,7 @@
             <h3 style="margin:0; color:#4a148c;">🙏 ขอบคุณที่สนับสนุน</h3>
             <p style="font-size: 13px; color: #666; margin: 10px 0;">เพื่อเป็นกำลังใจในการพัฒนาแอปต่อไปครับ</p>
             <img src="donate-qr.jpg" class="qr-img"> 
-            <p style="font-weight: 600; color: #d4af37;">พร้อมเพย์: 0XX-XXX-XXXX</p>
+            <p style="font-weight: 600; color: #d4af37;">พร้อมเพย์: [ใส่เบอร์พร้อมเพย์ของคุณปุ๊ก]</p>
             <button onclick="document.getElementById('donation-modal').style.display='none'" style="width:100%; padding:10px; border-radius:10px; border:none; background:#eee; cursor:pointer;">ไว้คราวหน้าครับ</button>
         </div>
     </div>

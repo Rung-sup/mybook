@@ -433,14 +433,6 @@
       "file_hash": "df57da4dde63ac1f95823c99f0a8a00f"
     },
     {
-      "title": "ข้างหลังภาพ",
-      "url": "https://raw.githubusercontent.com/rung-sup/2_Thai_Novel/main/%E0%B8%82%E0%B9%89%E0%B8%B2%E0%B8%87%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%87%E0%B8%A0%E0%B8%B2%E0%B8%9E.pdf",
-      "category": "2_Thai_Novel",
-      "folder": "ทั่วไป",
-      "cover_id": "265f4e7341faf095b04aa84f6cc8a25e",
-      "file_hash": "baad17019ce79956aabd9e05a9b32ead"
-    },
-    {
       "title": "คดีฆาตกรรมบนภูกระดึง",
       "url": "https://raw.githubusercontent.com/rung-sup/2_Thai_Novel/main/%E0%B8%84%E0%B8%94%E0%B8%B5%E0%B8%86%E0%B8%B2%E0%B8%95%E0%B8%81%E0%B8%A3%E0%B8%A3%E0%B8%A1%E0%B8%9A%E0%B8%99%E0%B8%A0%E0%B8%B9%E0%B8%81%E0%B8%A3%E0%B8%B0%E0%B8%94%E0%B8%B6%E0%B8%87.pdf",
       "category": "2_Thai_Novel",
@@ -6241,14 +6233,6 @@
       "file_hash": "f93e2bb84304e7436532e1e32ec85842"
     },
     {
-      "title": "ฝนรักหลงฤดู",
-      "url": "https://raw.githubusercontent.com/rung-sup/2_Thai_Novel_Vol3/main/%E0%B8%9D%E0%B8%99%E0%B8%A3%E0%B8%B1%E0%B8%81%E0%B8%AB%E0%B8%A5%E0%B8%87%E0%B8%A4%E0%B8%94%E0%B8%B9.pdf",
-      "category": "2_Thai_Novel",
-      "folder": "ทั่วไป",
-      "cover_id": "36eccd24633ade4ea284604906d1bed2",
-      "file_hash": "fce2e9d6bc7052d50ab1138bcfc3c0bd"
-    },
-    {
       "title": "วันแดงดูด",
       "url": "https://raw.githubusercontent.com/rung-sup/2_Thai_Novel_Vol3/main/%E0%B8%A7%E0%B8%B1%E0%B8%99%E0%B9%81%E0%B8%94%E0%B8%87%E0%B8%94%E0%B8%B9%E0%B8%94.pdf",
       "category": "2_Thai_Novel",
@@ -6263,14 +6247,6 @@
       "folder": "ทั่วไป",
       "cover_id": "109326cd5c826c69ae92c65ddbd7ffb3",
       "file_hash": "485156a23e790b4d20e91f508e6c03bc"
-    },
-    {
-      "title": "อย่าลืมฉัน",
-      "url": "https://raw.githubusercontent.com/rung-sup/2_Thai_Novel_Vol3/main/%E0%B8%AD%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%A5%E0%B8%B7%E0%B8%A1%E0%B8%89%E0%B8%B1%E0%B8%99.pdf",
-      "category": "2_Thai_Novel",
-      "folder": "ทั่วไป",
-      "cover_id": "f7925ff195236a6f6e656bae5285b850",
-      "file_hash": "a14bb0aa0a67e3be589a6da63759eeed"
     },
     {
       "title": "เล่ห์กา...มายาหงส์-ฟองน้ำ",
@@ -6481,22 +6457,6 @@
       "file_hash": "cbbdde8aa47274ee643f48090f274d03"
     },
     {
-      "title": "02Angels & Demons เทวา กับ ซาตาน",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Dan%20Brown%203%20%E0%B9%80%E0%B8%A3%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%87/02Angels%20%26%20Demons%20%E0%B9%80%E0%B8%97%E0%B8%A7%E0%B8%B2%20%E0%B8%81%E0%B8%B1%E0%B8%9A%20%E0%B8%8B%E0%B8%B2%E0%B8%95%E0%B8%B2%E0%B8%99.pdf",
-      "category": "3_English_Translated",
-      "folder": "Dan Brown 3 เรื่อง",
-      "cover_id": "9b713cff6f6ce6a7052138d8f51a8f8d",
-      "file_hash": "5b054f16ab8eb4f4f0ffd57004abdf6b"
-    },
-    {
-      "title": "03Deception Point แผนลวงสะท้านโลก",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Dan%20Brown%203%20%E0%B9%80%E0%B8%A3%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%87/03Deception%20Point%20%E0%B9%81%E0%B8%9C%E0%B8%99%E0%B8%A5%E0%B8%A7%E0%B8%87%E0%B8%AA%E0%B8%B0%E0%B8%97%E0%B9%89%E0%B8%B2%E0%B8%99%E0%B9%82%E0%B8%A5%E0%B8%81.pdf",
-      "category": "3_English_Translated",
-      "folder": "Dan Brown 3 เรื่อง",
-      "cover_id": "bcb743438cb0a3c1a6c22d3e045863cd",
-      "file_hash": "1f968b83bf0e5ebb2e502ae4e018a329"
-    },
-    {
       "title": "DUNE II",
       "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/DUNE%20%E0%B8%94%E0%B8%B9%E0%B8%A1%E0%B8%A3%E0%B8%B2%E0%B8%8A%E0%B8%B1%E0%B8%99%E0%B8%A2%E0%B9%8C%E0%B8%9E%E0%B8%B4%E0%B8%A0%E0%B8%9E%E0%B8%97%E0%B8%B0%E0%B9%80%E0%B8%A5%E0%B8%97%E0%B8%A3%E0%B8%B2%E0%B8%A2/DUNE%20II.pdf",
       "category": "3_English_Translated",
@@ -6537,28 +6497,12 @@
       "file_hash": "064da69cede0298036306bf61309d8bf"
     },
     {
-      "title": "Erec Rex 04 เผชิญเจ้าแห่งการลงทัณฑ์",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Erec%20Rex%20-%20%E0%B9%80%E0%B8%AD%E0%B9%80%E0%B8%A3%E0%B9%87%E0%B8%84%20%E0%B9%80%E0%B8%A3%E0%B9%87%E0%B8%81%E0%B8%8B%E0%B9%8C/Erec%20Rex%2004%20%E0%B9%80%E0%B8%9C%E0%B8%8A%E0%B8%B4%E0%B8%8D%E0%B9%80%E0%B8%88%E0%B9%89%E0%B8%B2%E0%B9%81%E0%B8%AB%E0%B9%88%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%A5%E0%B8%87%E0%B8%97%E0%B8%B1%E0%B8%93%E0%B8%91%E0%B9%8C.pdf",
-      "category": "3_English_Translated",
-      "folder": "Erec Rex - เอเร็ค เร็กซ์",
-      "cover_id": "7b8899a1af345f53cf9542a2e4ca9336",
-      "file_hash": "87f3a6596477536459b1ac03448ad947"
-    },
-    {
       "title": "2.Gregor and the Marks fo Secret#02-opt",
       "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Gregor%201-5/2.Gregor%20and%20the%20Marks%20fo%20Secret%2302-opt.pdf",
       "category": "3_English_Translated",
       "folder": "Gregor 1-5",
       "cover_id": "3fd87a6569b1493f95cab4a489d84101",
       "file_hash": "23de1f5f3f2c9727375fe10d33506940"
-    },
-    {
-      "title": "3.Gregor and the Curse of the Warmbloods#03-opt",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Gregor%201-5/3.Gregor%20and%20the%20Curse%20of%20the%20Warmbloods%2303-opt.pdf",
-      "category": "3_English_Translated",
-      "folder": "Gregor 1-5",
-      "cover_id": "974158dccfb5c0e776d116aa86ea5887",
-      "file_hash": "3853ba2977a2f5c0d6daa7102e2b127d"
     },
     {
       "title": "4.Gregor and the Marks of Secret#04-opt",
@@ -6575,14 +6519,6 @@
       "folder": "Gregor 1-5",
       "cover_id": "8d79c1024b197ce5e5160af68945e71a",
       "file_hash": "6e7969b5db9312eaf1b0e30de99a595c"
-    },
-    {
-      "title": "Gregor and the Curse of the Warmbloods#03-opt",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Gregor%201-5/Gregor%20and%20the%20Curse%20of%20the%20Warmbloods%2303-opt.pdf",
-      "category": "3_English_Translated",
-      "folder": "Gregor 1-5",
-      "cover_id": "54670a252919cb5a5e326393fb8cc269",
-      "file_hash": "3853ba2977a2f5c0d6daa7102e2b127d"
     },
     {
       "title": "Gregor the Overlander#01-opt",
@@ -7057,30 +6993,6 @@
       "file_hash": "97fc772253dca26c78e18642c606ef7f"
     },
     {
-      "title": "Septimus Heap 05 หมู่เกาะอาถรรพ์",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Septimus%20Heap%20%E0%B8%9B%E0%B8%B2%E0%B8%8E%E0%B8%B4%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%A2%E0%B9%8C%E0%B8%AB%E0%B8%A1%E0%B8%B2%E0%B8%A2%E0%B9%80%E0%B8%A5%E0%B8%82%E0%B9%80%E0%B8%88%E0%B9%87%E0%B8%94/Septimus%20Heap%2005%20%E0%B8%AB%E0%B8%A1%E0%B8%B9%E0%B9%88%E0%B9%80%E0%B8%81%E0%B8%B2%E0%B8%B0%E0%B8%AD%E0%B8%B2%E0%B8%96%E0%B8%A3%E0%B8%A3%E0%B8%9E%E0%B9%8C.pdf",
-      "category": "3_English_Translated",
-      "folder": "Septimus Heap ปาฎิหารย์หมายเลขเจ็ด",
-      "cover_id": "5f05590881abff0b1672e61299f69c85",
-      "file_hash": "1ee1fca9b819f63b5e0e2f61883034ee"
-    },
-    {
-      "title": "Septimus Heap 06 ผจญศาสตร์มืด",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Septimus%20Heap%20%E0%B8%9B%E0%B8%B2%E0%B8%8E%E0%B8%B4%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%A2%E0%B9%8C%E0%B8%AB%E0%B8%A1%E0%B8%B2%E0%B8%A2%E0%B9%80%E0%B8%A5%E0%B8%82%E0%B9%80%E0%B8%88%E0%B9%87%E0%B8%94/Septimus%20Heap%2006%20%E0%B8%9C%E0%B8%88%E0%B8%8D%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B8%A1%E0%B8%B7%E0%B8%94.pdf",
-      "category": "3_English_Translated",
-      "folder": "Septimus Heap ปาฎิหารย์หมายเลขเจ็ด",
-      "cover_id": "db8f0e06c6ddc4d03debf247901f778f",
-      "file_hash": "ad23303bb3ba9b8845729775c7f83e37"
-    },
-    {
-      "title": "Septimus Heap 07 อานุภาพแห่งไฟ",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Septimus%20Heap%20%E0%B8%9B%E0%B8%B2%E0%B8%8E%E0%B8%B4%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%A2%E0%B9%8C%E0%B8%AB%E0%B8%A1%E0%B8%B2%E0%B8%A2%E0%B9%80%E0%B8%A5%E0%B8%82%E0%B9%80%E0%B8%88%E0%B9%87%E0%B8%94/Septimus%20Heap%2007%20%E0%B8%AD%E0%B8%B2%E0%B8%99%E0%B8%B8%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B9%81%E0%B8%AB%E0%B9%88%E0%B8%87%E0%B9%84%E0%B8%9F.pdf",
-      "category": "3_English_Translated",
-      "folder": "Septimus Heap ปาฎิหารย์หมายเลขเจ็ด",
-      "cover_id": "92e6ad5d7b73418616515c90b4db5d42",
-      "file_hash": "423d1fdc353ecdc34187124614243041"
-    },
-    {
       "title": "Septimus Heap เล่มพิเศษ คางคกมืด",
       "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/Septimus%20Heap%20%E0%B8%9B%E0%B8%B2%E0%B8%8E%E0%B8%B4%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%A2%E0%B9%8C%E0%B8%AB%E0%B8%A1%E0%B8%B2%E0%B8%A2%E0%B9%80%E0%B8%A5%E0%B8%82%E0%B9%80%E0%B8%88%E0%B9%87%E0%B8%94/Septimus%20Heap%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%E0%B8%9E%E0%B8%B4%E0%B9%80%E0%B8%A8%E0%B8%A9%20%E0%B8%84%E0%B8%B2%E0%B8%87%E0%B8%84%E0%B8%81%E0%B8%A1%E0%B8%B7%E0%B8%94.PDF",
       "category": "3_English_Translated",
@@ -7255,14 +7167,6 @@
       "folder": "The Maze Runner",
       "cover_id": "54d528bca27215297c6803f19ba01efc",
       "file_hash": "99f53b188a211ec5fcab4bb69b293485"
-    },
-    {
-      "title": "The Mortal Instruments 02 เมืองเถ้า",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/The%20Mortal%20Instruments%20%E0%B8%99%E0%B8%84%E0%B8%A3%E0%B8%A3%E0%B8%B1%E0%B8%95%E0%B8%95%E0%B8%B4%E0%B8%81%E0%B8%B2%E0%B8%A5/The%20Mortal%20Instruments%2002%20%E0%B9%80%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%87%E0%B9%80%E0%B8%96%E0%B9%89%E0%B8%B2.pdf",
-      "category": "3_English_Translated",
-      "folder": "The Mortal Instruments นครรัตติกาล",
-      "cover_id": "aa571a8852ce43cc78556d99e666863b",
-      "file_hash": "14a279c9c9f72dbe2563a74d3d8db631"
     },
     {
       "title": "The Sisters Grimm 02 แผนลับโรงเรียนเทพนิยาย",
@@ -7593,28 +7497,12 @@
       "file_hash": "a6e5f170947e0e1902ffcd1f463f7c42"
     },
     {
-      "title": "เล่ม 4 ตอน โอปอลตลบหลัง",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/ttt%20%E0%B8%AD%E0%B8%B2%E0%B8%97%E0%B8%B4%E0%B8%A1%E0%B8%B5%E0%B8%AA%20%E0%B8%9F%E0%B8%B2%E0%B8%A7%E0%B8%A5%E0%B9%8C/%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%204%20%E0%B8%95%E0%B8%AD%E0%B8%99%20%E0%B9%82%E0%B8%AD%E0%B8%9B%E0%B8%AD%E0%B8%A5%E0%B8%95%E0%B8%A5%E0%B8%9A%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%87.pdf",
-      "category": "3_English_Translated",
-      "folder": "ttt อาทิมีส ฟาวล์",
-      "cover_id": "171a439200b320d4cd30d82ac21e8894",
-      "file_hash": "61080fdc0a348c21decbc4c17de2c6ee"
-    },
-    {
       "title": "เล่ม 5 ตอนอาณาจักร์ที่สาบสูญ",
       "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/ttt%20%E0%B8%AD%E0%B8%B2%E0%B8%97%E0%B8%B4%E0%B8%A1%E0%B8%B5%E0%B8%AA%20%E0%B8%9F%E0%B8%B2%E0%B8%A7%E0%B8%A5%E0%B9%8C/%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%205%20%E0%B8%95%E0%B8%AD%E0%B8%99%E0%B8%AD%E0%B8%B2%E0%B8%93%E0%B8%B2%E0%B8%88%E0%B8%B1%E0%B8%81%E0%B8%A3%E0%B9%8C%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%AA%E0%B8%B2%E0%B8%9A%E0%B8%AA%E0%B8%B9%E0%B8%8D.pdf",
       "category": "3_English_Translated",
       "folder": "ttt อาทิมีส ฟาวล์",
       "cover_id": "3049a693b6412cdecada5622526bdb10",
       "file_hash": "d9615083e9f2400720bad22eafab3809"
-    },
-    {
-      "title": "เล่ม 6 ตอน มิติพิศวง",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/ttt%20%E0%B8%AD%E0%B8%B2%E0%B8%97%E0%B8%B4%E0%B8%A1%E0%B8%B5%E0%B8%AA%20%E0%B8%9F%E0%B8%B2%E0%B8%A7%E0%B8%A5%E0%B9%8C/%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%206%20%E0%B8%95%E0%B8%AD%E0%B8%99%20%E0%B8%A1%E0%B8%B4%E0%B8%95%E0%B8%B4%E0%B8%9E%E0%B8%B4%E0%B8%A8%E0%B8%A7%E0%B8%87.pdf",
-      "category": "3_English_Translated",
-      "folder": "ttt อาทิมีส ฟาวล์",
-      "cover_id": "98e1294db72d94d4e354297e69834409",
-      "file_hash": "e815c1eada30e4ee07be265e5045482d"
     },
     {
       "title": "01Digital Fortress ล่ารหัสมรณะ",
@@ -7633,28 +7521,12 @@
       "file_hash": "17c9f9fbb4bfd5231827acdb375bff71"
     },
     {
-      "title": "06Inferno สู่นรกภูมิ",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/tttt%20Dan%20Brown%206%20%E0%B9%80%E0%B8%A3%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%87/06Inferno%20%E0%B8%AA%E0%B8%B9%E0%B9%88%E0%B8%99%E0%B8%A3%E0%B8%81%E0%B8%A0%E0%B8%B9%E0%B8%A1%E0%B8%B4.pdf",
-      "category": "3_English_Translated",
-      "folder": "tttt Dan Brown 6 เรื่อง",
-      "cover_id": "255d74ddd3655dd6400ba0e41db51958",
-      "file_hash": "ac3b0359d3e8b310ab62e6c58a3c84cb"
-    },
-    {
       "title": "กฎเหี้ยม คนโหด-S",
       "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/%5B%E0%B8%AA%E0%B8%B8%E0%B8%B8%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B9%8C%20%E0%B8%82%E0%B8%B2%E0%B8%A7%E0%B8%9B%E0%B8%A5%E0%B8%AD%E0%B8%94%5D/%E0%B8%81%E0%B8%8E%E0%B9%80%E0%B8%AB%E0%B8%B5%E0%B9%89%E0%B8%A2%E0%B8%A1%20%E0%B8%84%E0%B8%99%E0%B9%82%E0%B8%AB%E0%B8%94-S.pdf",
       "category": "3_English_Translated",
       "folder": "[สุุวิทย์ ขาวปลอด]",
       "cover_id": "5e4ffd00ac1f4b2110651cca693e43e6",
       "file_hash": "aa9d325f50a7ed300dc2806e9839f058"
-    },
-    {
-      "title": "ฝันร้ายที่เป็นจริง",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated/main/%5B%E0%B8%AA%E0%B8%B8%E0%B8%B8%E0%B8%A7%E0%B8%B4%E0%B8%97%E0%B8%A2%E0%B9%8C%20%E0%B8%82%E0%B8%B2%E0%B8%A7%E0%B8%9B%E0%B8%A5%E0%B8%AD%E0%B8%94%5D/%E0%B8%9D%E0%B8%B1%E0%B8%99%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%A2%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B9%80%E0%B8%9B%E0%B9%87%E0%B8%99%E0%B8%88%E0%B8%A3%E0%B8%B4%E0%B8%87.pdf",
-      "category": "3_English_Translated",
-      "folder": "[สุุวิทย์ ขาวปลอด]",
-      "cover_id": "0038551c7a6b78b8cfe343c6a7ab7c2c",
-      "file_hash": "b5e1272c411309c55d63efc10ca70a35"
     },
     {
       "title": "เมฆสีดำ",
@@ -8215,6 +8087,14 @@
       "folder": "86 เอทตี้ซิกซ์",
       "cover_id": "1c685dc3c14d53c2011d7997dc3bae7c",
       "file_hash": "7a5c860641549311e5721126753e953c"
+    },
+    {
+      "title": "86 -เอทตี้ซิกซ์- 04 เล่ม 1",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/86%20%E0%B9%80%E0%B8%AD%E0%B8%97%E0%B8%95%E0%B8%B5%E0%B9%89%E0%B8%8B%E0%B8%B4%E0%B8%81%E0%B8%8B%E0%B9%8C/86%20-%E0%B9%80%E0%B8%AD%E0%B8%97%E0%B8%95%E0%B8%B5%E0%B9%89%E0%B8%8B%E0%B8%B4%E0%B8%81%E0%B8%8B%E0%B9%8C-%2004%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%201.pdf",
+      "category": "3_English_Translated",
+      "folder": "86 เอทตี้ซิกซ์",
+      "cover_id": "c2194e0af1d14f40e33f34d6c654f280",
+      "file_hash": "04cc650212773e45950b75897f875aea"
     },
     {
       "title": "86 -เอทตี้ซิกซ์- 04 เล่ม 2 เล่ม 1",
@@ -9169,70 +9049,6 @@
       "file_hash": "fab869ddfcf90901decabcec33f20237"
     },
     {
-      "title": "Silverarea เล่ม 4",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%204.pdf",
-      "category": "3_English_Translated",
-      "folder": "รวมนิยายแปล\\Silver Area",
-      "cover_id": "49846456f4933de8ee9c4cf549b68a30",
-      "file_hash": "b8cf90711b52fcd439b4e888ebb9a40e"
-    },
-    {
-      "title": "Silverarea เล่ม 5",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%205.pdf",
-      "category": "3_English_Translated",
-      "folder": "รวมนิยายแปล\\Silver Area",
-      "cover_id": "979febacdd330b3724cd9478c9724527",
-      "file_hash": "4dfa96d782dd72e790566a97f236e3d6"
-    },
-    {
-      "title": "Silverarea เล่ม 6",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%206.pdf",
-      "category": "3_English_Translated",
-      "folder": "รวมนิยายแปล\\Silver Area",
-      "cover_id": "07900f86b4c87fadbe5e1c7714dc2b72",
-      "file_hash": "7730154022f5c315a61354e3282c2fff"
-    },
-    {
-      "title": "Silverarea เล่ม 7",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%207.pdf",
-      "category": "3_English_Translated",
-      "folder": "รวมนิยายแปล\\Silver Area",
-      "cover_id": "574ebe526f703b76564bfc257c017505",
-      "file_hash": "da16a2e6a48d6c70a3fafb3ac683ff58"
-    },
-    {
-      "title": "Silverarea เล่ม 8 จบ",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%208%20%E0%B8%88%E0%B8%9A.pdf",
-      "category": "3_English_Translated",
-      "folder": "รวมนิยายแปล\\Silver Area",
-      "cover_id": "dc28034c1df7d275b47cf4b4ba746868",
-      "file_hash": "2ae720814d9336590b9d84824c8557c2"
-    },
-    {
-      "title": "silverarea เล่ม 1",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/Silver%20Area/silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%201.pdf",
-      "category": "3_English_Translated",
-      "folder": "รวมนิยายแปล\\Silver Area",
-      "cover_id": "23e341e5384fd4d0aba0706aec0a1dbe",
-      "file_hash": "697647165e2d9f70a5c08fba3b6736ba"
-    },
-    {
-      "title": "silverarea เล่ม 2",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/Silver%20Area/silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%202.pdf",
-      "category": "3_English_Translated",
-      "folder": "รวมนิยายแปล\\Silver Area",
-      "cover_id": "8739d30b7095b83a23db019082dcac5c",
-      "file_hash": "b5cdaec01a933918ed77ed21c4e93fd5"
-    },
-    {
-      "title": "silverarea เล่ม 3",
-      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/Silver%20Area/silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%203.pdf",
-      "category": "3_English_Translated",
-      "folder": "รวมนิยายแปล\\Silver Area",
-      "cover_id": "ca935de0f72ccf2fa27d389ba81dbd30",
-      "file_hash": "8aac8b677bf2e82ac853b6a1b8c9d099"
-    },
-    {
       "title": "บันทึกคฤหาสน์ซ่อนอาถรรพ์ 01",
       "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol2/main/%E0%B8%A3%E0%B8%A7%E0%B8%A1%E0%B8%99%E0%B8%B4%E0%B8%A2%E0%B8%B2%E0%B8%A2%E0%B9%81%E0%B8%9B%E0%B8%A5/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%84%E0%B8%A4%E0%B8%AB%E0%B8%B2%E0%B8%AA%E0%B8%99%E0%B9%8C%E0%B8%8B%E0%B9%88%E0%B8%AD%E0%B8%99%E0%B8%AD%E0%B8%B2%E0%B8%96%E0%B8%A3%E0%B8%A3%E0%B8%9E%E0%B9%8C/%E0%B8%9A%E0%B8%B1%E0%B8%99%E0%B8%97%E0%B8%B6%E0%B8%81%E0%B8%84%E0%B8%A4%E0%B8%AB%E0%B8%B2%E0%B8%AA%E0%B8%99%E0%B9%8C%E0%B8%8B%E0%B9%88%E0%B8%AD%E0%B8%99%E0%B8%AD%E0%B8%B2%E0%B8%96%E0%B8%A3%E0%B8%A3%E0%B8%9E%E0%B9%8C%2001.pdf",
       "category": "3_English_Translated",
@@ -9559,6 +9375,174 @@
       "folder": "อกาธา คริสตี้ 10 เรื่อง",
       "cover_id": "4765501ae5fe62ed69cb1a5d5b00473f",
       "file_hash": "edeebbbbf54480c7b7391b7da3383051"
+    },
+    {
+      "title": "06Inferno สู่นรกภูมิ",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/06Inferno%20%E0%B8%AA%E0%B8%B9%E0%B9%88%E0%B8%99%E0%B8%A3%E0%B8%81%E0%B8%A0%E0%B8%B9%E0%B8%A1%E0%B8%B4.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "0da2d40cf158357ab1db7e4da0aa2476",
+      "file_hash": "ac3b0359d3e8b310ab62e6c58a3c84cb"
+    },
+    {
+      "title": "3.Gregor and the Curse of the Warmbloods#03-opt",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/3.Gregor%20and%20the%20Curse%20of%20the%20Warmbloods%2303-opt.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "337d8a81a1eb16b1b92f742568e56c14",
+      "file_hash": "3853ba2977a2f5c0d6daa7102e2b127d"
+    },
+    {
+      "title": "Brilliance of the Moon_zip",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Brilliance%20of%20the%20Moon_zip.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "911c63958f417355b991eea1bc4c3110",
+      "file_hash": "877ddcb580064e21c7e45fa18dbfc0dc"
+    },
+    {
+      "title": "Erec Rex 04 เผชิญเจ้าแห่งการลงทัณฑ์",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Erec%20Rex%2004%20%E0%B9%80%E0%B8%9C%E0%B8%8A%E0%B8%B4%E0%B8%8D%E0%B9%80%E0%B8%88%E0%B9%89%E0%B8%B2%E0%B9%81%E0%B8%AB%E0%B9%88%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%A5%E0%B8%87%E0%B8%97%E0%B8%B1%E0%B8%93%E0%B8%91%E0%B9%8C.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "7d10abb01abe8c503712d018d192b8bf",
+      "file_hash": "87f3a6596477536459b1ac03448ad947"
+    },
+    {
+      "title": "Grass for his Pillow_zipเหยียบถิ่นพยัคฆ์เล่ม 2",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Grass%20for%20his%20Pillow_zip%E0%B9%80%E0%B8%AB%E0%B8%A2%E0%B8%B5%E0%B8%A2%E0%B8%9A%E0%B8%96%E0%B8%B4%E0%B9%88%E0%B8%99%E0%B8%9E%E0%B8%A2%E0%B8%B1%E0%B8%84%E0%B8%86%E0%B9%8C%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%202.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "1910e5726f701d5742f56c5d1b4dc302",
+      "file_hash": "2eb8d14a54c0882527ef86e153a55b9d"
+    },
+    {
+      "title": "Heaven's Net is Wide_zip",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Heaven%27s%20Net%20is%20Wide_zip.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "5bb025c7161c410822486d2b838a4238",
+      "file_hash": "af8ba3d74eb1f584fe26d90a19e7bc7d"
+    },
+    {
+      "title": "Septimus Heap 05 หมู่เกาะอาถรรพ์",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Septimus%20Heap%2005%20%E0%B8%AB%E0%B8%A1%E0%B8%B9%E0%B9%88%E0%B9%80%E0%B8%81%E0%B8%B2%E0%B8%B0%E0%B8%AD%E0%B8%B2%E0%B8%96%E0%B8%A3%E0%B8%A3%E0%B8%9E%E0%B9%8C.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "e61b94d0508e6fca94b366b93309bedb",
+      "file_hash": "1ee1fca9b819f63b5e0e2f61883034ee"
+    },
+    {
+      "title": "Septimus Heap 06 ผจญศาสตร์มืด",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Septimus%20Heap%2006%20%E0%B8%9C%E0%B8%88%E0%B8%8D%E0%B8%A8%E0%B8%B2%E0%B8%AA%E0%B8%95%E0%B8%A3%E0%B9%8C%E0%B8%A1%E0%B8%B7%E0%B8%94.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "d50bad9659d0b095197fdfeca5f2ae25",
+      "file_hash": "ad23303bb3ba9b8845729775c7f83e37"
+    },
+    {
+      "title": "Septimus Heap 07 อานุภาพแห่งไฟ",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Septimus%20Heap%2007%20%E0%B8%AD%E0%B8%B2%E0%B8%99%E0%B8%B8%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B9%81%E0%B8%AB%E0%B9%88%E0%B8%87%E0%B9%84%E0%B8%9F.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "9f90ebd0ca65573cb1bd6c560b3fd2a6",
+      "file_hash": "423d1fdc353ecdc34187124614243041"
+    },
+    {
+      "title": "The Hash Cry of the Heron_zip",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/The%20Hash%20Cry%20of%20the%20Heron_zip.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "b48e249bded773427a1166168298e2fc",
+      "file_hash": "6608e962fc3d46b4382893ff213f91f8"
+    },
+    {
+      "title": "The Mortal Instruments 02 เมืองเถ้า",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/The%20Mortal%20Instruments%2002%20%E0%B9%80%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%87%E0%B9%80%E0%B8%96%E0%B9%89%E0%B8%B2.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "382968aeb61b3c11211e2d748fb36912",
+      "file_hash": "14a279c9c9f72dbe2563a74d3d8db631"
+    },
+    {
+      "title": "ฝันร้ายที่เป็นจริง",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/%E0%B8%9D%E0%B8%B1%E0%B8%99%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%A2%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B9%80%E0%B8%9B%E0%B9%87%E0%B8%99%E0%B8%88%E0%B8%A3%E0%B8%B4%E0%B8%87.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "a2c949622944009d4a1e2fc571e2d339",
+      "file_hash": "b5e1272c411309c55d63efc10ca70a35"
+    },
+    {
+      "title": "เล่ม 4 ตอน โอปอลตลบหลัง",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%204%20%E0%B8%95%E0%B8%AD%E0%B8%99%20%E0%B9%82%E0%B8%AD%E0%B8%9B%E0%B8%AD%E0%B8%A5%E0%B8%95%E0%B8%A5%E0%B8%9A%E0%B8%AB%E0%B8%A5%E0%B8%B1%E0%B8%87.pdf",
+      "category": "3_English_Translated",
+      "folder": "ทั่วไป",
+      "cover_id": "fa3bea9f32f5fd7b60141c56b150fab5",
+      "file_hash": "61080fdc0a348c21decbc4c17de2c6ee"
+    },
+    {
+      "title": "Silverarea เล่ม 4",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%204.pdf",
+      "category": "3_English_Translated",
+      "folder": "Silver Area",
+      "cover_id": "cc6d703d9fa517798caff29fe3fecb64",
+      "file_hash": "b8cf90711b52fcd439b4e888ebb9a40e"
+    },
+    {
+      "title": "Silverarea เล่ม 5",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%205.pdf",
+      "category": "3_English_Translated",
+      "folder": "Silver Area",
+      "cover_id": "667217cdb3a6541b7b50a9a525c9c6bc",
+      "file_hash": "4dfa96d782dd72e790566a97f236e3d6"
+    },
+    {
+      "title": "Silverarea เล่ม 6",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%206.pdf",
+      "category": "3_English_Translated",
+      "folder": "Silver Area",
+      "cover_id": "c8edb6f9ec9050edd0f3ffad2a946b66",
+      "file_hash": "7730154022f5c315a61354e3282c2fff"
+    },
+    {
+      "title": "Silverarea เล่ม 7",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%207.pdf",
+      "category": "3_English_Translated",
+      "folder": "Silver Area",
+      "cover_id": "1b191a58991adc59ffbffa82817a16c5",
+      "file_hash": "da16a2e6a48d6c70a3fafb3ac683ff58"
+    },
+    {
+      "title": "Silverarea เล่ม 8 จบ",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Silver%20Area/Silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%208%20%E0%B8%88%E0%B8%9A.pdf",
+      "category": "3_English_Translated",
+      "folder": "Silver Area",
+      "cover_id": "eebe4031c5121606d01b00988ff51596",
+      "file_hash": "2ae720814d9336590b9d84824c8557c2"
+    },
+    {
+      "title": "silverarea เล่ม 1",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Silver%20Area/silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%201.pdf",
+      "category": "3_English_Translated",
+      "folder": "Silver Area",
+      "cover_id": "88793389337118ec0743670f6b389f30",
+      "file_hash": "697647165e2d9f70a5c08fba3b6736ba"
+    },
+    {
+      "title": "silverarea เล่ม 2",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Silver%20Area/silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%202.pdf",
+      "category": "3_English_Translated",
+      "folder": "Silver Area",
+      "cover_id": "50e40d78e0f7b5e614cd4c3aa598ea95",
+      "file_hash": "b5cdaec01a933918ed77ed21c4e93fd5"
+    },
+    {
+      "title": "silverarea เล่ม 3",
+      "url": "https://raw.githubusercontent.com/rung-sup/3_English_Translated_Vol3/main/Silver%20Area/silverarea%20%E0%B9%80%E0%B8%A5%E0%B9%88%E0%B8%A1%203.pdf",
+      "category": "3_English_Translated",
+      "folder": "Silver Area",
+      "cover_id": "56725bcb2a739750d0240aa1e8f22f08",
+      "file_hash": "8aac8b677bf2e82ac853b6a1b8c9d099"
     },
     {
       "title": "ttt 101 คำถามสามก๊ก โดย หลี่ฉวนจวิน และคณะ",

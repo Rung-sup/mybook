@@ -1,0 +1,67 @@
+=== รายงานการตรวจสอบ MyLibrary ===
+
+⚠️ ไฟล์ใหญ่เกิน 90MB (8 ไฟล์):
+86 -เอทตี้ซิกซ์- 04 เล่ม 1.pdf (93.06 MB) -> C:\MyLibrary\3_English_Translated\นิยายญี่ปุ่นแปลไทย\86 - เอทตี้ซิกซ์ เล่ม 1-6
+หนึ่งแสง หลังแดนอสูร 2.pdf (92.81 MB) -> C:\MyLibrary\3_English_Translated\นิยายญี่ปุ่นแปลไทย\Hayashi  Kisara 3 ภาค\After The Light หนึ่งแสงหลังแดนอสูร
+มรณะในห้องสมุด.pdf (90.86 MB) -> C:\MyLibrary\3_English_Translated_Vol2\อกาธา คริสตี้ 10 เรื่อง
+D01 กระบี่อมตะ.pdf (91.90 MB) -> C:\MyLibrary\4_Chinese_Novel_Vol2
+D07 ยอดมือปราบ.pdf (90.09 MB) -> C:\MyLibrary\4_Chinese_Novel_Vol2
+มังกรหยก ภาค 1 - จำลอง พิศนาคะ.pdf (93.28 MB) -> C:\MyLibrary\4_Chinese_Novel_Vol2\tttt กิมย้ง
+พุทธศักราชอัสดงกับทรงจำของทรงจำของแมวกุหลาบดำ (วีรพร นิติประภา).pdf (93.20 MB) -> C:\MyLibrary\Split_Backup
+ลูกอีสาน (คำพูน บุญทวี).pdf (91.48 MB) -> C:\MyLibrary\Split_Backup
+
+👥 ไฟล์ซ้ำ (48 ไฟล์):
+กษัตริย์วังหน้า.pdf (ซ้ำกับ ttt กษัตริย์วังหน้า.pdf) -> C:\MyLibrary\2_Thai_Novel
+ขุนนางอยุธยา.pdf (ซ้ำกับ ttt ขุนนางอยุธยา.pdf) -> C:\MyLibrary\2_Thai_Novel
+จนกว่าเราจะพบกันอีก - ศรีบูรพา.pdf (ซ้ำกับ ttt จนกว่าเราจะพบกันอีก - ศรีบูรพา.pdf) -> C:\MyLibrary\2_Thai_Novel
+ละครแห่งชีวิต_ม.จ.อากาศดำเกิง.pdf (ซ้ำกับ ttt ละครแห่งชีวิต_ม.จ.อากาศดำเกิง.pdf) -> C:\MyLibrary\2_Thai_Novel
+หอมทวนลม.pdf (ซ้ำกับ ttt หอมทวนลม.pdf) -> C:\MyLibrary\2_Thai_Novel
+โฉมสะคราญ ปณิธาน จอมคน.pdf (ซ้ำกับ ttt โฉมสะคราญ ปณิธาน จอมคน.pdf) -> C:\MyLibrary\2_Thai_Novel
+มัจจุราชสีรุ้ง ภาค1 สิงห์สาวแห่งสาละวิน1.pdf (ซ้ำกับ ภาค 1 ตอน สิงห์สาวแห่งสาละวิน 1.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค1 สิงห์สาวแห่งสาละวิน2.pdf (ซ้ำกับ ภาค 1 ตอน สิงห์สาวแห่งสาละวิน 2.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค1 สิงห์สาวแห่งสาละวิน3.pdf (ซ้ำกับ ภาค 1 ตอน สิงห์สาวแห่งสาละวิน 3 จบ.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค2 ธิดาพญายม1.pdf (ซ้ำกับ ภาค 2 ตอน ธิดาพญายม 1.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค2 ธิดาพญายม2.pdf (ซ้ำกับ ภาค 2 ตอน ธิดาพญายม 2.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค2 ธิดาพญายม3.pdf (ซ้ำกับ ภาค 2 ตอน ธิดาพญายม 3 จบ.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค2 ธิดาพญายม4.pdf (ซ้ำกับ ภาค 2 ตอนต่อ ธิดาพญายม.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค3 มฤตยูผู้โสภิณ เล่ม 1.pdf (ซ้ำกับ ภาค 3 ตอน มฤตยูผู้โสภิณ 1.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค3 มฤตยูผู้โสภิณ เล่ม 2.pdf (ซ้ำกับ ภาค 3 ตอน มฤตยูผู้โสภิณ 2.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค3 มฤตยูผู้โสภิณ เล่ม 3.pdf (ซ้ำกับ ภาค 3 ตอน มฤตยูผู้โสภิณ 3.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค3 มฤตยูผู้โสภิณ เล่ม 4.pdf (ซ้ำกับ ภาค 3 ตอน มฤตยูผู้โสภิณ 4 จบ.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค4 นรกแตก เล่ม 1.pdf (ซ้ำกับ ภาค 4 ตอน นรกแตก เล่ม 1.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค4 นรกแตก เล่ม 2.pdf (ซ้ำกับ ภาค 4 ตอน นรกแตก เล่ม 2.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค4 นรกแตก เล่ม 3.pdf (ซ้ำกับ ภาค 4 ตอน นรกแตก เล่ม 3.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+มัจจุราชสีรุ้ง ภาค4 นรกแตก เล่ม 4.pdf (ซ้ำกับ ภาค 4 ตอน นรกแตก เล่ม 4 จบ.pdf) -> C:\MyLibrary\2_Thai_Novel_Vol2\มัจจุราชสีรุ้ง [พนมเทียน]
+IQ Detective - คดีฆาตกรรมบนภูกระดึง.pdf (ซ้ำกับ คดีฆาตกรรมบนภูกระดึง.pdf) -> C:\MyLibrary\3_English_Translated
+คนเหล็กพันธุ์โหด - Recon Hell on Earth.pdf (ซ้ำกับ ttt คนเหล็กพันธุ์โหด - Recon Hell on Earth.pdf) -> C:\MyLibrary\3_English_Translated
+เอมิลยอดนักสืบ-เอริช เคสท์เนอร์.pdf (ซ้ำกับ ttt เอมิลยอดนักสืบ-เอริช เคสท์เนอร์.pdf) -> C:\MyLibrary\3_English_Translated
+Beautiful Creature 03 เนตรมนตรา.pdf (ซ้ำกับ Beautiful Creature 03 เนตรมนตรา.pdf) -> C:\MyLibrary\3_English_Translated\Beautiful Creature
+Circle Of Magic 3 ตอน คำสาปรูปปั้น.pdf (ซ้ำกับ Circle Of Magic 3 ตอน คำสาปรูปปั้น[colour].pdf) -> C:\MyLibrary\3_English_Translated\วงล้อมแห่งมนตรา
+Circle Of Magic 4 ตอน วังมsณะ.pdf (ซ้ำกับ Circle Of Magic 04 ตอน วังมsณะ.pdf) -> C:\MyLibrary\3_English_Translated\วงล้อมแห่งมนตรา
+Circle Of Magic 5 ตอน ปsาสาทจอมขมังเวn.pdf (ซ้ำกับ Circle Of Magic 05 ตอน ปsาสาทจอมขมังเวn.pdf) -> C:\MyLibrary\3_English_Translated\วงล้อมแห่งมนตรา
+2. เหี้ยมไม่เงียบ The Silence of the Lambs (1988).pdf (ซ้ำกับ เหี้ยมไม่เงียบ สุวิทย์ ขาวปลอด.pdf) -> C:\MyLibrary\3_English_Translated\ฮันนิบาล
+Brilliance of the Moon_zip.pdf (ซ้ำกับ Brilliance of the Moon_zip.pdf) -> C:\MyLibrary\3_English_Translated_Vol3
+Grass for his Pillow_zipเหยียบถิ่นพยัคฆ์เล่ม 2.pdf (ซ้ำกับ Grass for his Pillow_zipเหยียบถิ่นพยัคฆ์เล่ม 2.pdf) -> C:\MyLibrary\3_English_Translated_Vol3
+Heaven's Net is Wide_zip.pdf (ซ้ำกับ Heaven's Net is Wide_zip.pdf) -> C:\MyLibrary\3_English_Translated_Vol3
+The Hash Cry of the Heron_zip.pdf (ซ้ำกับ The Hash Cry of the Heron_zip.pdf) -> C:\MyLibrary\3_English_Translated_Vol3
+ขุมทรัพย์ปัญญาจีน (คีรีบูน).pdf (ซ้ำกับ ttt ขุมทรัพย์ปัญญาจีน (คีรีบูน).pdf) -> C:\MyLibrary\4_Chinese_Novel
+มนุษย์ทองคำคนที่แปด แห่งเส้าหลิน (Giddens).pdf (ซ้ำกับ ttt มนุษย์ทองคำคนที่แปด แห่งเส้าหลิน (Giddens).pdf) -> C:\MyLibrary\4_Chinese_Novel
+มหายุทธ์ล้างปฐพี เล่ม 10 จบ.pdf (ซ้ำกับ ttt มหายุทธ์ล้างปฐพี เล่ม 10 จบ.pdf) -> C:\MyLibrary\4_Chinese_Novel
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 01.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 01.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 02.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 02.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 03.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 03.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 04.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 04.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 05.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 05.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 06.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 06.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 07.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 07.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 08.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 08.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+บันทึกคฤหาสน์ซ่อนอาถรรพ์ 09 จบ.pdf (ซ้ำกับ บันทึกคฤหาสน์ซ่อนอาถรรพ์ 09 จบ.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol2\บันทึกคฤหาสน์ซ่อนอาถรรพ์
+จอมดาบตะลุยเลือด เล่ม 1.pdf (ซ้ำกับ จอมดาบตะลุยเลือด เล่ม 1.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol3\จอมดาบตะลุยเลือด
+จอมดาบตะลุยเลือด เล่ม 2.pdf (ซ้ำกับ จอมดาบตะลุยเลือด เล่ม 2.pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol3\จอมดาบตะลุยเลือด
+จอมดาบตะลุยเลือด เล่ม 3 [จบ].pdf (ซ้ำกับ จอมดาบตะลุยเลือด เล่ม 3 [จบ].pdf) -> C:\MyLibrary\4_Chinese_Novel_Vol3\จอมดาบตะลุยเลือด
+
+❌ ไฟล์ที่โครงสร้างไม่ใช่ PDF (4 ไฟล์):
+ตี๋เหรินเจี๋ย เล่มที่ 1 ตอนสกัดแผนโค่นอำนาจบู๊เช็กเทียน.pdf -> C:\MyLibrary\4_Chinese_Novel_Vol2\ตี้เหรินเจี๋ย
+ตี๋เหรินเจี๋ย เล่มที่ 3 ไขปริศนานิกายชุดดำ เรืองชัย.pdf -> C:\MyLibrary\4_Chinese_Novel_Vol2\ตี้เหรินเจี๋ย
+ตี๋เหรินเจี๋ย เล่มที่ 4 ตอน แกะรอยคดีปล้นเกลือหลวง.pdf -> C:\MyLibrary\4_Chinese_Novel_Vol2\ตี้เหรินเจี๋ย
+ตี๋เหรินเจี๋ยเทพนักสืบ-ม่านหมอกบัลลังก์เลือดST.pdf -> C:\MyLibrary\4_Chinese_Novel_Vol2\ตี้เหรินเจี๋ย

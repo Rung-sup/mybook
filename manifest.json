@@ -1,22 +1,23 @@
 {
   "short_name": "MyReader",
   "name": "My Reader App - คลังหนังสือคุณรันนรา",
+  "description": "แอปพลิเคชันอ่านนิยายและ E-book ส่วนตัว",
   "icons": [
     {
-      "src": "https://via.placeholder.com/192",
+      "src": "https://rung-sup.github.io/mybook/app-icon.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "https://via.placeholder.com/512",
+      "src": "https://rung-sup.github.io/mybook/app-icon.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
   "start_url": "index.html",
   "background_color": "#764ba2",
-  "display": "standalone",
-  "scope": "./",
   "theme_color": "#764ba2",
-  "description": "แอปพลิเคชันอ่านนิยายและ E-book ส่วนตัว"
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "./"
 }

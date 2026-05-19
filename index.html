@@ -2,8 +2,8 @@
 <html lang="th">
 <head>
     <link rel="apple-touch-icon" href="https://rung-sup.github.io/mybook/app-icon.png">
-
-<link rel="icon" type="image/png" href="https://rung-sup.github.io/mybook/app-icon.png">
+    <link rel="icon" type="image/png" href="https://rung-sup.github.io/mybook/app-icon.png">
+    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ - Reader App</title>
@@ -168,6 +168,46 @@
                 btn.innerText = "เข้าใช้งาน";
             });
     }
+
+    // ─── [ระบบเพิ่มเติม] ดักจับคำสั่งติดตั้งแอปหน้าจอโฮมอัตโนมัติ (PWA Install Prompt) ───
+    let deferredPrompt;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // ป้องกันไม่ให้เบราว์เซอร์เปิดหน้าต่างติดตั้งดั้งเดิมแบบเงียบๆ
+        e.preventDefault();
+        // เก็บเหตุการณ์ไว้ในตัวแปรเพื่อสั่งรันภายหลัง
+        deferredPrompt = e;
+        
+        // สร้างปุ่มนำทางดีไซน์กลมกลืนกับหน้าแอปของคุณรันนรา
+        const installBanner = document.createElement('div');
+        installBanner.id = 'pwa-install-banner';
+        installBanner.style = "position:fixed; top:20px; left:50%; transform:translateX(-50%); width:90%; max-width:360px; background:#ffffff; padding:18px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.25); z-index:99999; display:flex; flex-direction:column; align-items:center; gap:12px; border:2px solid #764ba2;";
+        installBanner.innerHTML = `
+            <div style="font-size:15px; font-weight:600; color:#333; text-align:center;">✨ เพิ่มแอปไว้บนหน้าจอมือถือของคุณ</div>
+            <div style="font-size:12px; color:#666; text-align:center; line-height:1.5;">เพื่อการเปิดอ่านที่เต็มหน้าจอ รวดเร็ว<br>และไม่ต้องคอยงมหาลิงก์เข้าเว็บอีกต่อไปครับ</div>
+            <div style="display:flex; gap:10px; width:100%; margin-top:5px;">
+                <button id='btn-pwa-close' style='flex:1; padding:10px; border:1px solid #ddd; background:#fff; border-radius:10px; font-size:13px; font-weight:500; color:#666; cursor:pointer;'>ไว้ทีหลัง</button>
+                <button id='btn-pwa-install' style='flex:2; padding:10px; border:none; background:#764ba2; color:#fff; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 4px 10px rgba(118,75,162,0.3);'>ติดตั้งลงเครื่อง</button>
+            </div>
+        `;
+        document.body.appendChild(installBanner);
+
+        // เมื่อผู้ใช้ยอมรับกดปุ่มติดตั้ง
+        document.getElementById('btn-pwa-install').addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt(); // ปลุกหน้าต่างยืนยันการเพิ่มไอคอนของระบบมือถือขึ้นมา
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                installBanner.remove();
+            }
+        });
+
+        // เมื่อผู้ใช้กดปิดหน้าต่างแจ้งเตือนชั่วคราว
+        document.getElementById('btn-pwa-close').addEventListener('click', () => {
+            installBanner.remove();
+        });
+    });
     </script>
 </body>
 </html>

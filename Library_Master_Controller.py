@@ -8,6 +8,7 @@ import time
 import unicodedata
 import urllib.parse
 import shlex
+import re
 from pdf2image import convert_from_path
 import fitz  # PyMuPDF
 
@@ -146,6 +147,9 @@ def build_databases_and_covers():
         cat_path = os.path.join(LIBRARY_ROOT, cat_folder)
         if not os.path.isdir(cat_path) or cat_folder in ['.git', 'covers', '.github']: continue
 
+        # 🛠️ ตรวจจับและยุบรวมห้องย่อยเข้าหมวดหลักโดยใช้ Regex เช่น 4_Chinese_Novel_Vol4 -> 4_Chinese_Novel อัตโนมัติ
+        display_category = re.sub(r'_Vol\d+$', '', cat_folder, flags=re.IGNORECASE)
+
         folder_info = {}
 
         for root, dirs, files in os.walk(cat_path):
@@ -178,8 +182,8 @@ def build_databases_and_covers():
 
                 item_data = {
                     "title": normalize_text(os.path.splitext(f)[0]),
-                    "url": build_file_url(cat_folder, full_p, cat_path),
-                    "category": cat_folder,
+                    "url": build_file_url(cat_folder, full_p, cat_path), # ยังคงดึงลิงก์จาก Repo จริงบน GitHub แยกกันลิ้งก์ไม่พัง
+                    "category": display_category,                       # แปลงค่าป้ายชื่อกลุ่มรวมกันโชว์ในแอปพลิเคชัน
                     "folder": folder_disp,
                     "cover_id": c_id,
                     "file_hash": get_file_hash(full_p)
@@ -206,7 +210,7 @@ def build_databases_and_covers():
                         print(f"📸 เจนปกโฟลเดอร์สำเร็จ: [{folder_name}] (มีทั้งหมด {info['count']} เล่ม)")
 
                 for book in all_books:
-                    if book["category"] == cat_folder and book["folder"] == folder_name:
+                    if book["category"] == display_category and book["folder"] == folder_name:
                         book["folder_cover_id"] = f"folder_{folder_cover_id}"
                         book["folder_book_count"] = info["count"]
 
@@ -262,7 +266,7 @@ if __name__ == "__main__":
     print("=======================================================")
     
     prepare_and_move_files()      # จบข้อ 1: เตรียม หั่น ย้าย รักษาต้นฉบับ
-    build_databases_and_covers()  # จบข้อ 2: เจนปก นำเข้า JSON นับจำนวนเล่ม
+    build_databases_and_covers()  # จบข้อ 2: เจนปก นำเข้า JSON นับจำนวนเล่มและยุบรวมหมวดหมู่ _Vol อัตโนมัติ
     auto_git_push_all()           # จบข้อ 3: ทยอยกวาดและผลักขึ้น GitHub
     
     print("\n🎉 [เสร็จสิ้นทุกขั้นตอน] ทุกอย่างถูกจัดการและส่งขึ้น GitHub เรียบร้อยแล้วครับคุณ Runnara!")

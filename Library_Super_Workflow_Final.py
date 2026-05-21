@@ -20,12 +20,8 @@ DB_DIR = r'C:\MyBook_Test'
 
 DB_PATH = os.path.join(DB_DIR, 'database.json')
 MUSIC_DB_PATH = os.path.join(DB_DIR, 'music_db.json')
-AUDIOBOOK_DB_PATH = os.path.join(DB_DIR, 'audiobook_db.json')
-
 POPPLER_PATH = r'C:\MyBook_Test\poppler-25.12.0\Library\bin'
 GITHUB_USER = "rung-sup"
-PUSH_BATCH_SIZE = 15
-PUSH_BATCH_DELAY_SEC = 3
 
 def normalize_rel_path(path_text):
     return unicodedata.normalize('NFC', path_text.replace('\\', '/')).replace('\u0e4d\u0e32', '\u0e33')
@@ -64,38 +60,62 @@ def build_file_url(repo_name, full_path, cat_root_path):
     return f"https://raw.githubusercontent.com/{GITHUB_USER}/{repo_name}/main/{urllib.parse.quote(path_in_repo)}"
 
 # ==========================================
-# WORKFLOW STEPS
+# 🚀 STEP 1: บังคับย้ายไฟล์และแสดง Log อย่างละเอียด
 # ==========================================
 def step1_process_and_move():
     print("🚀 [1/3] ตรวจสอบไฟล์ใหม่และย้ายเข้าระบบ (Deep Scan)...")
-    if not os.path.exists(PROCESS_ZONE): return
+    if not os.path.exists(PROCESS_ZONE): 
+        print("❌ ไม่พบโฟลเดอร์ Process_Zone!")
+        return
     
-    for cat in sorted(os.listdir(PROCESS_ZONE)):
+    categories = [d for d in os.listdir(PROCESS_ZONE) if os.path.isdir(os.path.join(PROCESS_ZONE, d))]
+    
+    for cat in categories:
         cat_staging = os.path.join(PROCESS_ZONE, cat)
-        if not os.path.isdir(cat_staging): continue
+        target_lib = os.path.join(LIBRARY_ROOT, cat.strip())
         
-        # ปรับปรุง: ยึดชื่อโฟลเดอร์ตามจริง (รวม Vol) เพื่อให้ตรงกับโครงสร้างคลังหลักและ GitHub Repo
-        target_lib = os.path.join(LIBRARY_ROOT, cat)
         if not os.path.exists(target_lib):
             os.makedirs(target_lib, exist_ok=True)
 
-        for item in sorted(os.listdir(cat_staging)):
-            f_path = os.path.join(cat_staging, item)
-            if os.path.isdir(f_path): continue
-            
-            dest = os.path.join(target_lib, item)
-            if os.path.exists(dest):
-                print(f"⚠️ พบไฟล์ชื่อซ้ำที่ปลายทางหลักแล้ว ข้ามการย้าย: {item}")
-                continue
-            try:
-                shutil.move(f_path, dest)
-                print(f"📦 ย้ายสำเร็จ: {item} -> {cat}")
-            except Exception as e:
-                print(f"❌ ไม่สามารถย้ายไฟล์ {item} ได้: {e}")
+        # เปลี่ยนมาใช้ os.walk เพื่อค้นหาไฟล์ที่ซ่อนอยู่ลึกในโฟลเดอร์ย่อยด้วย
+        all_found_files = []
+        for root, dirs, files in os.walk(cat_staging):
+            for f in files:
+                # บันทึกพาธเต็มของไฟล์ทั้งหมดที่เจอ
+                all_found_files.append(os.path.join(root, f))
+                
+        print(f"📂 โฟลเดอร์ [{cat}] ตรวจพบไฟล์ทั้งหมด (รวมในโฟลเดอร์ย่อย): {len(all_found_files)} ไฟล์")
 
+        for f_path in all_found_files:
+            item = os.path.basename(f_path)
+            dest = os.path.join(target_lib, item)
+            
+            # 1. ตรวจสอบขนาดไฟล์เปล่า 0 Bytes
+            if os.path.getsize(f_path) == 0:
+                print(f"❌ เจอไฟล์เสีย/ไฟล์เปล่า 0 Bytes (จะไม่ย้าย): {item}")
+                continue
+
+            # 2. ตรวจสอบไฟล์ซ้ำ
+            if os.path.exists(dest):
+                print(f"⚠️ ไฟล์ชื่อซ้ำกับคลังปลายทางแล้ว: {item}")
+                continue
+
+            try:
+                # บังคับย้ายไฟล์จริงออกจากโครงสร้างย่อย ไปวางที่รากของคลังหลัก
+                shutil.move(f_path, dest)
+                print(f"📦 [ย้ายสำเร็จ] {item} -> คลังหลัก [{cat.strip()}]")
+            except Exception as e:
+                print(f"❌ เกิดข้อผิดพลาดในการย้ายไฟล์ {item}: {e}")
+# ==========================================
+# 📊 STEP 2: สร้างฐานข้อมูลและดึงปกตรงเข้าห้องย่อย
+# ==========================================
 def step2_build_databases():
     print("📊 [2/3] อัปเดตฐานข้อมูลและสร้างรูปปก...")
     all_books, all_music = [], []
+
+    if not os.path.exists(LIBRARY_ROOT):
+        print("❌ ไม่พบโฟลเดอร์ MyLibrary!")
+        return
 
     for cat_folder in sorted(os.listdir(LIBRARY_ROOT)):
         cat_path = os.path.join(LIBRARY_ROOT, cat_folder)
@@ -109,11 +129,9 @@ def step2_build_databases():
                 if not f.lower().endswith(('.pdf', '.mp3')): continue
                 full_p = os.path.join(root, f)
                 
-                # บังคับคำนวณ ID โดยอิงตำแหน่งจาก LIBRARY_ROOT เสมอ เพื่อให้แอปอ่านค่าได้ตรงจุด
                 rel_from_library = os.path.relpath(full_p, LIBRARY_ROOT)
                 c_id = generate_cover_id(rel_from_library)
                 
-                # แยกโฟลเดอร์เก็บปกตามชื่อคลังจริง (รวม Vol) บนระบบเซิร์ฟเวอร์
                 if f.lower().endswith('.pdf'):
                     cover_dir = os.path.join(DB_DIR, 'covers', cat_folder)
                     os.makedirs(cover_dir, exist_ok=True)
@@ -129,7 +147,7 @@ def step2_build_databases():
                 item_data = {
                     "title": os.path.splitext(f)[0],
                     "url": build_file_url(cat_folder, full_p, cat_path),
-                    "category": cat_folder, # เชื่อมโยงตรงชื่อคลังจริง เพื่อให้แอปรีดเดอร์วิ่งไปดึงไฟล์ได้ถูก Repo
+                    "category": cat_folder,
                     "folder": folder_disp,
                     "cover_id": c_id,
                     "file_hash": get_file_hash(full_p)
@@ -144,38 +162,32 @@ def step2_build_databases():
     safe_json_dump(MUSIC_DB_PATH, {"music": all_music})
     print(f"✅ อัปเดตฐานข้อมูลเสร็จสิ้น! หนังสือ {len(all_books)} รายการ, เพลง {len(all_music)} รายการ")
 
+# ==========================================
+# ☁️ STEP 3: BATCH SYNC
+# ==========================================
 def step3_git_sync_batched(repo_path):
     if not is_git_repo(repo_path): return
-    
-    # ดึงข้อมูลไฟล์เปลี่ยนแปลงทั้งหมดรวมถึงไฟล์ใหม่ (Untracked & Modified)
     code, out, _ = run_git("git status --porcelain", repo_path)
-    if code != 0 or not out.strip():
-        return
+    if code != 0 or not out.strip(): return
 
     changed_files = []
     for line in out.splitlines():
-        if len(line) > 3:
-            # ดึงเฉพาะเส้นทางพาธของไฟล์อย่างรัดกุม
-            changed_files.append(line[3:].strip('"'))
-
+        if len(line) > 3: changed_files.append(line[3:].strip('"'))
     if not changed_files: return
+    
     print(f"📦 {os.path.basename(repo_path)}: ตรวจพบไฟล์เปลี่ยนแปลง {len(changed_files)} ไฟล์ กำลังทยอยส่ง...")
-
-    for i in range(0, len(changed_files), PUSH_BATCH_SIZE):
-        batch = changed_files[i:i + PUSH_BATCH_SIZE]
+    batch_size = 15
+    for i in range(0, len(changed_files), batch_size):
+        batch = changed_files[i:i + batch_size]
         quoted_files = " ".join(shlex.quote(f) for f in batch)
-        
         run_git(f"git add {quoted_files}", repo_path)
-        run_git(f'git commit -m "Auto-sync batch {i//PUSH_BATCH_SIZE + 1}"', repo_path)
+        run_git(f'git commit -m "Auto-sync batch {i//batch_size + 1}"', repo_path)
         code, _, err = run_git("git push origin HEAD", repo_path)
-        
         if code == 0:
-            print(f"   ✅ ส่งสำเร็จแล้ว {min(i + PUSH_BATCH_SIZE, len(changed_files))}/{len(changed_files)}")
+            print(f"   ✅ ส่งสำเร็จแล้ว {min(i + batch_size, len(changed_files))}/{len(changed_files)}")
         else:
             print(f"   ❌ Batch นี้ส่งไม่สำเร็จ: {err}")
-        
-        if i + PUSH_BATCH_SIZE < len(changed_files):
-            time.sleep(PUSH_BATCH_DELAY_SEC)
+        if i + batch_size < len(changed_files): time.sleep(3)
 
 def sync_all_repositories():
     print("☁️ [3/3] เริ่มกระบวนการ Batch Sync ไปยัง GitHub...")

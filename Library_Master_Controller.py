@@ -151,11 +151,15 @@ def build_databases_and_covers():
         display_category = re.sub(r'_Vol\d+$', '', cat_folder, flags=re.IGNORECASE)
 
         folder_info = {}
+        
+        # 📌 พจนานุกรมชั่วคราวสำหรับจำพิกัดรูปปกพาร์ท 1: { "ชื่อเรื่องหลัก": "พิกัดไฟล์ปกพาร์ท1.jpg" }
+        part_one_covers = {}
 
         for root, dirs, files in os.walk(cat_path):
             rel_f = os.path.relpath(root, cat_path)
             folder_disp = "ทั่วไป" if rel_f == "." else normalize_text(rel_f)
             
+            # ใช้ sorted เพื่อให้ระบบเจอและประมวลผลไฟล์ Part_1 ก่อน Part อื่น ๆ เสมอ
             for f in sorted(files):
                 if not f.lower().endswith(('.pdf', '.mp3')): continue
                 full_p = os.path.join(root, f)
@@ -164,17 +168,39 @@ def build_databases_and_covers():
                 c_id = generate_cover_id(rel_from_library)
                 
                 if f.lower().endswith('.pdf'):
-                    # 📌 รักษาพิกัดเซฟไฟล์ปกในเครื่องตามโฟลเดอร์คลังจริงบนดิสก์
                     cover_dir = os.path.join(DB_DIR, 'covers', cat_folder)
                     os.makedirs(cover_dir, exist_ok=True)
                     cover_out = os.path.join(cover_dir, f"{c_id}.jpg")
                     
-                    if not os.path.exists(cover_out) and os.path.exists(POPPLER_PATH):
-                        try:
-                            imgs = convert_from_path(full_p, first_page=1, last_page=1, size=(None, 400), poppler_path=POPPLER_PATH)
-                            if imgs: imgs[0].save(cover_out, 'JPEG', quality=85)
-                        except:
-                            pass
+                    # 🛠️ [ส่วนเพิ่มเติม] จัดการระบบล็อกและแชร์ปกให้ไฟล์ตระกูลพาร์ท
+                    part_match = re.search(r'^(.*)_part_(\d+)$', os.path.splitext(f)[0], flags=re.IGNORECASE)
+                    
+                    if part_match:
+                        base_story = normalize_text(part_match.group(1)).lower()
+                        part_num = int(part_match.group(2))
+                        
+                        if part_num == 1:
+                            # เล่มพาร์ท 1: สั่งแกะปกจากไฟล์ PDF ปกติตามระบบเดิม แล้วบันทึกเก็บเป็นต้นแบบ
+                            if not os.path.exists(cover_out) and os.path.exists(POPPLER_PATH):
+                                try:
+                                    imgs = convert_from_path(full_p, first_page=1, last_page=1, size=(None, 400), poppler_path=POPPLER_PATH)
+                                    if imgs: imgs[0].save(cover_out, 'JPEG', quality=85)
+                                except: pass
+                            # บันทึกพิกัดรูปปกพาร์ท 1 ไว้แชร์ต่อ
+                            part_one_covers[base_story] = cover_out
+                        else:
+                            # เล่มพาร์ทเสริม (2, 3, 4...): ถ้ายังไม่มีไฟล์รูป และมีต้นแบบพาร์ท 1 ให้ก๊อปปี้มาสวมแทนทันที
+                            if not os.path.exists(cover_out) and base_story in part_one_covers:
+                                if os.path.exists(part_one_covers[base_story]):
+                                    try: shutil.copy2(part_one_covers[base_story], cover_out)
+                                    except: pass
+                    else:
+                        # หนังสือเล่มเดี่ยวปกติ: ทำงานตามตรรกะเดิม
+                        if not os.path.exists(cover_out) and os.path.exists(POPPLER_PATH):
+                            try:
+                                imgs = convert_from_path(full_p, first_page=1, last_page=1, size=(None, 400), poppler_path=POPPLER_PATH)
+                                if imgs: imgs[0].save(cover_out, 'JPEG', quality=85)
+                            except: pass
                     
                     if folder_disp != "ทั่วไป":
                         if folder_disp not in folder_info:
@@ -184,11 +210,11 @@ def build_databases_and_covers():
                 item_data = {
                     "title": normalize_text(os.path.splitext(f)[0]),
                     "url": build_file_url(cat_folder, full_p, cat_path),
-                    "category": display_category,                       # รวมหมวดแสดงผลในแอปตามสั่ง
+                    "category": display_category,                      # รวมหมวดแสดงผลในแอปตามสั่ง
                     "folder": folder_disp,
                     "cover_id": c_id,
                     "file_hash": get_file_hash(full_p),
-                    "_raw_cat": cat_folder                               # 📌 แอบเก็บค่าจริงไว้ใช้ตรวจจับและแมปหน้าปกด้านล่างให้แม่นยำ
+                    "_raw_cat": cat_folder                              # 📌 แอบเก็บค่าจริงไว้ใช้ตรวจจับและแมปหน้าปกด้านล่างให้แม่นยำ
                 }
                 
                 if cat_folder.startswith("7_") or f.lower().endswith('.mp3'): 
@@ -273,7 +299,7 @@ if __name__ == "__main__":
     print("=======================================================")
     
     prepare_and_move_files()      # จบข้อ 1: เตรียม หั่น ย้าย รักษาต้นฉบับ
-    build_databases_and_covers()  # จบข้อ 2: เจนปก นำเข้า JSON นับจำนวนเล่มและยุบรวมหมวดหมู่ _Vol อัตโนมัติ (แก้ไขบั๊กปกหาย)
+    build_databases_and_covers()  # จบข้อ 2: เจนปก นำเข้า JSON นับจำนวนเล่ม และแชร์ปกพาร์ทอัตโนมัติ
     auto_git_push_all()           # จบข้อ 3: ทยอยกวาดและผลักขึ้น GitHub
     
     print("\n🎉 [เสร็จสิ้นทุกขั้นตอน] ทุกอย่างถูกจัดการและส่งขึ้น GitHub เรียบร้อยแล้วครับคุณ Runnara!")

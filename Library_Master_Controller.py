@@ -147,7 +147,7 @@ def build_databases_and_covers():
         cat_path = os.path.join(LIBRARY_ROOT, cat_folder)
         if not os.path.isdir(cat_path) or cat_folder in ['.git', 'covers', '.github']: continue
 
-        # 🛠️ ตรวจจับและยุบรวมห้องย่อยเข้าหมวดหลักโดยใช้ Regex เช่น 4_Chinese_Novel_Vol4 -> 4_Chinese_Novel อัตโนมัติ
+        # 🛠️ ตรวจจับและยุบรวมห้องย่อยเข้าหมวดหลักสำหรับแอป เช่น 4_Chinese_Novel_Vol4 -> 4_Chinese_Novel อัตโนมัติ
         display_category = re.sub(r'_Vol\d+$', '', cat_folder, flags=re.IGNORECASE)
 
         folder_info = {}
@@ -164,6 +164,7 @@ def build_databases_and_covers():
                 c_id = generate_cover_id(rel_from_library)
                 
                 if f.lower().endswith('.pdf'):
+                    # 📌 รักษาพิกัดเซฟไฟล์ปกในเครื่องตามโฟลเดอร์คลังจริงบนดิสก์
                     cover_dir = os.path.join(DB_DIR, 'covers', cat_folder)
                     os.makedirs(cover_dir, exist_ok=True)
                     cover_out = os.path.join(cover_dir, f"{c_id}.jpg")
@@ -182,11 +183,12 @@ def build_databases_and_covers():
 
                 item_data = {
                     "title": normalize_text(os.path.splitext(f)[0]),
-                    "url": build_file_url(cat_folder, full_p, cat_path), # ยังคงดึงลิงก์จาก Repo จริงบน GitHub แยกกันลิ้งก์ไม่พัง
-                    "category": display_category,                       # แปลงค่าป้ายชื่อกลุ่มรวมกันโชว์ในแอปพลิเคชัน
+                    "url": build_file_url(cat_folder, full_p, cat_path),
+                    "category": display_category,                       # รวมหมวดแสดงผลในแอปตามสั่ง
                     "folder": folder_disp,
                     "cover_id": c_id,
-                    "file_hash": get_file_hash(full_p)
+                    "file_hash": get_file_hash(full_p),
+                    "_raw_cat": cat_folder                               # 📌 แอบเก็บค่าจริงไว้ใช้ตรวจจับและแมปหน้าปกด้านล่างให้แม่นยำ
                 }
                 
                 if cat_folder.startswith("7_") or f.lower().endswith('.mp3'): 
@@ -210,12 +212,17 @@ def build_databases_and_covers():
                         print(f"📸 เจนปกโฟลเดอร์สำเร็จ: [{folder_name}] (มีทั้งหมด {info['count']} เล่ม)")
 
                 for book in all_books:
-                    if book["category"] == display_category and book["folder"] == folder_name:
+                    # 🛠️ แก้จุดตาย: เช็คคู่แมปด้วยโฟลเดอร์ต้นทางจริงเพื่อให้เจอหนังสือของห้องย่อยแน่นอน
+                    if book["_raw_cat"] == cat_folder and book["folder"] == folder_name:
                         book["folder_cover_id"] = f"folder_{folder_cover_id}"
                         book["folder_book_count"] = info["count"]
 
             except Exception as e:
                 print(f"⚠️  เกิดข้อผิดพลาดกับปกโฟลเดอร์ {folder_name}: {e}")
+
+    # ล้างคีย์ชั่วคราวออกก่อนบันทึกไฟล์ เพื่อคงระเบียบความสะอาดของไฟล์ JSON
+    for book in all_books: book.pop("_raw_cat", None)
+    for music in all_music: music.pop("_raw_cat", None)
 
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     with open(DB_PATH, 'w', encoding='utf-8') as f: json.dump({"books": all_books}, f, ensure_ascii=False, indent=2)
@@ -266,7 +273,7 @@ if __name__ == "__main__":
     print("=======================================================")
     
     prepare_and_move_files()      # จบข้อ 1: เตรียม หั่น ย้าย รักษาต้นฉบับ
-    build_databases_and_covers()  # จบข้อ 2: เจนปก นำเข้า JSON นับจำนวนเล่มและยุบรวมหมวดหมู่ _Vol อัตโนมัติ
+    build_databases_and_covers()  # จบข้อ 2: เจนปก นำเข้า JSON นับจำนวนเล่มและยุบรวมหมวดหมู่ _Vol อัตโนมัติ (แก้ไขบั๊กปกหาย)
     auto_git_push_all()           # จบข้อ 3: ทยอยกวาดและผลักขึ้น GitHub
     
     print("\n🎉 [เสร็จสิ้นทุกขั้นตอน] ทุกอย่างถูกจัดการและส่งขึ้น GitHub เรียบร้อยแล้วครับคุณ Runnara!")

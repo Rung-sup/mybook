@@ -60,16 +60,14 @@ def build_file_url(repo_name, full_path, cat_root_path):
     return f"https://raw.githubusercontent.com/{GITHUB_USER}/{repo_name}/main/{urllib.parse.quote(path_in_repo)}"
 
 # ==========================================
-# 🚀 STEP 1: บังคับย้ายไฟล์และแสดง Log อย่างละเอียด
+# 🚀 STEP 1: ย้ายโฟลเดอร์ย่อยโดยรักษาโครงสร้างเดิม 100%
 # ==========================================
 def step1_process_and_move():
     print("🚀 [1/3] ตรวจสอบไฟล์ใหม่และย้ายเข้าระบบ (Deep Scan)...")
-    if not os.path.exists(PROCESS_ZONE): 
-        print("❌ ไม่พบโฟลเดอร์ Process_Zone!")
-        return
+    if not os.path.exists(PROCESS_ZONE): return
     
     categories = [d for d in os.listdir(PROCESS_ZONE) if os.path.isdir(os.path.join(PROCESS_ZONE, d))]
-    
+
     for cat in categories:
         cat_staging = os.path.join(PROCESS_ZONE, cat)
         target_lib = os.path.join(LIBRARY_ROOT, cat.strip())
@@ -77,49 +75,35 @@ def step1_process_and_move():
         if not os.path.exists(target_lib):
             os.makedirs(target_lib, exist_ok=True)
 
-        # เปลี่ยนมาใช้ os.walk เพื่อค้นหาไฟล์ที่ซ่อนอยู่ลึกในโฟลเดอร์ย่อยด้วย
-        all_found_files = []
-        for root, dirs, files in os.walk(cat_staging):
-            for f in files:
-                # บันทึกพาธเต็มของไฟล์ทั้งหมดที่เจอ
-                all_found_files.append(os.path.join(root, f))
-                
-        print(f"📂 โฟลเดอร์ [{cat}] ตรวจพบไฟล์ทั้งหมด (รวมในโฟลเดอร์ย่อย): {len(all_found_files)} ไฟล์")
-
-        for f_path in all_found_files:
-            item = os.path.basename(f_path)
-            dest = os.path.join(target_lib, item)
+        for item in os.listdir(cat_staging):
+            src_path = os.path.join(cat_staging, item)
+            dest_path = os.path.join(target_lib, item)
             
-            # 1. ตรวจสอบขนาดไฟล์เปล่า 0 Bytes
-            if os.path.getsize(f_path) == 0:
-                print(f"❌ เจอไฟล์เสีย/ไฟล์เปล่า 0 Bytes (จะไม่ย้าย): {item}")
+            if os.path.exists(dest_path):
+                print(f"⚠️ พบรายการซ้ำที่ปลายทางแล้ว ข้ามการย้าย: {item}")
                 continue
-
-            # 2. ตรวจสอบไฟล์ซ้ำ
-            if os.path.exists(dest):
-                print(f"⚠️ ไฟล์ชื่อซ้ำกับคลังปลายทางแล้ว: {item}")
-                continue
-
+                
             try:
-                # บังคับย้ายไฟล์จริงออกจากโครงสร้างย่อย ไปวางที่รากของคลังหลัก
-                shutil.move(f_path, dest)
-                print(f"📦 [ย้ายสำเร็จ] {item} -> คลังหลัก [{cat.strip()}]")
+                shutil.move(src_path, dest_path)
+                print(f"📦 [ย้ายสำเร็จ] {item} -> คลังหลัก [{cat.strip()}] (คงโครงสร้างโฟลเดอร์)")
             except Exception as e:
-                print(f"❌ เกิดข้อผิดพลาดในการย้ายไฟล์ {item}: {e}")
+                print(f"❌ เกิดข้อผิดพลาดในการย้าย {item}: {e}")
+
 # ==========================================
-# 📊 STEP 2: สร้างฐานข้อมูลและดึงปกตรงเข้าห้องย่อย
+# 📊 STEP 2: สร้าง DB + ปกรายไฟล์ + ปกโฟลเดอร์ (พร้อมนับจำนวนเล่ม)
 # ==========================================
 def step2_build_databases():
     print("📊 [2/3] อัปเดตฐานข้อมูลและสร้างรูปปก...")
     all_books, all_music = [], []
 
-    if not os.path.exists(LIBRARY_ROOT):
-        print("❌ ไม่พบโฟลเดอร์ MyLibrary!")
-        return
+    if not os.path.exists(LIBRARY_ROOT): return
 
     for cat_folder in sorted(os.listdir(LIBRARY_ROOT)):
         cat_path = os.path.join(LIBRARY_ROOT, cat_folder)
         if not os.path.isdir(cat_path) or cat_folder in ['.git', 'covers', '.github']: continue
+
+        # folder_info สำหรับเก็บ: {"ชื่อโฟลเดอร์ย่อย": {"first_pdf": path, "count": 0}}
+        folder_info = {}
 
         for root, dirs, files in os.walk(cat_path):
             rel_f = os.path.relpath(root, cat_path)
@@ -133,6 +117,7 @@ def step2_build_databases():
                 c_id = generate_cover_id(rel_from_library)
                 
                 if f.lower().endswith('.pdf'):
+                    # เจนปกรายไฟล์ตามปกติ
                     cover_dir = os.path.join(DB_DIR, 'covers', cat_folder)
                     os.makedirs(cover_dir, exist_ok=True)
                     cover_out = os.path.join(cover_dir, f"{c_id}.jpg")
@@ -141,8 +126,14 @@ def step2_build_databases():
                         try:
                             imgs = convert_from_path(full_p, first_page=1, last_page=1, size=(None, 400), poppler_path=POPPLER_PATH)
                             if imgs: imgs[0].save(cover_out, 'JPEG', quality=85)
-                        except Exception as e:
-                            print(f"⚠️ ไม่สามารถสร้างปกให้ไฟล์ {f} ได้: {e}")
+                        except:
+                            pass
+                    
+                    # 📊 เก็บข้อมูลสำหรับทำปกประจำโฟลเดอร์และนับจำนวนเล่มย่อย
+                    if folder_disp != "ทั่วไป":
+                        if folder_disp not in folder_info:
+                            folder_info[folder_disp] = {"first_pdf": full_p, "count": 0}
+                        folder_info[folder_disp]["count"] += 1
 
                 item_data = {
                     "title": os.path.splitext(f)[0],
@@ -158,12 +149,38 @@ def step2_build_databases():
                 else: 
                     all_books.append(item_data)
 
+        # 🔥 ส่วนการจัดการหน้าปกโฟลเดอร์ และส่งข้อมูลจำนวนเล่มเข้าฐานข้อมูล
+        for folder_name, info in folder_info.items():
+            try:
+                # คำนวณรหัส ID สำหรับโฟลเดอร์ย่อยนี้
+                folder_rel_path = os.path.join(cat_folder, folder_name)
+                folder_cover_id = generate_cover_id(folder_rel_path)
+                
+                cover_dir = os.path.join(DB_DIR, 'covers', cat_folder)
+                folder_cover_out = os.path.join(cover_dir, f"folder_{folder_cover_id}.jpg")
+                
+                # สั่งเจนปกโฟลเดอร์โดยดึงจากหน้าแรกของเล่มแรก
+                if not os.path.exists(folder_cover_out) and os.path.exists(POPPLER_PATH):
+                    imgs = convert_from_path(info["first_pdf"], first_page=1, last_page=1, size=(None, 400), poppler_path=POPPLER_PATH)
+                    if imgs:
+                        imgs[0].save(folder_cover_out, 'JPEG', quality=85)
+                        print(f"📸 เจนปกโฟลเดอร์สำเร็จ: [{folder_name}] (มีหนังสือ {info['count']} เล่ม)")
+
+                # ค้นหาและฝังข้อมูลจำนวนเล่ม (book_count) และรหัสปกโฟลเดอร์ เข้าไปในทุกเล่มที่อยู่ใต้โฟลเดอร์นี้
+                for book in all_books:
+                    if book["category"] == cat_folder and book["folder"] == folder_name:
+                        book["folder_cover_id"] = f"folder_{folder_cover_id}"
+                        book["folder_book_count"] = info["count"]  # 🌟 ตัวเลขจำนวนเล่มที่จะเอาไปโชว์บนหน้าปกโฟลเดอร์
+
+            except Exception as e:
+                print(f"⚠️ เกิดข้อผิดพลาดกับปกโฟลเดอร์ {folder_name}: {e}")
+
     safe_json_dump(DB_PATH, {"books": all_books})
     safe_json_dump(MUSIC_DB_PATH, {"music": all_music})
     print(f"✅ อัปเดตฐานข้อมูลเสร็จสิ้น! หนังสือ {len(all_books)} รายการ, เพลง {len(all_music)} รายการ")
 
 # ==========================================
-# ☁️ STEP 3: BATCH SYNC
+# ☁️ STEP 3: BATCH SYNC TO GITHUB
 # ==========================================
 def step3_git_sync_batched(repo_path):
     if not is_git_repo(repo_path): return

@@ -237,15 +237,14 @@
     }
 
     function getCoverUrl(item) {
-  const category = (item.category || '').trim();
-  const coverId = String(item.cover_id || item.coverid || '').trim();
+        const category = (item.category || "").trim();
+        const coverId = (item.cover_id || "").toString().trim();
 
-  if (!category || !coverId) {
-    return 'https://via.placeholder.com/150x220?text=No+Cover';
-  }
-
-  return `covers/${category}/${coverId}.jpg`;
-}
+        if (!category || !coverId) {
+            return 'https://via.placeholder.com/150x220?text=No+Cover';
+        }
+        return `covers/${category}/${coverId}.jpg`;
+    }
 
     function buildDisplayList(items) {
         const groupedData = {};

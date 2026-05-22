@@ -67,6 +67,15 @@
       .reader-toolbar { flex-wrap: wrap; }
       .reader-toolbar button { padding: 7px 10px; font-size: 12px; }
       .nav-zone { width: 18%; }
+    .btn-clear-continue {
+  border: none;
+  background: #d9534f;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
     }
   </style>
 </head>
@@ -81,12 +90,12 @@
   </div>
 
   <div id="continue-reading-section" style="display:none; padding:15px; background:#e9e4d9; border-bottom:2px solid #d4af37;">
-    <div class="continue-head">
-      <h3 style="margin:0; font-size:12px; color:#8b6d00;">📚 อ่านค้างไว้ล่าสุด</h3>
-      <button class="btn-clear-continue" onclick="clearAllContinueReading()">ลบทั้งหมด</button>
-    </div>
-    <div id="continue-list" style="display:flex; overflow-x:auto; gap:10px; padding-bottom:5px;"></div>
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin:0 0 10px 0;">
+    <h3 style="margin:0; font-size:12px; color:#8b6d00;">📚 อ่านค้างไว้ล่าสุด</h3>
+    <button class="btn-clear-continue" onclick="clearAllContinueReading()">ลบทั้งหมด</button>
   </div>
+  <div id="continue-list" style="display:flex; overflow-x:auto; gap:10px; padding-bottom:5px;"></div>
+</div>
 
   <div id="book-list" class="container"></div>
 
@@ -189,37 +198,37 @@
     }
 
     function getHistoryKey() {
-      const user = firebase.auth().currentUser;
-      return user ? 'pukhistory_' + user.uid : null;
-    }
+  const user = firebase.auth().currentUser;
+  return user ? 'pukhistory_' + user.uid : null;
+}
 
-    function getHistory() {
-      const key = getHistoryKey();
-      if (!key) return {};
-      try { return JSON.parse(localStorage.getItem(key) || '{}'); }
-      catch { return {}; }
-    }
+function getHistory() {
+  const key = getHistoryKey();
+  if (!key) return {};
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); }
+  catch { return {}; }
+}
 
-    function saveHistory(history) {
-      const key = getHistoryKey();
-      if (!key) return;
-      localStorage.setItem(key, JSON.stringify(history));
-    }
+function saveHistory(history) {
+  const key = getHistoryKey();
+  if (!key) return;
+  localStorage.setItem(key, JSON.stringify(history));
+}
 
-    function removeHistoryItem(bookUrl) {
-      const history = getHistory();
-      const bookId = btoa(encodeURIComponent(bookUrl));
-      delete history[bookId];
-      saveHistory(history);
-      renderContinueReading();
-    }
+function removeHistoryItem(bookUrl) {
+  const history = getHistory();
+  const bookId = btoa(encodeURIComponent(bookUrl));
+  delete history[bookId];
+  saveHistory(history);
+  renderContinueReading();
+}
 
-    function clearAllContinueReading() {
-      const key = getHistoryKey();
-      if (!key) return;
-      localStorage.removeItem(key);
-      renderContinueReading();
-    }
+function clearAllContinueReading() {
+  const key = getHistoryKey();
+  if (!key) return;
+  localStorage.removeItem(key);
+  renderContinueReading();
+}
 
     function buildDisplayList(items) {
       const groupedData = {};
@@ -461,61 +470,77 @@
     }
 
     function renderContinueReading() {
-      const history = getHistory();
-      const container = document.getElementById('continue-list');
-      const section = document.getElementById('continue-reading-section');
-      const sorted = Object.keys(history).sort((a, b) => history[b].t - history[a].t).slice(0, 10);
-      container.innerHTML = '';
+  const history = getHistory();
+  const container = document.getElementById('continue-list');
+  const section = document.getElementById('continue-reading-section');
+  const sorted = Object.keys(history).sort((a, b) => history[b].t - history[a].t).slice(0, 10);
+  container.innerHTML = '';
 
-      if (sorted.length === 0) {
-        section.style.display = 'none';
-        return;
-      }
+  if (sorted.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
 
-      section.style.display = 'block';
-      sorted.forEach(id => {
-        const book = allBooksGlobal.find(b => btoa(encodeURIComponent(b.url)) === id);
-        if (!book) return;
+  section.style.display = 'block';
+  sorted.forEach(id => {
+    const book = allBooksGlobal.find(b => btoa(encodeURIComponent(b.url)) === id);
+    if (!book) return;
 
-        const div = document.createElement('div');
-        div.className = 'book-card continue-card';
-        const safeUrl = book.url.replace(/'/g, "\\'");
-        div.innerHTML = `
-          <div class="cover-box">
-            <div class="status-badge">${history[id].p}</div>
-            <button class="remove-continue-btn" onclick="event.stopPropagation(); removeHistoryItem('${safeUrl}')">✕</button>
-            <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
-          </div>
-          <div class="book-info">${book.title}</div>`;
-        div.onclick = () => openBook(book.url);
-        container.appendChild(div);
-      });
-    }
+    const div = document.createElement('div');
+    div.className = 'book-card continue-card';
+    const safeUrl = book.url.replace(/'/g, "\\'");
+    div.innerHTML = `
+      <div class="cover-box">
+        <div class="status-badge">${history[id].p}</div>
+        <button class="remove-continue-btn" data-book-url="${safeUrl}">✕</button>
+        <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
+      </div>
+      <div class="book-info">${book.title}</div>`;
+    div.onclick = () => openBook(book.url);
+    container.appendChild(div);
+  });
+
+  bindContinueReadingActions();
+    function bindContinueReadingActions() {
+  const section = document.getElementById('continue-reading-section');
+  if (!section) return;
+
+  section.querySelectorAll('.remove-continue-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      removeHistoryItem(btn.dataset.bookUrl);
+    };
+  });
+}
+}
 
     function closeBook(keepPosition = false) {
-      document.getElementById('reader-overlay').style.display = 'none';
-      pdfDoc = null;
-      currentScale = null;
-      if (!keepPosition) loadData();
-    }
+  document.getElementById('reader-overlay').style.display = 'none';
+  pdfDoc = null;
+  currentScale = null;
+  if (!keepPosition) loadData();
+}
 
-    function goBack() {
-      if (document.getElementById('reader-overlay').style.display === 'flex') {
-        closeBook(true);
-        return;
-      }
-      if (document.getElementById('episode-modal').style.display === 'flex') {
-        document.getElementById('episode-modal').style.display = 'none';
-        return;
-      }
-      if (folderStack.length > 0) {
-        const prev = folderStack.pop();
-        renderList(prev, false);
-        window.scrollTo(0, 0);
-        return;
-      }
-      window.location.href = 'categories.html';
-    }
+function goBack() {
+  if (document.getElementById('reader-overlay').style.display === 'flex') {
+    closeBook(true);
+    return;
+  }
+
+  if (document.getElementById('episode-modal').style.display === 'flex') {
+    document.getElementById('episode-modal').style.display = 'none';
+    return;
+  }
+
+  if (folderStack.length > 0) {
+    const prev = folderStack.pop();
+    renderList(prev, false);
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  window.location.href = 'categories.html';
+}
 
     function closeModal(e) {
       if (e.target.id === 'episode-modal') e.target.style.display = 'none';

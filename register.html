@@ -197,7 +197,7 @@
       return `covers/${category}/${coverId}.jpg`;
     }
 
-    function getHistoryKey() {
+function getHistoryKey() {
   const user = firebase.auth().currentUser;
   return user ? 'pukhistory_' + user.uid : null;
 }
@@ -230,246 +230,18 @@ function clearAllContinueReading() {
   renderContinueReading();
 }
 
-    function buildDisplayList(items) {
-      const groupedData = {};
-      const standaloneFiles = [];
-      items.forEach(item => {
-        const folderName = item.folder;
-        if (folderName && folderName !== 'ทั่วไป') {
-          if (!groupedData[folderName]) groupedData[folderName] = [];
-          groupedData[folderName].push(item);
-        } else {
-          standaloneFiles.push(item);
-        }
-      });
+function bindContinueReadingActions() {
+  const section = document.getElementById('continue-reading-section');
+  if (!section) return;
+  section.querySelectorAll('.remove-continue-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      removeHistoryItem(btn.dataset.bookUrl);
+    };
+  });
+}
 
-      const displayList = [];
-      for (const name in groupedData) {
-        const files = groupedData[name];
-        files.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true }));
-        displayList.push({
-          title: name,
-          isFolder: true,
-          count: files.length,
-          category: files[0].category,
-          cover_id: files[0].folder_cover_id || files[0].cover_id || files[0].coverid,
-          allFiles: files
-        });
-      }
-      standaloneFiles.forEach(file => displayList.push(file));
-      return displayList;
-    }
-
-    async function loadData() {
-      const params = new URLSearchParams(window.location.search);
-      currentCategory = (params.get('cat') || '').trim();
-      currentCategorySet = categoryMap[currentCategory] || [currentCategory];
-      if (currentCategory === '7music') {
-        window.location.href = 'musicroom.html';
-        return;
-      }
-
-      try {
-        const res = await fetch(`database.json?v=${Date.now()}`);
-        const data = await res.json();
-        allBooksGlobal = data.books || [];
-
-        if (currentCategory === '8AudioBooks') {
-          const resAudio = await fetch(`audiobookdb.json?v=${Date.now()}`);
-          const dataAudio = await resAudio.json();
-          allBooksCurrent = (dataAudio.audiobooks || []).filter(item => currentCategorySet.includes((item.category || '').trim()));
-          currentRootList = allBooksCurrent.slice();
-        } else {
-          const filtered = allBooksGlobal.filter(item => currentCategorySet.includes((item.category || '').trim()));
-          allBooksCurrent = buildDisplayList(filtered);
-          currentRootList = allBooksCurrent.slice();
-        }
-
-        folderStack = [];
-        renderList(allBooksCurrent, false);
-        renderContinueReading();
-        document.getElementById('global-search').placeholder = `ค้นหา... (${allBooksCurrent.length} รายการ)`;
-      } catch (error) {
-        console.error('Load Error', error);
-        document.getElementById('book-list').innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#999;">โหลดข้อมูลไม่สำเร็จ</div>';
-      }
-    }
-
-    function renderList(items, pushState = false) {
-      const container = document.getElementById('book-list');
-      if (pushState) folderStack.push(allBooksCurrent.slice());
-      allBooksCurrent = items.slice();
-      container.innerHTML = '';
-
-      if (!items || items.length === 0) {
-        container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#999;">ไม่พบรายการ</div>';
-        return;
-      }
-
-      const history = getHistory();
-
-      items.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'book-card' + (item.isFolder ? ' folder-card' : '');
-
-        let badge = '';
-        if (item.isFolder) badge = `<div class="folder-badge">${item.count}</div>`;
-        if (item.episodes) badge = `<div class="audio-badge">เสียง</div>`;
-        if (item.ismusic) badge = `<div class="music-badge">เพลง</div>`;
-        if (!item.isFolder && !item.episodes && !item.ismusic && item.url) {
-          const bookId = btoa(encodeURIComponent(item.url));
-          if (history[bookId]) badge += `<div class="status-badge">${history[bookId].p}</div>`;
-        }
-
-        const coverUrl = getCoverUrl(item);
-        card.innerHTML = `
-          <div class="cover-box">
-            ${badge}
-            <img src="${coverUrl}" class="book-cover-img" loading="lazy" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
-          </div>
-          <div class="book-info">${item.title}</div>`;
-
-        card.onclick = () => {
-          if (item.isFolder) {
-            renderList(item.allFiles, true);
-            window.scrollTo(0, 0);
-          } else if (item.episodes) {
-            openEpisodeModal(item);
-          } else if (item.ismusic) {
-            window.location.href = 'musicroom.html';
-          } else {
-            openBook(item.url);
-          }
-        };
-        container.appendChild(card);
-      });
-    }
-
-    function openEpisodeModal(book) {
-      const modal = document.getElementById('episode-modal');
-      const list = document.getElementById('episode-list');
-      document.getElementById('modal-title').innerText = book.title;
-      list.innerHTML = '';
-      (book.episodes || []).forEach(ep => {
-        const div = document.createElement('div');
-        div.className = 'episode-item';
-        const progress = localStorage.getItem('audiopos_' + btoa(ep.epurl)) || '';
-        div.innerHTML = `<span>${ep.eptitle}</span><small style="color:#d4af37">${progress ? progress : ''}</small>`;
-        div.onclick = () => playAudio(ep, book);
-        list.appendChild(div);
-      });
-      modal.style.display = 'flex';
-    }
-
-    function playAudio(ep, book) {
-      if (!isYTReady) return alert('ระบบเสียงยังไม่พร้อม');
-      document.getElementById('episode-modal').style.display = 'none';
-      const videoId = ep.epurl.split('v=')[1]?.split('&')[0];
-      if (!videoId) return alert('YouTube URL ไม่ถูกต้อง');
-
-      const audioId = btoa(ep.epurl);
-      currentAudioId = audioId;
-      const savedTime = localStorage.getItem('audiopos_' + audioId) || 0;
-      ytPlayer.loadVideoById({ videoId, startSeconds: parseFloat(savedTime) });
-      document.getElementById('audio-player-ui').style.display = 'flex';
-      document.getElementById('player-img').src = getCoverUrl(book);
-      document.getElementById('player-title').innerText = book.title;
-      document.getElementById('player-ep').innerText = ep.eptitle;
-      document.getElementById('master-play-btn').innerText = '⏸';
-
-      if (window.audioInterval) clearInterval(window.audioInterval);
-      window.audioInterval = setInterval(() => {
-        if (ytPlayer && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) {
-          localStorage.setItem('audiopos_' + currentAudioId, ytPlayer.getCurrentTime());
-        }
-      }, 10000);
-    }
-
-    function toggleYT() {
-      if (!ytPlayer) return;
-      const state = ytPlayer.getPlayerState();
-      if (state === YT.PlayerState.PLAYING) {
-        ytPlayer.pauseVideo();
-        document.getElementById('master-play-btn').innerText = '▶';
-      } else {
-        ytPlayer.playVideo();
-        document.getElementById('master-play-btn').innerText = '⏸';
-      }
-    }
-
-    function seek(sec) {
-      if (!ytPlayer) return;
-      const now = ytPlayer.getCurrentTime();
-      ytPlayer.seekTo(now + sec, true);
-    }
-
-    function closePlayer() {
-      if (ytPlayer) ytPlayer.stopVideo();
-      document.getElementById('audio-player-ui').style.display = 'none';
-      if (window.audioInterval) clearInterval(window.audioInterval);
-    }
-
-    function onPlayerStateChange(event) {
-      if (event.data === YT.PlayerState.ENDED) {
-        localStorage.removeItem('audiopos_' + currentAudioId);
-        document.getElementById('master-play-btn').innerText = '▶';
-      }
-    }
-
-    async function openBook(url) {
-      const overlay = document.getElementById('reader-overlay');
-      overlay.style.display = 'flex';
-      currentScale = null;
-      const loadingTask = pdfjsLib.getDocument(url);
-      pdfDoc = await loadingTask.promise;
-      const history = getHistory();
-      const bookId = btoa(encodeURIComponent(url));
-      const startPage = history[bookId] ? history[bookId].p : 1;
-      await renderPage(startPage, url);
-    }
-
-    async function renderPage(num, url) {
-      if (!pdfDoc) return;
-      const page = await pdfDoc.getPage(num);
-      const canvas = document.getElementById('pdf-canvas');
-      const container = document.getElementById('pdf-render-container');
-      const isMobile = window.innerWidth < 768;
-      const baseViewport = page.getViewport({ scale: 1 });
-      fitScale = Math.max((container.clientWidth - (isMobile ? 8 : 40)) / baseViewport.width, isMobile ? 1.05 : 0.95);
-      const scale = currentScale || (isMobile ? Math.max(fitScale, 1.15) : Math.max(fitScale, 1.0));
-      const viewport = page.getViewport({ scale });
-
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-
-      document.getElementById('page-info').innerText = `${num} / ${pdfDoc.numPages}`;
-      window.currentPage = num;
-      window.currentUrl = url;
-
-      const history = getHistory();
-      const bookId = btoa(encodeURIComponent(url));
-      history[bookId] = { p: num, t: Date.now() };
-      saveHistory(history);
-    }
-
-    function zoomPdf(delta) {
-      currentScale = Math.max(0.8, Math.min((currentScale || fitScale || 1.1) + delta, 3));
-      renderPage(window.currentPage, window.currentUrl);
-    }
-
-    function fitPdfToScreen() {
-      currentScale = fitScale;
-      renderPage(window.currentPage, window.currentUrl);
-    }
-
-    function changePage(dir) {
-      if (!pdfDoc) return;
-      const next = window.currentPage + dir;
-      if (next >= 1 && next <= pdfDoc.numPages) renderPage(next, window.currentUrl);
-    }
-
-    function renderContinueReading() {
+function renderContinueReading() {
   const history = getHistory();
   const container = document.getElementById('continue-list');
   const section = document.getElementById('continue-reading-section');
@@ -501,6 +273,8 @@ function clearAllContinueReading() {
   });
 
   bindContinueReadingActions();
+}
+
     function bindContinueReadingActions() {
   const section = document.getElementById('continue-reading-section');
   if (!section) return;

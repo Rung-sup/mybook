@@ -282,6 +282,28 @@
         });
     }
 }
+function removeBookFromShelf(encodedId, event) {
+        event.stopPropagation(); // ป้องกันไม่ให้ทะลุไปเปิดหนังสือ
+
+        if(confirm("ต้องการลบหนังสือเล่มนี้ออกจากชั้นอ่านค้างใช่หรือไม่?")) {
+            if(currentUser) {
+                const historyKey = `puk_history_${currentUser.uid}`;
+                let history = JSON.parse(localStorage.getItem(historyKey)) || {};
+                
+                // ลบข้อมูลออกจาก Object
+                delete history[encodedId];
+                
+                // บันทึกกลับลง LocalStorage
+                localStorage.setItem(historyKey, JSON.stringify(history));
+                
+                // (ทางเลือก) ลบหน้าเว็บที่จำไว้ของเล่มนี้ทิ้งด้วย
+                localStorage.removeItem('page_' + encodedId);
+                
+                // รีเฟรชหน้าจอ
+                renderShelf(currentUser.uid); 
+            }
+        }
+    }
 </script>
 </body>
 </html>

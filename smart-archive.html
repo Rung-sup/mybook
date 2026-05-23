@@ -203,33 +203,61 @@
     }
 
     async function renderPage(num) {
-        if(!pdfDoc) return;
-        const page = await pdfDoc.getPage(num);
-        const sw = window.innerWidth > 600 ? 580 : window.innerWidth;
-        const vp = page.getViewport({ scale: (sw * 1.5) / page.getViewport({ scale: 1 }).width });
-        
-        if(canvas && ctx) {
-            canvas.height = vp.height; 
-            canvas.width = vp.width;
-            await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        }
-        
-        document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
-        localStorage.setItem('page_' + currentBookId, num);
+    if(!pdfDoc) return;
+    const page = await pdfDoc.getPage(num);
+    const sw = window.innerWidth > 600 ? 580 : window.innerWidth;
+    const vp = page.getViewport({ scale: (sw * 1.5) / page.getViewport({ scale: 1 }).width });
+    
+    if(canvas && ctx) {
+        canvas.height = vp.height; 
+        canvas.width = vp.width;
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
     }
+    
+    document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
+    
+    // บันทึกเฉพาะหน้า
+    localStorage.setItem('page_' + currentBookId, num);
+
+    // --- ส่วนที่ต้องเพิ่ม: อัปเดตประวัติการอ่านหลัก ---
+    if (currentUser && currentBookId) {
+        const historyKey = `puk_history_${currentUser.uid}`;
+        let history = JSON.parse(localStorage.getItem(historyKey)) || {};
+        
+        if (history[currentBookId]) {
+            history[currentBookId].p = num; // อัปเดตเลขหน้า
+            history[currentBookId].time = Date.now(); // อัปเดตเวลาเพื่อดันขึ้นมาลำดับแรก
+            
+            // เช็คว่าอ่านจบหรือยัง
+            if (num >= pdfDoc.numPages) {
+                history[currentBookId].s = 'อ่านจบแล้ว';
+            } else {
+                history[currentBookId].s = 'กำลังอ่าน';
+            }
+            
+            localStorage.setItem(historyKey, JSON.stringify(history));
+        }
+    }
+}
 
     function prevPage() { if(pageNum > 1) { pageNum--; renderPage(pageNum); } }
     function nextPage() { if(pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } }
     
     function closeBook() { 
-        document.getElementById('reader-overlay').style.display = 'none'; 
-        document.body.style.overflow = 'auto'; 
-        if(pdfDoc) { 
-            pdfDoc.destroy().then(() => {
-                pdfDoc = null;
-            });
-        }
+    document.getElementById('reader-overlay').style.display = 'none'; 
+    document.body.style.overflow = 'auto'; 
+    
+    // เคลียร์ภาพหน้าจอเก่าออก
+    if (ctx && canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
+
+    if(pdfDoc) { 
+        pdfDoc.destroy().then(() => {
+            pdfDoc = null;
+        });
+    }
+}
 </script>
 </body>
 </html>

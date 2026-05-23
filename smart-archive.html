@@ -38,6 +38,29 @@
         #pdf-canvas { max-width: 100%; height: auto !important; }
         .nav-controls { position: fixed; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 25px; pointer-events: none; }
         .nav-btn { width: 55px; height: 55px; border-radius: 50%; background: rgba(0,0,0,0.85); color: #d4af37; border: 1.5px solid #d4af37; pointer-events: auto; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; }
+        .btn-remove-book {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 24px;
+    height: 24px;
+    background: rgba(255, 77, 77, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: 0.2s;
+}
+.btn-remove-book:hover {
+    background: red;
+    transform: scale(1.1);
+}
     </style>
 </head>
 <body>
@@ -179,6 +202,7 @@
             const card = document.createElement('div');
             card.className = 'book-card';
             card.innerHTML = `
+                <button class="btn-remove-book" onclick="removeBookFromShelf('${id}', event)">✕</button>
                 <div class="cover-box">
                     <div class="status-badge ${data.s === 'อ่านจบแล้ว' ? 'status-done' : ''}">${data.s === 'อ่านจบแล้ว' ? 'จบแล้ว' : 'หน้า ' + data.p}</div>
                     <img src="${coverUrl}" class="book-cover-img" loading="lazy" onerror="this.src='https://via.placeholder.com/150x220?text=No+Cover'">

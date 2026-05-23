@@ -12,38 +12,83 @@
   <style>
     * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
     body { margin: 0; background-color: #f4f1ea; color: #333; padding-bottom: 120px; overflow-x: hidden; }
+    
     .header { padding: 10px 15px; background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight: 500; }
     .search-input { width: 100%; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 13px; }
+    
     .view-controls { display: flex; gap: 5px; margin-left: 5px; }
     .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: 0.2s; }
     .btn-view.active { background: #d4af37; color: #000; border-color: #d4af37; }
+    
     .container { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
     .container.list-mode { display: flex; flex-direction: column; gap: 8px; }
+    
     .book-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; position: relative; border: 1px solid #eee; transition: 0.2s; }
     .book-card:active { transform: scale(0.98); }
+    .folder-card { border: 2px solid #d4af37; }
+    
     .container.list-mode .book-card { display: flex; align-items: center; min-height: 68px; border-radius: 8px; }
     .container.list-mode .cover-box { width: 52px; min-width: 52px; height: 68px; padding-bottom: 0; border-right: 1px solid #eee; }
     .container.list-mode .book-info { flex-grow: 1; text-align: left; padding: 0 12px; font-size: 13px; height: auto; justify-content: flex-start; }
+    
     .cover-box { width: 100%; padding-bottom: 145%; position: relative; background: #e0e0e0; }
     .book-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .status-badge { position: absolute; top: 5px; left: 5px; z-index: 10; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    .remove-continue-btn { position: absolute; top: 5px; right: 5px; z-index: 10; width: 22px; height: 22px; border: none; border-radius: 50%; background: rgba(0,0,0,0.78); color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    
+    .folder-badge, .status-badge, .audio-badge, .music-badge, .remove-continue-btn { position: absolute; z-index: 10; }
+    .folder-badge { bottom: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fff; padding: 3px 7px; border-radius: 5px; font-size: 10px; font-weight: bold; }
+    .status-badge { top: 5px; left: 5px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .audio-badge { top: 5px; right: 5px; background: #ff4d4d; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+    .music-badge { top: 5px; right: 5px; background: #ff4081; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+    .remove-continue-btn { top: 5px; right: 5px; width: 22px; height: 22px; border: none; border-radius: 50%; background: rgba(0,0,0,0.78); color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    
     .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
-    .glass-player { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 420px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 20px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; display: none; align-items: center; gap: 12px; }
+    
+    .glass-player { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 420px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; border: 1px solid rgba(255,255,255,0.3); display: none; align-items: center; gap: 12px; }
     .player-cover { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; }
-    .btn-circle { width: 35px; height: 35px; border-radius: 50%; border: none; background: #333; color: #fff; cursor: pointer; }
+    .player-info-text { flex-grow: 1; overflow: hidden; }
+    .player-info-text h4 { margin: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-info-text p { margin: 0; font-size: 11px; color: #666; }
+    .player-btns { display: flex; gap: 10px; align-items: center; }
+    .btn-circle { width: 35px; height: 35px; border-radius: 50%; border: none; background: #333; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    
     #episode-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: flex-end; }
-    .modal-content { background: #fff; width: 100%; max-height: 80vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; }
+    .modal-content { background: #fff; width: 100%; max-height: 80vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .episode-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .episode-item:active { background: #f9f9f9; }
+    
     #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
-    .btn-clear-continue { border: none; background: #d9534f; color: #fff; padding: 6px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+    .reader-toolbar { padding: 10px; background: #222; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .reader-toolbar-left, .reader-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .reader-toolbar button { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
+    .reader-toolbar button.primary { background: #ff4d4d; border-color: #ff4d4d; }
+    
+    #pdf-render-container { flex-grow: 1; overflow: auto; background: #1a1a1a; position: relative; padding: 8px; display: flex; justify-content: center; align-items: flex-start; }
+    #pdf-canvas { display: block; margin: 0 auto; max-width: none; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+    .nav-zone { position: absolute; top: 0; bottom: 0; width: 25%; z-index: 5010; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(212,175,55,0.1); font-size: 40px; }
+    .nav-zone:hover { background: rgba(255,255,255,0.02); color: rgba(212,175,55,0.5); }
+    .nav-left { left: 0; }
+    .nav-right { right: 0; }
+    
     .continue-card { width: 88px !important; min-width: 88px !important; }
+    .continue-card .book-info { font-size: 9px; height: 30px; }
+    .btn-clear-continue { border: none; background: #d9534f; color: #fff; padding: 6px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+    
+    @media (max-width: 767px) {
+      #pdf-render-container { padding: 4px; }
+      .reader-toolbar { flex-wrap: wrap; }
+      .reader-toolbar button { padding: 7px 10px; font-size: 12px; }
+      .nav-zone { width: 18%; }
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <button onclick="goBack()" class="btn-back">❮ กลับ</button>
-    <div style="flex-grow: 1;"><input type="text" id="global-search" class="search-input" placeholder="ค้นหาหนังสือ..." oninput="handleSearch()"></div>
+    <div style="flex-grow: 1;">
+      <input type="text" id="global-search" class="search-input" placeholder="ค้นหาหนังสือ..." oninput="handleSearch()">
+    </div>
     <div class="view-controls">
       <button id="grid-btn" onclick="toggleView('grid')" class="btn-view active">🔲</button>
       <button id="list-btn" onclick="toggleView('list')" class="btn-view">📋</button>
@@ -60,7 +105,51 @@
 
   <div id="book-list" class="container"></div>
 
+  <div id="episode-modal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h3 id="modal-title" style="margin-top:0;">เลือกตอน</h3>
+      <div id="episode-list"></div>
+      <button onclick="document.getElementById('episode-modal').style.display='none'" style="width:100%; padding:15px; margin-top:10px; border:none; border-radius:10px; background:#eee;">ปิด</button>
+    </div>
+  </div>
+
+  <div id="audio-player-ui" class="glass-player">
+    <img id="player-img" src="" class="player-cover">
+    <div class="player-info-text">
+      <h4 id="player-title">กำลังเล่น...</h4>
+      <p id="player-ep">ตอนที่ 1</p>
+    </div>
+    <div class="player-btns">
+      <button class="btn-circle" onclick="seek(-10)">-10</button>
+      <button id="master-play-btn" class="btn-circle" style="background:#d4af37; color:#000;" onclick="toggleYT()">▶</button>
+      <button class="btn-circle" onclick="seek(30)">+30</button>
+      <button class="btn-circle" style="background:#eee; color:#333;" onclick="closePlayer()">ปิด</button>
+    </div>
+  </div>
+
+  <div id="yt-player-hidden" style="position:fixed; top:-9999px;"></div>
+
+  <div id="reader-overlay">
+    <div class="reader-toolbar">
+      <div class="reader-toolbar-left">
+        <button class="primary" onclick="closeBook(true)">ปิด</button>
+        <span id="page-info" style="color:#d4af37; font-size:14px;">1 / 1</span>
+      </div>
+      <div class="reader-toolbar-right">
+        <button onclick="zoomPdf(-0.15)">A-</button>
+        <button onclick="fitPdfToScreen()">พอดีจอ</button>
+        <button onclick="zoomPdf(0.15)">A+</button>
+      </div>
+    </div>
+    <div id="pdf-render-container">
+      <div class="nav-zone nav-left" onclick="changePage(-1)">‹</div>
+      <canvas id="pdf-canvas"></canvas>
+      <div class="nav-zone nav-right" onclick="changePage(1)">›</div>
+    </div>
+  </div>
+
   <script>
+    // --- การตั้งค่าและตัวแปรเริ่มต้น ---
     const firebaseConfig = {
       apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
       authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -71,8 +160,51 @@
     };
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
 
-    // --- ฟังก์ชันจัดการ History ---
+    let allBooksGlobal = [];
+    let allBooksCurrent = [];
+    let currentCategory = '';
+    let currentCategorySet = [];
+    let currentRootList = [];
+    let folderStack = [];
+    let pdfDoc = null;
+    let ytPlayer = null;
+    let currentAudioId = null;
+    let isYTReady = false;
+    let currentScale = null;
+    let fitScale = 1;
+
+    const categoryMap = {
+      '1PetchPraUma': ['1PetchPraUma'],
+      '2ThaiNovel': ['2ThaiNovel', '2ThaiNovelVol2'],
+      '3EnglishTranslated': ['3EnglishTranslated', '3EnglishTranslatedVol2'],
+      '4ChineseNovel': ['4ChineseNovel', '4ChineseNovelVol2'],
+      '5HowToReligion': ['5HowToReligion'],
+      '6HowToReligionScience': ['6HowToReligionScience'],
+      '7music': ['7music', '7musicVol2'],
+      '8AudioBooks': ['8AudioBooks']
+    };
+
+    // --- ฟังก์ชันหลัก ---
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player('yt-player-hidden', {
+        height: '0',
+        width: '0',
+        events: {
+          onReady: () => isYTReady = true,
+          onStateChange: onPlayerStateChange
+        }
+      });
+    }
+
+    function getCoverUrl(item) {
+      const category = (item.category || '').trim();
+      const coverId = String(item.cover_id || item.coverid || '').trim();
+      if (!category || !coverId) return 'https://via.placeholder.com/150x220?text=No+Cover';
+      return `covers/${category}/${coverId}.jpg`;
+    }
+
     function getHistoryKey() {
       const user = firebase.auth().currentUser;
       return user ? 'pukhistory_' + user.uid : null;
@@ -106,17 +238,6 @@
       renderContinueReading();
     }
 
-    function bindContinueReadingActions() {
-      const section = document.getElementById('continue-reading-section');
-      if (!section) return;
-      section.querySelectorAll('.remove-continue-btn').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          removeHistoryItem(btn.dataset.bookUrl);
-        };
-      });
-    }
-
     function renderContinueReading() {
       const history = getHistory();
       const container = document.getElementById('continue-list');
@@ -136,24 +257,67 @@
 
         const div = document.createElement('div');
         div.className = 'book-card continue-card';
+        const safeUrl = book.url.replace(/'/g, "\\'");
         div.innerHTML = `
           <div class="cover-box">
             <div class="status-badge">${history[id].p}</div>
-            <button class="remove-continue-btn" data-book-url="${book.url}">✕</button>
-            <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=No+Cover'">
+            <button class="remove-continue-btn" data-book-url="${safeUrl}">✕</button>
+            <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
           </div>
           <div class="book-info">${book.title}</div>`;
         div.onclick = () => openBook(book.url);
         container.appendChild(div);
       });
+
       bindContinueReadingActions();
     }
 
-    function getCoverUrl(item) {
-      const category = (item.category || '').trim();
-      const coverId = String(item.cover_id || item.coverid || '').trim();
-      if (!category || !coverId) return 'https://via.placeholder.com/150x220?text=No+Cover';
-      return `covers/${category}/${coverId}.jpg`;
+    function bindContinueReadingActions() {
+      const section = document.getElementById('continue-reading-section');
+      if (!section) return;
+      section.querySelectorAll('.remove-continue-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          removeHistoryItem(btn.dataset.bookUrl);
+        };
+      });
+    }
+
+    function closeBook(keepPosition = false) {
+      document.getElementById('reader-overlay').style.display = 'none';
+      pdfDoc = null;
+      currentScale = null;
+      if (!keepPosition) loadData();
+    }
+
+    function goBack() {
+      if (document.getElementById('reader-overlay').style.display === 'flex') {
+        closeBook(true);
+        return;
+      }
+
+      if (document.getElementById('episode-modal').style.display === 'flex') {
+        document.getElementById('episode-modal').style.display = 'none';
+        return;
+      }
+
+      if (folderStack.length > 0) {
+        const prev = folderStack.pop();
+        renderList(prev, false);
+        window.scrollTo(0, 0);
+        return;
+      }
+
+      window.location.href = 'categories.html';
+    }
+
+    function closeModal(e) {
+      if (e.target.id === 'episode-modal') e.target.style.display = 'none';
+    }
+
+    function handleSearch() {
+      const q = document.getElementById('global-search').value.toLowerCase();
+      renderList((allBooksCurrent || []).filter(item => (item.title || '').toLowerCase().includes(q)), false);
     }
 
     function toggleView(mode) {
@@ -167,6 +331,76 @@
         document.getElementById('grid-btn').classList.add('active');
         document.getElementById('list-btn').classList.remove('active');
       }
+    }
+
+    window.addEventListener('resize', () => {
+      if (document.getElementById('reader-overlay').style.display === 'flex' && pdfDoc && window.currentPage && window.currentUrl) {
+        fitPdfToScreen();
+      }
+    });
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) loadData();
+      else window.location.href = 'index.html';
+    });
+
+
+    // =====================================================================
+    // --- ส่วนของฟังก์ชันที่หายไปจากโค้ดเดิม (สร้างโครงสร้างไว้กัน Error) ---
+    // (หากคุณมีโค้ดส่วนนี้อยู่แล้ว ให้นำมาใส่ทับด้านล่างนี้ได้เลยครับ)
+    // =====================================================================
+
+    function loadData() {
+      // โค้ดดึงข้อมูลหนังสือจาก Database
+      console.log('loadData called');
+    }
+
+    function renderList(listData, isAppend) {
+      // โค้ดแสดงรายการหนังสือบนหน้าจอ
+      console.log('renderList called', listData);
+    }
+
+    function openBook(url) {
+      // โค้ดสำหรับเปิดหนังสือ หรือเล่นไฟล์เสียง
+      console.log('openBook called:', url);
+    }
+
+    function seek(seconds) {
+      // โค้ดสำหรับกรอเสียงเดินหน้า-ถอยหลัง
+      if (ytPlayer && ytPlayer.getCurrentTime) {
+        ytPlayer.seekTo(ytPlayer.getCurrentTime() + seconds, true);
+      }
+    }
+
+    function toggleYT() {
+      // โค้ดเล่น/หยุดเสียง
+      console.log('toggleYT called');
+    }
+
+    function closePlayer() {
+      // โค้ดปิดเครื่องเล่นเสียง
+      document.getElementById('audio-player-ui').style.display = 'none';
+      if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
+    }
+
+    function onPlayerStateChange(event) {
+      // จัดการสถานะ YouTube Player
+      console.log('Player state changed:', event.data);
+    }
+
+    function changePage(direction) {
+      // เปลี่ยนหน้า PDF
+      console.log('changePage called:', direction);
+    }
+
+    function zoomPdf(scaleAmount) {
+      // ซูมเข้า-ออก PDF
+      console.log('zoomPdf called:', scaleAmount);
+    }
+
+    function fitPdfToScreen() {
+      // ปรับขนาด PDF ให้พอดีจอ
+      console.log('fitPdfToScreen called');
     }
   </script>
 </body>

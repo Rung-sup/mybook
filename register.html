@@ -32,12 +32,10 @@
     .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
     .glass-player { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 420px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); border-radius: 20px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; display: none; align-items: center; gap: 12px; }
     .player-cover { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; }
-    .player-info-text { flex-grow: 1; overflow: hidden; }
     .btn-circle { width: 35px; height: 35px; border-radius: 50%; border: none; background: #333; color: #fff; cursor: pointer; }
     #episode-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: flex-end; }
     .modal-content { background: #fff; width: 100%; max-height: 80vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; }
     #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
-    .reader-toolbar { padding: 10px; background: #222; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .btn-clear-continue { border: none; background: #d9534f; color: #fff; padding: 6px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; }
     .continue-card { width: 88px !important; min-width: 88px !important; }
   </style>
@@ -74,7 +72,7 @@
 
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
-    // --- History Logic ---
+    // --- ฟังก์ชันจัดการ History ---
     function getHistoryKey() {
       const user = firebase.auth().currentUser;
       return user ? 'pukhistory_' + user.uid : null;
@@ -151,7 +149,6 @@
       bindContinueReadingActions();
     }
 
-    // --- Helper Functions ---
     function getCoverUrl(item) {
       const category = (item.category || '').trim();
       const coverId = String(item.cover_id || item.coverid || '').trim();

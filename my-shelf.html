@@ -53,6 +53,31 @@
         .btn-browse { background: #764ba2; color: #fff; padding: 12px 25px; border-radius: 30px; text-decoration: none; display: inline-block; margin-top: 20px; font-weight: 500; }
         .btn-logout { background: none; border: 1px solid #ff4d4d; color: #ff4d4d; padding: 4px 12px; border-radius: 15px; cursor: pointer; font-size: 12px; }
         .empty-state { text-align: center; padding: 50px 20px; color: #888; grid-column: 1/-1; }
+
+        /* --- เพิ่ม CSS สำหรับปุ่มลบหนังสือ --- */
+        .btn-remove-book {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 77, 77, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: 0.2s;
+        }
+        .btn-remove-book:hover {
+            background: red;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -203,7 +228,9 @@
 
             const card = document.createElement('div');
             card.className = 'book-card';
+            // --- อัปเดต HTML เพิ่มปุ่มกากบาทตรงนี้ ---
             card.innerHTML = `
+                <button class="btn-remove-book" onclick="removeBookFromShelf('${id}', event)">✕</button>
                 <div class="cover-box">
                     <div class="status-badge ${data.s === 'อ่านจบแล้ว' ? 'status-done' : ''}">${data.s === 'อ่านจบแล้ว' ? 'จบแล้ว' : 'หน้า ' + data.p}</div>
                     <img src="${coverUrl}" class="book-cover-img" onerror="this.src='https://via.placeholder.com/150x220?text=No+Cover'">
@@ -213,6 +240,24 @@
             card.onclick = () => window.location.href = `register.html?cat=${cat}&name=${encodeURIComponent(data.title)}`;
             shelfDiv.appendChild(card);
         });
+    }
+
+    // --- เพิ่มฟังก์ชันสำหรับลบหนังสือ ---
+    function removeBookFromShelf(bookId, event) {
+        event.stopPropagation(); // ป้องกันไม่ให้ทะลุไปเปิดหนังสือ
+
+        if(confirm("ต้องการลบหนังสือเล่มนี้ออกจากชั้นอ่านค้างใช่หรือไม่?")) {
+            if(currentUser) {
+                const historyKey = `puk_history_${currentUser.uid}`;
+                let history = JSON.parse(localStorage.getItem(historyKey)) || {};
+                
+                delete history[bookId]; // ลบออกจาก Object
+                localStorage.setItem(historyKey, JSON.stringify(history)); // บันทึกกลับ
+                localStorage.removeItem('page_' + bookId); // ลบหน้าที่จำไว้
+                
+                renderShelf(currentUser.uid); // วาดชั้นหนังสือใหม่
+            }
+        }
     }
 </script>
 </body>

@@ -9,7 +9,6 @@
     <title>เข้าสู่ระบบ - Reader App</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
     
-    <!-- Firebase SDK (v8) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
@@ -43,21 +42,21 @@
     </div>
 
     <script>
-        const isLineApp = navigator.userAgent.indexOf('Line') > -1;
-
+    // 1. ตรวจสอบ LINE Browser
+    const isLineApp = navigator.userAgent.indexOf('Line') > -1;
     if (isLineApp) {
-        // แทนที่จะ Redirect ทันที (ซึ่งมักถูก LINE บล็อก) 
-        // เราจะแสดงข้อความให้ผู้ใช้กดเปิดเองเพื่อให้ผ่านนโยบายความปลอดภัย
         document.body.innerHTML = `
-            <div style="padding: 40px; text-align: center; font-family: sans-serif;">
+            <div style="padding: 40px; text-align: center; font-family: sans-serif; background: white; border-radius: 20px; margin: 20px;">
                 <p>กรุณาเปิดแอปนี้ในเบราว์เซอร์หลัก (Safari หรือ Chrome)</p>
                 <button onclick="window.location.href='https://rung-sup.github.io/mybook/index.html?openExternalBrowser=1'" 
-                style="padding: 15px 30px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px;">
+                style="padding: 15px 30px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer;">
                 กดที่นี่เพื่อเปิดแอป
                 </button>
             </div>
         `;
     }
+
+    // 2. ตั้งค่า Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -73,36 +72,24 @@
     const auth = firebase.auth();
     const provider = new firebase.auth.GoogleAuthProvider();
 
-    // ระบบจัดการเส้นทาง: ตรวจสอบว่ายอมรับข้อตกลงหรือยัง
-    // ปรับปรุงฟังก์ชันเช็คสถานะการเข้าถึง
+    // 3. ระบบจัดการเส้นทาง
     function checkTermsAndRedirect() {
         const hasAccepted = localStorage.getItem('terms_accepted');
-        
-        // ถ้ายังไม่มีสถานะการยอมรับ ให้ไปหน้า welcome เพื่อเริ่มกระบวนการ
         if (!hasAccepted) {
             window.location.href = 'welcome.html';
         } else {
-            // ถ้ากดยอมรับแล้ว ให้ไปหน้าหมวดหมู่
             window.location.href = 'categories.html';
         }
     }
 
-    // ใน onAuthStateChanged ให้เรียกฟังก์ชันนี้
+    // 4. ฟังสถานะการล็อกอิน (เรียกเพียงครั้งเดียว)
     auth.onAuthStateChanged((user) => {
         if (user) {
             checkTermsAndRedirect();
         }
     });
 
-    // ติดตามสถานะผู้ใช้
-    auth.onAuthStateChanged((user) => {
-        if (user) {
-            // ถ้าล็อกอินแล้ว ให้ไปเช็คเงื่อนไขเพื่อส่งต่อหน้า
-            checkTermsAndRedirect();
-        }
-    });
-
-    // ฟังก์ชัน Google Login
+    // 5. ฟังก์ชัน Login
     function handleGoogleLogin() {
         auth.signInWithPopup(provider)
             .catch((error) => {

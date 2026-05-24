@@ -14,6 +14,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
 
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- [จุดที่เพิ่ม] โหลด Firebase SDK (v8) เพื่อใช้ฟังก์ชันตรวจสอบสถานะและล็อกเอาต์ -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         body {
@@ -89,7 +94,7 @@
         .audio-card { border-bottom: 5px solid #d4af37; }
         .construction-card { border-bottom: 5px solid #1877f2; }
 
-        /* ปุ่มสนับสนุนลอยตัว */
+        /* ปุ่มสนับสนุนลอยตัวขวา */
         .btn-donate-fixed {
             position: fixed; bottom: 20px; right: 20px;
             background: #d4af37; color: #000; border: none;
@@ -98,6 +103,18 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
             display: flex; align-items: center; gap: 8px; z-index: 1000;
         }
+
+        /* [จุดที่เพิ่ม] สไตล์ปุ่มออกจากระบบ ลอยตัวซ้าย */
+        .btn-logout-fixed {
+            position: fixed; bottom: 20px; left: 20px;
+            background: #e53e3e; color: white; border: none;
+            padding: 12px 18px; border-radius: 50px;
+            font-weight: 600; font-size: 14px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            display: flex; align-items: center; gap: 8px; z-index: 1000;
+            transition: 0.2s;
+        }
+        .btn-logout-fixed:hover { background: #c53030; }
 
         /* Modal สำหรับ QR Code */
         .modal-overlay {
@@ -115,14 +132,14 @@
 
     <div class="header">
         <div class="app-logo-container">
-            <!-- แสดงรูปจากไฟล์ app-icon.png[cite: 1] -->
+            <!-- แสดงรูปจากไฟล์ app-icon.png -->
             <img src="app-icon.png" alt="App Logo" onerror="this.parentElement.innerHTML='<h1 style=\'font-size:60px; margin:20px 0;\'>📚</h1>'">
         </div>
         <h1 style="margin: 0; font-size: 24px;">หอสมุดส่วนตัว</h1>
     </div>
 
     <div class="grid-container">
-        <!-- หมวดหมู่หนังสือต่างๆ[cite: 3] -->
+        <!-- หมวดหมู่หนังสือต่างๆ -->
         <a href="library.html?cat=1_PetchPraUma" class="category-card book-card"><div class="icon">🐘</div><div class="name">เพชรพระอุมา</div></a>
         <a href="library.html?cat=2_Thai_Novel" class="category-card book-card"><div class="icon">📖</div><div class="name">นิยายไทย</div></a>
         <a href="library.html?cat=3_English_Translated" class="category-card book-card"><div class="icon">🌍</div><div class="name">นิยายแปล</div></a>
@@ -132,14 +149,19 @@
         <a href="music_room.html" class="category-card music-card"><div class="icon">🎵</div><div class="name">ห้องฟังเพลง</div></a>
         <a href="library.html?cat=8_AudioBooks" class="category-card audio-card"><div class="icon">🎧</div><div class="name">หนังสือเสียง</div></a>
         
-        <!-- กล่อง K2 Home พร้อมโลโก้บริษัท[cite: 3] -->
+        <!-- กล่อง K2 Home พร้อมโลโก้บริษัท -->
         <a href="construction_page.html" class="category-card construction-card">
             <img src="k2-logo.jpg" alt="K2 Logo" class="card-logo" onerror="this.src='https://via.placeholder.com/60?text=K2'">
             <div class="name" style="color:#1877f2; font-size: 13px;">K2 Home สร้างบ้านดีต้องมีเรา<br>ผลงานและเกร็ดความรู้</div>
         </a>
     </div>
 
-    <!-- ปุ่มสนับสนุน[cite: 3] -->
+    <!-- [จุดที่เพิ่ม] ปุ่มออกจากระบบ ลอยตัวอยู่ที่มุมล่างซ้าย -->
+    <button class="btn-logout-fixed" onclick="handleSignOut()">
+        🚪 ออกจากระบบ
+    </button>
+
+    <!-- ปุ่มสนับสนุน -->
     <button class="btn-donate-fixed" onclick="document.getElementById('donation-modal').style.display='flex'">
         ☕ เลี้ยงกาแฟผู้พัฒนา
     </button>
@@ -153,6 +175,49 @@
             <button onclick="document.getElementById('donation-modal').style.display='none'" style="width:100%; padding:10px; border-radius:10px; border:none; background:#eee; cursor:pointer;">ไว้คราวหน้าครับ</button>
         </div>
     </div>
+
+    <script>
+    // =======================================================================
+    // ⚙️ ส่วนทำงานควบคุมของ Firebase Auth และระบบความปลอดภัย
+    // =======================================================================
+    
+    // Config ของโปรเจกต์ Firebase ของคุณรันนรา (อิงตามไฟล์ index.html)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+        authDomain: "myreaderapp-89e75.firebaseapp.com",
+        projectId: "myreaderapp-89e75",
+        storageBucket: "myreaderapp-89e75.firebasestorage.app",
+        messagingSenderId: "1016151043482",
+        appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+    };
+    
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    const auth = firebase.auth();
+
+    // 1. ระบบรักษาความปลอดภัย: เช็กคนแอบเข้าหน้านี้โดยตรงโดยไม่ได้ล็อกอิน
+    auth.onAuthStateChanged((user) => {
+        if (!user || !user.emailVerified) {
+            // ถ้าไม่มีบัญชีล็อกอิน หรือบัญชียังไม่ได้ยืนยันอีเมล ให้ส่งกลับหน้าแรกทันที
+            window.location.href = 'index.html';
+        }
+    });
+
+    // 2. ฟังก์ชันสั่งออกจากระบบเมื่อคลิกปุ่ม
+    function handleSignOut() {
+        if (confirm("คุณรันนราต้องการออกจากระบบใช่หรือไม่ครับ?")) {
+            auth.signOut()
+                .then(() => {
+                    alert("ออกจากระบบเรียบร้อยแล้วครับ");
+                    window.location.href = 'index.html'; 
+                })
+                .catch((error) => {
+                    alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + error.message);
+                });
+        }
+    }
+    </script>
 
 </body>
 </html>

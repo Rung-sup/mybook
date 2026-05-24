@@ -177,11 +177,7 @@
     </div>
 
     <script>
-    // =======================================================================
-    // ⚙️ ส่วนทำงานควบคุมของ Firebase Auth และระบบความปลอดภัย
-    // =======================================================================
-    
-    // Config ของโปรเจกต์ Firebase ของคุณรันนรา (อิงตามไฟล์ index.html)
+    // Config ของโปรเจกต์ Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -195,29 +191,29 @@
         firebase.initializeApp(firebaseConfig);
     }
     const auth = firebase.auth();
+    const provider = new firebase.auth.GoogleAuthProvider();
 
-    // 1. ระบบรักษาความปลอดภัย: เช็กคนแอบเข้าหน้านี้โดยตรงโดยไม่ได้ล็อกอิน
+    // 1. ระบบรักษาความปลอดภัย: เช็กคนแอบเข้าหน้านี้โดยตรง
     auth.onAuthStateChanged((user) => {
-        if (!user || !user.emailVerified) {
-            // ถ้าไม่มีบัญชีล็อกอิน หรือบัญชียังไม่ได้ยืนยันอีเมล ให้ส่งกลับหน้าแรกทันที
+        if (!user) {
+            // ถ้าไม่ได้ล็อกอิน ให้ส่งกลับหน้าแรก (index.html)
             window.location.href = 'index.html';
         }
     });
 
-    // 2. ฟังก์ชันสั่งออกจากระบบเมื่อคลิกปุ่ม
+    // 2. ฟังก์ชันสั่งออกจากระบบ
     function handleSignOut() {
         if (confirm("คุณรันนราต้องการออกจากระบบใช่หรือไม่ครับ?")) {
             auth.signOut()
                 .then(() => {
-                    alert("ออกจากระบบเรียบร้อยแล้วครับ");
                     window.location.href = 'index.html'; 
                 })
                 .catch((error) => {
-                    alert("เกิดข้อผิดพลาดในการออกจากระบบ: " + error.message);
+                    alert("เกิดข้อผิดพลาด: " + error.message);
                 });
         }
     }
-    </script>
+</script>
 
 </body>
 </html>

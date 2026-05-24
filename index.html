@@ -59,16 +59,25 @@
     const provider = new firebase.auth.GoogleAuthProvider();
 
     // ระบบจัดการเส้นทาง: ตรวจสอบว่ายอมรับข้อตกลงหรือยัง
+    // ปรับปรุงฟังก์ชันเช็คสถานะการเข้าถึง
     function checkTermsAndRedirect() {
         const hasAccepted = localStorage.getItem('terms_accepted');
-        if (hasAccepted === 'true') {
+        
+        // ถ้ายังไม่มีสถานะการยอมรับ ให้ไปหน้า welcome เพื่อเริ่มกระบวนการ
+        if (!hasAccepted) {
+            window.location.href = 'welcome.html';
+        } else {
             // ถ้ากดยอมรับแล้ว ให้ไปหน้าหมวดหมู่
             window.location.href = 'categories.html';
-        } else {
-            // ถ้ายังไม่เคยกด ให้ไปหน้า Welcome เพื่อเริ่มกระบวนการ
-            window.location.href = 'welcome.html';
         }
     }
+
+    // ใน onAuthStateChanged ให้เรียกฟังก์ชันนี้
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            checkTermsAndRedirect();
+        }
+    });
 
     // ติดตามสถานะผู้ใช้
     auth.onAuthStateChanged((user) => {

@@ -177,6 +177,20 @@
     </div>
 
     <script>
+        // ตรวจสอบสิทธิ์การเข้าถึงหน้าเว็บ
+auth.onAuthStateChanged((user) => {
+    // 1. ถ้ายังไม่ได้ล็อกอิน ให้เด้งกลับไปหน้า Login
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // 2. ถ้าล็อกอินแล้ว แต่ยังไม่ได้กดยอมรับข้อตกลง ให้เด้งไปหน้า Terms
+    const hasAccepted = localStorage.getItem('terms_accepted');
+    if (hasAccepted !== 'true') {
+        window.location.href = 'terms.html';
+    }
+});
     // Config ของโปรเจกต์ Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",

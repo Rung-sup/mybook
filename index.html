@@ -23,55 +23,26 @@
             background-color: rgba(255, 255, 255, 0.95); padding: 35px; border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 400px; text-align: center;
         }
-        .title { font-size: 26px; font-weight: 600; color: #333; margin-bottom: 25px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 14px; outline: none; }
-        input:focus { border-color: #764ba2; }
-        .btn-main {
-            width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px;
-            font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 15px; font-weight: 500;
+        .title { font-size: 24px; font-weight: 600; color: #333; margin-bottom: 30px; }
+        .btn-google {
+            width: 100%; padding: 14px; background: #ffffff; color: #555; border: 1px solid #ddd; 
+            border-radius: 10px; font-size: 16px; cursor: pointer; transition: 0.3s; 
+            display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500;
         }
-        .btn-main:hover { background: #667eea; }
-        .btn-main:disabled { background: #ccc; cursor: not-allowed; }
-        .toggle-link { margin-top: 20px; font-size: 14px; color: #555; cursor: pointer; text-decoration: underline; transition: 0.3s; }
-        .toggle-link:hover { color: #764ba2; }
-        
-        #register-card { display: none; }
+        .btn-google:hover { background: #f8f9fa; border-color: #bbb; }
     </style>
 </head>
 <body>
 
     <div class="auth-container">
-        <!-- การ์ดเข้าสู่ระบบ -->
-        <div id="login-card">
-            <div class="title">🔑 เข้าสู่ระบบ</div>
-            <input type="email" id="login-email" placeholder="อีเมลของคุณ">
-            <input type="password" id="login-pass" placeholder="รหัสผ่าน">
-            <button class="btn-main" id="btn-login" onclick="handleLogin()">เข้าใช้งาน</button>
-            <div class="toggle-link" onclick="toggleAuth('register')">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</div>
-        </div>
-
-        <!-- การ์ดลงทะเบียนใหม่ -->
-        <div id="register-card">
-            <div class="title">📝 ลงทะเบียนใหม่</div>
-            <input type="text" id="reg-name" placeholder="ชื่อ-นามสกุล">
-            <input type="email" id="reg-email" placeholder="อีเมล">
-            <input type="password" id="reg-pass" placeholder="รหัสผ่าน (6 ตัวขึ้นไป)">
-            <button class="btn-main" id="btn-reg" onclick="handleRegister()">สมัครสมาชิก</button>
-            <div class="toggle-link" onclick="toggleAuth('login')">มีบัญชีแล้ว? เข้าสู่ระบบที่นี่</div>
-        </div>
+        <div class="title">📚 หอสมุดส่วนตัว</div>
+        <button class="btn-google" onclick="handleGoogleLogin()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+            ลงชื่อเข้าใช้ด้วย Google
+        </button>
     </div>
 
     <script>
-    // 1. กำหนดโครงสร้างตัวกำหนดค่าเริ่มต้น Firebase
-    // ดักจับและบังคับเด้งออกจาก LINE In-App Browser ไปเปิดในเบราว์เซอร์หลักของเครื่อง
-    if (navigator.userAgent.indexOf('Line') > -1) {
-        const currentUrl = window.location.href;
-        if (currentUrl.indexOf('?') > -1) {
-            window.location.href = currentUrl + '&openExternalBrowser=1';
-        } else {
-            window.location.href = currentUrl + '?openExternalBrowser=1';
-        }
-    }
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -81,167 +52,29 @@
         appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
     };
     
-    // เริ่มต้นแอปพลิเคชัน Firebase 
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
     const auth = firebase.auth();
-    let deferredPrompt; // ตัวแปรสำหรับใช้งาน PWA Prompt
+    const provider = new firebase.auth.GoogleAuthProvider();
 
-    // 2. ฟังก์ชันควบคุมเส้นทางและเปลี่ยนหน้าจอแสดงผล (UI)
-    function checkTermsAndRedirect() {
-        const hasAccepted = localStorage.getItem('terms_accepted');
-        if (hasAccepted === 'true') {
-            window.location.href = 'categories.html';
-        } else {
-            window.location.href = 'terms.html';
-        }
-    }
-
-    function toggleAuth(mode) {
-        const loginCard = document.getElementById('login-card');
-        const registerCard = document.getElementById('register-card');
-        if (mode === 'register') {
-            loginCard.style.display = 'none';
-            registerCard.style.display = 'block';
-        } else {
-            loginCard.style.display = 'block';
-            registerCard.style.display = 'none';
-        }
-    }
-
-    // 3. ติดตามการเปลี่ยนแปลงสถานะล็อกอินของผู้ใช้
+    // เช็คสถานะการเข้าสู่ระบบ
     auth.onAuthStateChanged((user) => {
-        if (user && user.emailVerified) {
-            checkTermsAndRedirect();
+        if (user) {
+            window.location.href = 'categories.html';
         }
     });
 
-    // 4. ฟังก์ชันสำหรับการลงทะเบียนสมาชิกใหม่
-    async function handleRegister() {
-        const name = document.getElementById('reg-name').value.trim();
-        const email = document.getElementById('reg-email').value.trim();
-        const pass = document.getElementById('reg-pass').value;
-        const btn = document.getElementById('btn-reg');
-
-        if (!name || !email || !pass) {
-            alert("กรุณากรอกข้อมูลให้ครบถ้วนทุกช่องครับ");
-            return;
-        }
-
-        if (pass.length < 6) {
-            alert("รหัสผ่านต้องมีความยาว 6 ตัวอักษรขึ้นไปครับ");
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerText = "กำลังลงทะเบียน...";
-
-        try {
-            // สร้างบัญชีผู้ใช้งาน
-            const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
-            const user = userCredential.user;
-
-            // บันทึกชื่อผู้ใช้งานเข้าสู่โปรไฟล์
-            await user.updateProfile({ displayName: name });
-            
-            // ล้างเซสชันยอมรับข้อตกลงของคนเก่า
-            localStorage.removeItem('terms_accepted');
-            
-            // ส่งอีเมลยืนยันตัวตน
-            await user.sendEmailVerification();
-            
-            // บังคับลงชื่อออก เพื่อป้องกันการแอบเปลี่ยนหน้าจนกว่าจะยืนยันอีเมล
-            await auth.signOut();
-
-            alert("ลงทะเบียนสำเร็จ! ระบบได้ส่งลิงก์ยืนยันตัวตนไปที่อีเมลของคุณแล้ว กรุณากดยืนยันก่อนเข้าใช้งานนะคร้าบ");
-            
-            // เคลียร์ค่าในกล่องรับข้อมูล
-            document.getElementById('reg-name').value = '';
-            document.getElementById('reg-email').value = '';
-            document.getElementById('reg-pass').value = '';
-            
-            toggleAuth('login');
-        } catch (error) {
-            console.error(error);
-            if (error.code === 'auth/email-already-in-use') {
-                alert("อีเมลนี้ถูกใช้สมัครสมาชิกไปแล้วครับ");
-            } else if (error.code === 'auth/invalid-email') {
-                alert("รูปแบบอีเมลไม่ถูกต้องครับ");
-            } else {
-                alert("เกิดข้อผิดพลาด: " + error.message);
-            }
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "สมัครสมาชิก";
-        }
-    }
-
-    // 5. ฟังก์ชันสำหรับเข้าสู่ระบบ
-    function handleLogin() {
-        const email = document.getElementById('login-email').value;
-        const pass = document.getElementById('login-pass').value;
-        const btn = document.getElementById('btn-login');
-
-        if (!email || !pass) {
-            alert("กรุณากรอกอีเมลและรหัสผ่าน");
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerText = "กำลังตรวจสอบ...";
-
-        auth.signInWithEmailAndPassword(email, pass)
-            .then((userCredential) => {
-                const user = userCredential.user;
-                if (user.emailVerified) {
-                    checkTermsAndRedirect();
-                } else {
-                    alert("คุณยังไม่ได้ยืนยันอีเมลครับ");
-                    auth.signOut();
-                    btn.disabled = false;
-                    btn.innerText = "เข้าใช้งาน";
-                }
+    // ฟังก์ชัน Google Login
+    function handleGoogleLogin() {
+        auth.signInWithPopup(provider)
+            .then((result) => {
+                // ล็อกอินสำเร็จ ระบบจะพากลับไปหน้า categories.html อัตโนมัติโดย onAuthStateChanged
             })
             .catch((error) => {
-                alert("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-                btn.disabled = false;
-                btn.innerText = "เข้าใช้งาน";
+                alert("เกิดข้อผิดพลาด: " + error.message);
             });
     }
-
-    // 6. การดักจับเหตุการณ์แสดงตัวติดตั้งหน้าจอหลักแอปพลิเคชัน (PWA)
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        
-        const installBanner = document.createElement('div');
-        installBanner.id = 'pwa-install-banner';
-        installBanner.style = "position:fixed; top:20px; left:50%; transform:translateX(-50%); width:90%; max-width:360px; background:#ffffff; padding:18px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.25); z-index:99999; display:flex; flex-direction:column; align-items:center; gap:12px; border:2px solid #764ba2;";
-        installBanner.innerHTML = `
-            <div style="font-size:15px; font-weight:600; color:#333; text-align:center;">✨ เพิ่มแอปไว้บนหน้าจอมือถือของคุณ</div>
-            <div style="font-size:12px; color:#666; text-align:center; line-height:1.5;">เพื่อการเปิดอ่านที่เต็มหน้าจอ รวดเร็ว<br>และไม่ต้องคอยงมหาลิงก์เข้าเว็บอีกต่อไปครับ</div>
-            <div style="display:flex; gap:10px; width:100%; margin-top:5px;">
-                <button id='btn-pwa-close' style='flex:1; padding:10px; border:1px solid #ddd; background:#fff; border-radius:10px; font-size:13px; font-weight:500; color:#666; cursor:pointer;'>ไว้ทีหลัง</button>
-                <button id='btn-pwa-install' style='flex:2; padding:10px; border:none; background:#764ba2; color:#fff; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 4px 10px rgba(118,75,162,0.3);'>ติดตั้งลงเครื่อง</button>
-            </div>
-        `;
-        document.body.appendChild(installBanner);
-
-        document.getElementById('btn-pwa-install').addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to the install prompt: ${outcome}`);
-                deferredPrompt = null;
-                installBanner.remove();
-            }
-        });
-
-        document.getElementById('btn-pwa-close').addEventListener('click', () => {
-            installBanner.remove();
-        });
-    });
     </script>
 </body>
 </html>

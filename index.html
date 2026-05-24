@@ -58,19 +58,29 @@
     const auth = firebase.auth();
     const provider = new firebase.auth.GoogleAuthProvider();
 
-    // เช็คสถานะการเข้าสู่ระบบ
+    // ระบบจัดการเส้นทาง: ตรวจสอบว่ายอมรับข้อตกลงหรือยัง
+    function checkTermsAndRedirect() {
+        const hasAccepted = localStorage.getItem('terms_accepted');
+        if (hasAccepted === 'true') {
+            // ถ้ากดยอมรับแล้ว ให้ไปหน้าหมวดหมู่
+            window.location.href = 'categories.html';
+        } else {
+            // ถ้ายังไม่เคยกด ให้ไปหน้า Welcome เพื่อเริ่มกระบวนการ
+            window.location.href = 'welcome.html';
+        }
+    }
+
+    // ติดตามสถานะผู้ใช้
     auth.onAuthStateChanged((user) => {
         if (user) {
-            window.location.href = 'categories.html';
+            // ถ้าล็อกอินแล้ว ให้ไปเช็คเงื่อนไขเพื่อส่งต่อหน้า
+            checkTermsAndRedirect();
         }
     });
 
     // ฟังก์ชัน Google Login
     function handleGoogleLogin() {
         auth.signInWithPopup(provider)
-            .then((result) => {
-                // ล็อกอินสำเร็จ ระบบจะพากลับไปหน้า categories.html อัตโนมัติโดย onAuthStateChanged
-            })
             .catch((error) => {
                 alert("เกิดข้อผิดพลาด: " + error.message);
             });

@@ -200,16 +200,18 @@
 
     // 3. ฟังก์ชันออกจากระบบ (จะมองเห็นตัวแปร auth เพราะประกาศไว้ข้างบนแล้ว)
     function handleSignOut() {
-        if (confirm("คุณรันนราต้องการออกจากระบบใช่หรือไม่ครับ?")) {
-            auth.signOut()
-                .then(() => {
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    alert("เกิดข้อผิดพลาด: " + error.message);
-                });
-        }
+    // เปลี่ยนจากชื่อบุคคล เป็นข้อความที่เป็นกลางครับ
+    if (confirm("คุณต้องการออกจากระบบใช่หรือไม่ครับ?")) {
+        localStorage.removeItem('terms_accepted');
+        auth.signOut()
+            .then(() => {
+                window.location.href = 'index.html';
+            })
+            .catch((error) => {
+                alert("เกิดข้อผิดพลาด: " + error.message);
+            });
     }
+}
 
     // 4. ส่วนป้องกันการแอบเข้า (วางไว้บรรทัดสุดท้ายของ script นี้)
     auth.onAuthStateChanged((user) => {

@@ -43,6 +43,21 @@
     </div>
 
     <script>
+        const isLineApp = navigator.userAgent.indexOf('Line') > -1;
+
+    if (isLineApp) {
+        // แทนที่จะ Redirect ทันที (ซึ่งมักถูก LINE บล็อก) 
+        // เราจะแสดงข้อความให้ผู้ใช้กดเปิดเองเพื่อให้ผ่านนโยบายความปลอดภัย
+        document.body.innerHTML = `
+            <div style="padding: 40px; text-align: center; font-family: sans-serif;">
+                <p>กรุณาเปิดแอปนี้ในเบราว์เซอร์หลัก (Safari หรือ Chrome)</p>
+                <button onclick="window.location.href='https://rung-sup.github.io/mybook/index.html?openExternalBrowser=1'" 
+                style="padding: 15px 30px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px;">
+                กดที่นี่เพื่อเปิดแอป
+                </button>
+            </div>
+        `;
+    }
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",

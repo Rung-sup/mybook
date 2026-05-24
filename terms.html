@@ -4,172 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ข้อตกลงการใช้งาน - Reader App</title>
-    
-    <!-- Meta Tags สำหรับการแชร์ลิงก์ -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://rung-sup.github.io/mybook/terms.html">
-    <meta property="og:title" content="K2 Home & หอสมุดส่วนตัว">
-    <meta property="og:description" content="คลังความรู้ นิยาย หนังสือเสียง และเกร็ดความรู้เรื่องบ้านโดย K2 Home">
-    <meta property="og:image" content="https://rung-sup.github.io/mybook/app-icon.png">
-
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     
     <style>
-        * {
-            box-sizing: border-box;
-            font-family: 'Prompt', sans-serif;
-        }
-        body {
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-        .terms-container {
-            background-color: rgba(255, 255, 255, 0.95);
-            padding: 25px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            width: 90%;
-            max-width: 450px; /* ปรับขนาดกรอบให้กระชับขึ้น[cite: 1] */
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        /* ปรับขนาดรูปภาพหน้าปกให้เล็กลงและได้สัดส่วน[cite: 1] */
-        .app-icon {
-            width: 140px; /* ปรับขนาดให้พอดีกับสายตา[cite: 1] */
-            height: 140px;
-            border-radius: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-            object-fit: cover;
-        }
-
-        .title {
-            font-size: 22px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
-        }
-        .terms-box {
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            padding: 15px;
-            height: 200px; /* ปรับความสูงกล่องข้อความให้สมดุลกับรูป[cite: 1] */
-            overflow-y: auto;
-            font-size: 14px;
-            color: #555;
-            line-height: 1.6;
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        .terms-box h4 {
-            margin-top: 0;
-            color: #333;
-        }
-        .checkbox-container {
-            display: flex;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #333;
-            text-align: left;
-        }
-        .checkbox-container input {
-            margin-top: 2px;
-            margin-right: 10px;
-            cursor: pointer;
-            width: 18px;
-            height: 18px;
-        }
-        .btn-accept {
-            width: 100%;
-            padding: 12px;
-            background: #764ba2;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .btn-accept:hover {
-            background: #667eea;
-        }
-        .btn-accept:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .terms-container { background-color: rgba(255, 255, 255, 0.95); padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); width: 90%; max-width: 450px; text-align: center; }
+        .app-icon { width: 140px; height: 140px; border-radius: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); }
+        .title { font-size: 22px; font-weight: 600; color: #333; margin-bottom: 15px; }
+        .terms-box { background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 10px; padding: 15px; height: 200px; overflow-y: auto; font-size: 14px; color: #555; text-align: left; margin-bottom: 20px; }
+        .checkbox-container { display: flex; align-items: flex-start; margin-bottom: 20px; font-size: 13px; color: #333; text-align: left; }
+        .checkbox-container input { margin-top: 2px; margin-right: 10px; cursor: pointer; width: 18px; height: 18px; }
+        .btn-accept { width: 100%; padding: 12px; background: #764ba2; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; }
+        .btn-accept:disabled { background: #cccccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
     <div class="terms-container">
-        <!-- แสดงรูปหน้าปกแอปแบบปรับสัดส่วนแล้ว[cite: 1] -->
         <img src="app-icon.png" alt="App Logo" class="app-icon">
-        
         <div class="title">📄 ข้อตกลงการใช้งาน</div>
-        
         <div class="terms-box">
-            <h4>เงื่อนไขและข้อตกลง (Terms of Service)</h4>
-            <p>ยินดีต้อนรับสู่ My Reader App โปรดอ่านข้อตกลงนี้อย่างละเอียดก่อนเข้าใช้งาน[cite: 1]</p>
-            <p><strong>1. การยอมรับเงื่อนไข:</strong> การที่คุณเข้าใช้งานแอปพลิเคชันนี้ ถือว่าคุณได้ยอมรับเงื่อนไขและข้อตกลงทั้งหมดที่ระบุไว้[cite: 1]</p>
-            <p><strong>2. ลิขสิทธิ์เนื้อหา:</strong> นิยายและผลงานเขียนทั้งหมดในแอปพลิเคชันนี้ เป็นลิขสิทธิ์ของผู้เขียนหรือผู้แปล ห้ามมิให้ผู้ใดคัดลอก ดัดแปลง ทำซ้ำ หรือนำไปเผยแพร่ที่อื่นโดยไม่ได้รับอนุญาต[cite: 1]</p>
-            <p><strong>3. การใช้งานที่เหมาะสม:</strong> ผู้ใช้ตกลงที่จะใช้แอปพลิเคชันนี้เพื่อความบันเทิงส่วนตัวเท่านั้น และจะไม่กระทำการใดๆ ที่ก่อให้เกิดความเสียหายต่อระบบ[cite: 1]</p>
-            <p><strong>4. ข้อมูลส่วนบุคคล:</strong> แอปพลิเคชันจะจัดเก็บข้อมูลอีเมลของคุณเพื่อใช้ในการเข้าสู่ระบบและดูแลบัญชีผู้ใช้เท่านั้น เราจะไม่เปิดเผยข้อมูลของคุณให้แก่บุคคลที่สาม[cite: 1]</p>
+            <h4>เงื่อนไขและข้อตกลง</h4>
+            <p>1. การยอมรับเงื่อนไข: การใช้งานถือว่าคุณยอมรับเงื่อนไขทั้งหมด</p>
+            <p>2. ลิขสิทธิ์เนื้อหา: ห้ามคัดลอกหรือดัดแปลงผลงานโดยไม่ได้รับอนุญาต</p>
+            <p>3. ข้อมูลส่วนบุคคล: เราจะจัดเก็บอีเมลเพื่อใช้ดูแลบัญชีผู้ใช้เท่านั้น</p>
         </div>
 
         <label class="checkbox-container">
             <input type="checkbox" id="acceptCheckbox" onchange="toggleButton()">
-            <span>ฉันได้อ่านและยอมรับเงื่อนไขข้อตกลงการใช้งานทั้งหมด รวมถึงนโยบายความเป็นส่วนตัว[cite: 1]</span>
+            <span>ฉันได้อ่านและยอมรับเงื่อนไขข้อตกลงการใช้งานทั้งหมด</span>
         </label>
 
-        <button class="btn-accept" id="continueBtn" disabled onclick="goToWelcome()">ยอมรับและเข้าสู่แอปพลิเคชัน</button>
+        <button class="btn-accept" id="continueBtn" disabled onclick="goToCategories()">ยอมรับและเข้าสู่แอปพลิเคชัน</button>
     </div>
 
     <script>
-    function toggleButton() {
-        const checkbox = document.getElementById('acceptCheckbox');
-        const button = document.getElementById('continueBtn');
-        button.disabled = !checkbox.checked;[cite: 1]
-    }
-
-    function goToWelcome() {
-        localStorage.setItem('terms_accepted', 'true');[cite: 1]
-        window.location.href = 'categories.html';[cite: 1]
-    }
-    </script>
-<!-- ส่วนท้ายของไฟล์ terms.html -->
-<script>
-    // 1. ฟังก์ชันเปิด-ปิดปุ่มเมื่อติ๊กถูก
-    function toggleButton() {
-        const checkbox = document.getElementById('acceptCheckbox');
-        const button = document.getElementById('continueBtn');
-        button.disabled = !checkbox.checked;
-    }
-
-    // 2. ฟังก์ชันเมื่อกดปุ่ม "ยอมรับและเข้าสู่แอปพลิเคชัน"
-    function goToWelcome() {
-        // บันทึกสถานะว่ายอมรับเงื่อนไขแล้วลงในเครื่อง
-        localStorage.setItem('terms_accepted', 'true');
+        const auth = firebase.auth();
         
-        // พาผู้ใช้ไปที่หน้าหมวดหมู่หนังสือทันที
-        window.location.href = 'categories.html';
-    }
+        // ตรวจสอบสิทธิ์: ต้องล็อกอินก่อนถึงจะเข้าหน้านี้ได้
+        auth.onAuthStateChanged((user) => {
+            if (!user) window.location.href = 'index.html';
+            else if (localStorage.getItem('terms_accepted') === 'true') window.location.href = 'categories.html';
+        });
 
-    // 3. ป้องกันคนแอบเข้าหน้านี้โดยตรง (ถ้าเคยยอมรับแล้วให้ไปหน้าหลักเลย)
-    window.onload = function() {
-        if (localStorage.getItem('terms_accepted') === 'true') {
+        function toggleButton() {
+            document.getElementById('continueBtn').disabled = !document.getElementById('acceptCheckbox').checked;
+        }
+
+        function goToCategories() {
+            localStorage.setItem('terms_accepted', 'true');
             window.location.href = 'categories.html';
         }
-    };
-</script>
+    </script>
 </body>
 </html>

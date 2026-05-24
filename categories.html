@@ -176,30 +176,11 @@
         </div>
     </div>
 
-    <script>
-        // ตรวจสอบสิทธิ์การเข้าถึงหน้าเว็บ
-        // ใส่ในหน้า categories.html
-firebase.auth().onAuthStateChanged((user) => {
-    if (!user) {
-        window.location.href = 'index.html';
-    } else if (localStorage.getItem('terms_accepted') !== 'true') {
-        window.location.href = 'terms.html';
-    }
-});
-auth.onAuthStateChanged((user) => {
-    // 1. ถ้ายังไม่ได้ล็อกอิน ให้เด้งกลับไปหน้า Login
-    if (!user) {
-        window.location.href = 'index.html';
-        return;
-    }
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
-    // 2. ถ้าล็อกอินแล้ว แต่ยังไม่ได้กดยอมรับข้อตกลง ให้เด้งไปหน้า Terms
-    const hasAccepted = localStorage.getItem('terms_accepted');
-    if (hasAccepted !== 'true') {
-        window.location.href = 'terms.html';
-    }
-});
-    // Config ของโปรเจกต์ Firebase
+<script>
+    // 2. ประกาศตัวแปร auth ให้เป็น Global ตั้งแต่ต้น
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -208,33 +189,36 @@ auth.onAuthStateChanged((user) => {
         messagingSenderId: "1016151043482",
         appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
     };
-    
+
+    // ต้อง initialize ก่อนเสมอ
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
+    
+    // สร้างตัวแปร auth ให้พร้อมใช้งานทันทีที่โหลดหน้าเว็บ
     const auth = firebase.auth();
-    const provider = new firebase.auth.GoogleAuthProvider();
 
-    // 1. ระบบรักษาความปลอดภัย: เช็กคนแอบเข้าหน้านี้โดยตรง
-    auth.onAuthStateChanged((user) => {
-        if (!user) {
-            // ถ้าไม่ได้ล็อกอิน ให้ส่งกลับหน้าแรก (index.html)
-            window.location.href = 'index.html';
-        }
-    });
-
-    // 2. ฟังก์ชันสั่งออกจากระบบ
+    // 3. ฟังก์ชันออกจากระบบ (จะมองเห็นตัวแปร auth เพราะประกาศไว้ข้างบนแล้ว)
     function handleSignOut() {
         if (confirm("คุณรันนราต้องการออกจากระบบใช่หรือไม่ครับ?")) {
             auth.signOut()
                 .then(() => {
-                    window.location.href = 'index.html'; 
+                    window.location.href = 'index.html';
                 })
                 .catch((error) => {
                     alert("เกิดข้อผิดพลาด: " + error.message);
                 });
         }
     }
+
+    // 4. ส่วนป้องกันการแอบเข้า (วางไว้บรรทัดสุดท้ายของ script นี้)
+    auth.onAuthStateChanged((user) => {
+        if (!user) {
+            window.location.href = 'index.html';
+        } else if (localStorage.getItem('terms_accepted') !== 'true') {
+            window.location.href = 'terms.html';
+        }
+    });
 </script>
 
 </body>

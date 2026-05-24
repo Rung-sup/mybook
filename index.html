@@ -103,37 +103,73 @@
     }
 
     // 2. ฟังก์ชันสมัครสมาชิก (เพิ่มการรีเซ็ตค่ายอมรับเงื่อนไข)
-    function handleRegister() {
-        const email = document.getElementById('reg-email').value;
+    function // 2. ฟังก์ชันสมัครสมาชิก (เวอร์ชันแก้ไข บันทึกชื่อ และส่งอีเมลแม่นยำขึ้น)
+    async function handleRegister() {
+        // ดึงค่าจากหน้าจอ
+        const name = document.getElementById('reg-name').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
         const pass = document.getElementById('reg-pass').value;
         const btn = document.getElementById('btn-reg');
 
-        if (!email || !pass) {
-            alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        // ตรวจสอบความครบถ้วนของข้อมูล
+        if (!name || !email || !pass) {
+            alert("กรุณากรอกข้อมูลให้ครบถ้วนทุกช่องครับ");
             return;
         }
 
+        if (pass.length < 6) {
+            alert("รหัสผ่านต้องมีความยาว 6 ตัวอักษรขึ้นไปครับ");
+            return;
+        }
+
+        // เปลี่ยนสถานะปุ่มป้องกันการกดซ้ำ
         btn.disabled = true;
         btn.innerText = "กำลังลงทะเบียน...";
 
-        auth.createUserWithEmailAndPassword(email, pass)
-            .then((userCredential) => {
-                // *** จุดสำคัญ: เมื่อสมัครใหม่ ให้ล้างค่าการยอมรับเงื่อนไขเก่าทิ้งทันที ***
-                localStorage.removeItem('terms_accepted');
-                
-                return userCredential.user.sendEmailVerification().then(() => {
-                    auth.signOut();
-                    alert("ลงทะเบียนสำเร็จ! กรุณากดยืนยันในอีเมลก่อนเข้าใช้งานครับ");
-                    toggleAuth('login');
-                });
-            })
-            .catch((error) => {
-                alert("เกิดข้อผิดพลาด: " + error.message);
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerText = "สมัครสมาชิก";
+        try {
+            // ขั้นตอนที่ 1: สร้างบัญชีผู้ใช้ใน Firebase
+            const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+            const user = userCredential.user;
+
+            // ขั้นตอนที่ 2: บันทึกชื่อ-นามสกุลลงใน Profile ของ Firebase
+            await user.updateProfile({
+                displayName: name
             });
+
+            // ขั้นตอนที่ 3: ล้างค่าการยอมรับเงื่อนไขเก่าในเครื่อง
+            localStorage.removeItem('terms_accepted');
+            
+            // ขั้นตอนที่ 4: ส่งอีเมลยืนยันตัวตน
+            await user.sendEmailVerification();
+
+            // ขั้นตอนที่ 5: ออกจากระบบชั่วคราว เพื่อบังคับให้ไปล็อกอินและเช็กการยืนยันอีเมล
+            await auth.signOut();
+
+            alert("ลงทะเบียนสำเร็จ! ระบบได้ส่งลิงก์ยืนยันตัวตนไปที่อีเมลของคุณแล้ว กรุณากดยืนยันก่อนเข้าใช้งานนะคร้าบ");
+            
+            // ล้างค่าในช่องกรอกข้อมูลเก่า
+            document.getElementById('reg-name').value = '';
+            document.getElementById('reg-email').value = '';
+            document.getElementById('reg-pass').value = '';
+            
+            // สลับหน้าจอกลับไปที่ล็อกอิน
+            toggleAuth('login');
+
+        } catch (error) {
+            // จัดการข้อผิดพลาดแยกตามกรณีของ Firebase
+            console.error(error);
+            if (error.code === 'auth/email-already-in-use') {
+                alert("อีเมลนี้ถูกใช้สมัครสมาชิกไปแล้วครับ");
+            } else if (error.code === 'auth/invalid-email') {
+                alert("รูปแบบอีเมลไม่ถูกต้องครับ");
+            } else {
+                alert("เกิดข้อผิดพลาด: " + error.message);
+            }
+        } finally {
+            // คืนสถานะปุ่ม
+            btn.disabled = false;
+            btn.innerText = "สมัครสมาชิก";
+        }
     }
 
     // 3. ฟังก์ชันเข้าสู่ระบบ

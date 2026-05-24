@@ -63,6 +63,15 @@
 
     <script>
     // 1. กำหนดโครงสร้างตัวกำหนดค่าเริ่มต้น Firebase
+    // ดักจับและบังคับเด้งออกจาก LINE In-App Browser ไปเปิดในเบราว์เซอร์หลักของเครื่อง
+    if (navigator.userAgent.indexOf('Line') > -1) {
+        const currentUrl = window.location.href;
+        if (currentUrl.indexOf('?') > -1) {
+            window.location.href = currentUrl + '&openExternalBrowser=1';
+        } else {
+            window.location.href = currentUrl + '?openExternalBrowser=1';
+        }
+    }
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",

@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <!-- เก็บ YouTube API ไว้เผื่อใช้ในอนาคต แต่ไม่ได้เรียกใช้กับระบบเสียงแล้ว -->
     <script src="https://www.youtube.com/iframe_api"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -21,6 +22,7 @@
         .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: 0.2s; }
         .btn-view.active { background: #d4af37; color: #000; border-color: #d4af37; }
 
+        /* Premium Notice สำหรับหนังสือเสียง */
         .premium-notice { display: none; background: #fff; border-left: 4px solid #d4af37; padding: 15px; margin: 15px; border-radius: 8px; font-size: 13px; line-height: 1.6; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .premium-notice strong { color: #8b6d00; }
         .premium-notice .highlight { color: #d4af37; font-weight: 600; display: block; margin-top: 5px; }
@@ -44,10 +46,19 @@
 
         .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
 
-        #episode-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: flex-end; }
-        .modal-content { background: #fff; width: 100%; max-height: 80vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+        #episode-modal {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000;
+            align-items: flex-end;
+        }
+        .modal-content {
+            background: #fff; width: 100%; max-height: 80vh; border-radius: 20px 20px 0 0;
+            padding: 20px; overflow-y: auto; animation: slideUp 0.3s ease-out;
+        }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .episode-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
+        .episode-item {
+            padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer; transition: background 0.2s;
+        }
         .episode-item:hover { background: #f9f9f9; }
 
         #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
@@ -136,9 +147,33 @@ const categoryMap = {
     "8_AudioBooks": ["8_AudioBooks"]
 };
 
-// ฟังก์ชันเรียงลำดับแบบธรรมชาติ (Natural Sort)
-function naturalSort(a, b) {
-    return a.title.localeCompare(b.title, 'th', { numeric: true, sensitivity: 'base' });
+function extractYouTubeId(url) {
+    if (!url) return null;
+    try {
+        const u = new URL(url.trim());
+        const v = u.searchParams.get('v');
+        if (v && v.length >= 6) return v;
+    } catch (e) {}
+    const patterns = [
+        /youtu\.be\/([A-Za-z0-9_-]{6,})/,
+        /youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/,
+        /youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/,
+        /[?&]v=([A-Za-z0-9_-]{6,})/
+    ];
+    for (const p of patterns) {
+        const m = url.match(p);
+        if (m && m[1]) return m[1];
+    }
+    return null;
+}
+
+function getAudiobookCoverUrl(book) {
+    const firstEpUrl = book && Array.isArray(book.episodes) && book.episodes.length > 0
+        ? (book.episodes[0].ep_url || '')
+        : '';
+    const ytId = extractYouTubeId(firstEpUrl);
+    if (!ytId) return 'https://via.placeholder.com/150x220?text=No+Cover';
+    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
 }
 
 async function loadData() {
@@ -146,6 +181,7 @@ async function loadData() {
     currentCategory = (params.get('cat') || '').trim();
     currentCategorySet = categoryMap[currentCategory] || [currentCategory];
 
+    // แสดงคำแนะนำการฟังเฉพาะเมื่ออยู่ในหมวดหนังสือเสียง
     if (currentCategory === "8_AudioBooks") {
         document.getElementById('premium-notice').style.display = 'block';
     } else {
@@ -162,16 +198,15 @@ async function loadData() {
         if (currentCategory === "8_AudioBooks") {
             const resAudio = await fetch(`audiobook_db.json?v=${Date.now()}`);
             const dataAudio = await resAudio.json();
-            allBooksCurrent = (dataAudio.audiobooks || [])
-                .filter(item => currentCategorySet.includes((item.category || "").trim()))
-                .sort(naturalSort);
+            allBooksCurrent = (dataAudio.audiobooks || []).filter(item =>
+                currentCategorySet.includes((item.category || "").trim())
+            );
         } else if (currentCategory === "7_music") {
             const resMusic = await fetch(`music_db.json?v=${Date.now()}`);
             const dataMusic = await resMusic.json();
             allBooksCurrent = (dataMusic.music || [])
                 .filter(item => currentCategorySet.includes((item.category || "").trim()))
-                .map(item => ({ ...item, ismusic: true }))
-                .sort(naturalSort);
+                .map(item => ({ ...item, ismusic: true }));
         } else {
             const filtered = allBooksGlobal.filter(item =>
                 currentCategorySet.includes((item.category || "").trim())
@@ -203,9 +238,10 @@ function buildDisplayList(items) {
     });
 
     const displayList = [];
+
     for (const name in groupedData) {
         const files = groupedData[name];
-        files.sort(naturalSort); // เรียงไฟล์ในโฟลเดอร์
+        files.sort((a, b) => a.title.localeCompare(b.title, 'th', { numeric: true }));
         displayList.push({
             title: name,
             isFolder: true,
@@ -217,10 +253,14 @@ function buildDisplayList(items) {
     }
 
     standaloneFiles.forEach(file => displayList.push(file));
-    return displayList.sort(naturalSort); // เรียงรายการหลักทั้งหมด
+    return displayList;
 }
 
 function getCoverUrl(item) {
+    if (item && item.episodes) {
+        return getAudiobookCoverUrl(item);
+    }
+
     const category = (item.category || "").trim();
     const coverId = (item.cover_id || "").toString().trim();
     if (!category || !coverId) return 'https://via.placeholder.com/150x220?text=No+Cover';
@@ -244,15 +284,22 @@ function renderList(items) {
         card.className = 'book-card' + (item.isFolder ? ' folder-card' : '');
 
         let badge = '';
-        if (item.isFolder) badge += `<div class="folder-badge">📂 ${item.count} เล่ม</div>`;
-        if (item.episodes) badge += `<div class="audio-badge">เสียง</div>`;
+        if (item.isFolder) {
+            badge += `<div class="folder-badge">📂 ${item.count} เล่ม</div>`;
+        }
+        if (item.episodes) {
+            badge += `<div class="audio-badge">เสียง</div>`;
+        }
 
         if (!item.isFolder && !item.episodes && !item.ismusic && item.url) {
             const bookId = btoa(encodeURIComponent(item.url));
-            if (history[bookId]) badge += `<div class="status-badge">หน้า ${history[bookId].p}</div>`;
+            if (history[bookId]) {
+                badge += `<div class="status-badge">หน้า ${history[bookId].p}</div>`;
+            }
         }
 
         const coverUrl = getCoverUrl(item);
+
         card.innerHTML = `
             <div class="cover-box">
                 ${badge}
@@ -274,6 +321,7 @@ function renderList(items) {
                 openBook(item.url);
             }
         };
+
         container.appendChild(card);
     });
 }
@@ -298,27 +346,38 @@ function openEpisodeModal(book) {
                 ${icon}
             </a>
         `;
-        div.onclick = (e) => { if(e.target.tagName !== 'A') window.open(ep.ep_url, '_blank'); };
+        
+        div.onclick = (e) => {
+            if(e.target.tagName !== 'A') {
+                window.open(ep.ep_url, '_blank');
+            }
+        };
         list.appendChild(div);
     });
+
     modal.style.display = 'flex';
 }
 
 async function openBook(url) {
     const overlay = document.getElementById('reader-overlay');
     overlay.style.display = 'flex';
+
     const loadingTask = pdfjsLib.getDocument(url);
     pdfDoc = await loadingTask.promise;
 
     const user = firebase.auth().currentUser;
-    const history = user ? JSON.parse(localStorage.getItem(`puk_history_${user.uid}`) || '{}') : {};
+    if (!user) return;
+
+    const history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`) || '{}');
     const bookId = btoa(encodeURIComponent(url));
     const startPage = history[bookId] ? history[bookId].p : 1;
+
     renderPage(startPage, url);
 }
 
 async function renderPage(num, url) {
     if (!pdfDoc) return;
+
     const page = await pdfDoc.getPage(num);
     const canvas = document.getElementById('pdf-canvas');
     const baseViewport = page.getViewport({ scale: 1 });
@@ -326,35 +385,44 @@ async function renderPage(num, url) {
 
     canvas.width = viewport.width;
     canvas.height = viewport.height;
-    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+
+    await page.render({
+        canvasContext: canvas.getContext('2d'),
+        viewport
+    }).promise;
 
     document.getElementById('page-info').innerText = `หน้า ${num} / ${pdfDoc.numPages}`;
     window.currentPage = num;
     window.currentUrl = url;
 
     const user = firebase.auth().currentUser;
-    if (user) {
-        const bookId = btoa(encodeURIComponent(url));
-        let history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`) || '{}');
-        history[bookId] = { p: num, t: Date.now() };
-        localStorage.setItem(`puk_history_${user.uid}`, JSON.stringify(history));
-    }
+    if (!user) return;
+
+    const bookId = btoa(encodeURIComponent(url));
+    let history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`) || '{}');
+    history[bookId] = { p: num, t: Date.now() };
+    localStorage.setItem(`puk_history_${user.uid}`, JSON.stringify(history));
 }
 
 function changePage(dir) {
     const next = window.currentPage + dir;
-    if (pdfDoc && next >= 1 && next <= pdfDoc.numPages) renderPage(next, window.currentUrl);
+    if (next >= 1 && next <= pdfDoc.numPages) {
+        renderPage(next, window.currentUrl);
+    }
 }
 
 function renderContinueReading() {
     const user = firebase.auth().currentUser;
     if (!user) return;
+
     const history = JSON.parse(localStorage.getItem(`puk_history_${user.uid}`) || '{}');
     const container = document.getElementById('continue-list');
     const sorted = Object.keys(history).sort((a, b) => history[b].t - history[a].t).slice(0, 10);
 
     container.innerHTML = '';
-    if (sorted.length > 0) document.getElementById('continue-reading-section').style.display = 'block';
+    if (sorted.length > 0) {
+        document.getElementById('continue-reading-section').style.display = 'block';
+    }
 
     sorted.forEach(id => {
         const book = allBooksGlobal.find(b => btoa(encodeURIComponent(b.url)) === id);
@@ -364,7 +432,8 @@ function renderContinueReading() {
             div.innerHTML = `
                 <div class="cover-box">
                     <div class="status-badge">หน้า ${history[id].p}</div>
-                    <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
+                    <img src="${getCoverUrl(book)}" class="book-cover-img"
+                         onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
                 </div>
                 <div class="book-info">${book.title}</div>
             `;
@@ -380,13 +449,17 @@ function closeBook() {
     loadData();
 }
 
-function goBack() { window.location.href = 'categories.html'; }
-function closeModal(e) { if (e.target.id === 'episode-modal') e.target.style.display = 'none'; }
+function goBack() {
+    window.location.href = 'categories.html';
+}
+
+function closeModal(e) {
+    if (e.target.id === 'episode-modal') e.target.style.display = 'none';
+}
 
 function handleSearch() {
     const q = document.getElementById('global-search').value.toLowerCase();
-    const filtered = allBooksCurrent.filter(item => (item.title || "").toLowerCase().includes(q));
-    renderList(filtered.sort(naturalSort));
+    renderList(allBooksCurrent.filter(item => (item.title || "").toLowerCase().includes(q)));
 }
 
 function toggleView(mode) {
@@ -403,8 +476,11 @@ function toggleView(mode) {
 }
 
 firebase.auth().onAuthStateChanged(user => {
-    if (user) loadData();
-    else window.location.href = 'index.html';
+    if (user) {
+        loadData();
+    } else {
+        window.location.href = 'index.html';
+    }
 });
 </script>
 </body>

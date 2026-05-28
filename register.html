@@ -186,7 +186,12 @@
       '8AudioBooks': ['8AudioBooks']
     };
 
-    // --- ฟังก์ชันหลัก ---
+    // --- ดึงค่าหมวดหมู่จาก URL Parameters ---
+    const urlParams = new URLSearchParams(window.location.search);
+    currentCategory = urlParams.get('cat') || '';
+    currentCategorySet = categoryMap[currentCategory] || [];
+
+    // --- ฟังก์ชันหลักเกี่ยวกับ YouTube Player ---
     function onYouTubeIframeAPIReady() {
       ytPlayer = new YT.Player('yt-player-hidden', {
         height: '0',
@@ -198,7 +203,6 @@
       });
     }
 
-    // ฟังก์ชันช่วยสกัดจับ YouTube ID จาก URL หลากหลายรูปแบบ
     function extractYouTubeId(url) {
       if (!url) return null;
       const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -206,7 +210,6 @@
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
-    // ฟังก์ชันดึงรูปปกหนังสือ (เพิ่มการรองรับการดึงรูปจากเซิร์ฟเวอร์ YouTube โดยตรงเมื่อเป็นหมวดเสียงหรือเจอวิดีโอ)
     function getCoverUrl(item) {
       const category = (item.category || '').trim();
       const coverId = String(item.cover_id || item.coverid || '').trim();
@@ -280,7 +283,6 @@
         div.className = 'book-card continue-card';
         const safeUrl = book.url.replace(/'/g, "\\'");
         
-        // แก้ไขโครงสร้าง HTML โดยใส่ event.stopPropagation() ป้องกันปุ่มกากบาทกดทะลุไปเปิดหน้าอ่านหนังสือซ้อนกัน
         div.innerHTML = `
           <div class="cover-box">
             <div class="status-badge">${history[id].p}</div>
@@ -356,61 +358,236 @@
 
 
     // =====================================================================
-    // --- ส่วนของฟังก์ชันที่หายไปจากโค้ดเดิม (สร้างโครงสร้างไว้กัน Error) ---
-    // (หากคุณมีโค้ดส่วนนี้อยู่แล้ว ให้นำมาใส่ทับด้านล่างนี้ได้เลยครับ)
+    // --- ระบบทำงานเชื่อมโยงฐานข้อมูลตัวจริง (Production Code Logic) ---
     // =====================================================================
 
     function loadData() {
-      // โค้ดดึงข้อมูลหนังสือจาก Database
-      console.log('loadData called');
+      const targetDb = (currentCategory === '8AudioBooks') ? 'audiobook_db.json' : 'database.json';
+      
+      fetch(targetDb)
+        .then(res => res.json())
+        .then(data => {
+          let filtered = [];
+          if (Array.isArray(data)) {
+            filtered = data.filter(b => currentCategorySet.includes(b.category));
+          } else if (data && typeof data === 'object') {
+            filtered = Object.values(data).filter(b => currentCategorySet.includes(b.category));
+          }
+          
+          allBooksGlobal = filtered;
+          allBooksCurrent = filtered;
+          
+          // คัดกรองหารายการระดับ Root (แยกกลุ่มโฟลเดอร์)
+          let rootItems = [];
+          let folderMap = {};
+          
+          filtered.forEach(item => {
+            if (item.folder) {
+              if (!folderMap[item.folder]) {
+                folderMap[item.folder] = [];
+              }
+              folderMap[item.folder].push(item);
+            } else {
+              rootItems.push(item);
+            }
+          });
+          
+          Object.keys(folderMap).forEach(fName => {
+            rootItems.push({
+              isFolder: true,
+              title: fName,
+              items: folderMap[fName]
+            });
+          });
+          
+          currentRootList = rootItems;
+          renderList(rootItems, false);
+          renderContinueReading();
+        })
+        .catch(err => console.error("Error loading book data:", err));
     }
 
     function renderList(listData, isAppend) {
-      // โค้ดแสดงรายการหนังสือบนหน้าจอ
-      console.log('renderList called', listData);
+      const container = document.getElementById('book-list');
+      if (!isAppend) container.innerHTML = '';
+      
+      if (!listData || listData.length === 0) {
+        container.innerHTML = '<div style="text-align:center;width:100%;padding:40px;color:#999;">ไม่พบรายการที่ค้นหา</div>';
+        return;
+      }
+      
+      listData.forEach(item => {
+        const div = document.createElement('div');
+        
+        if (item.isFolder) {
+          div.className = 'book-card folder-card';
+          div.innerHTML = `
+            <div class="cover-box" style="background:#e5c158; display:flex; align-items:center; justify-content:center;">
+              <span style="font-size:40px;">📁</span>
+              <div class="folder-badge">${item.items.length} รายการ</div>
+            </div>
+            <div class="book-info">${item.title}</div>
+          `;
+          div.onclick = () => {
+            folderStack.push(currentRootList);
+            allBooksCurrent = item.items;
+            renderList(item.items, false);
+            window.scrollTo(0, 0);
+          };
+        } else {
+          div.className = 'book-card';
+          const isAudio = (item.category === '8AudioBooks' || item.category === '7music' || item.category === '7musicVol2');
+          const badgeHtml = isAudio ? `<div class="audio-badge">AUDIO</div>` : ``;
+          
+          div.innerHTML = `
+            <div class="cover-box">
+              ${badgeHtml}
+              <img src="${getCoverUrl(item)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
+            </div>
+            <div class="book-info">${item.title}</div>
+          `;
+          div.onclick = () => openBook(item.url);
+        }
+        container.appendChild(div);
+      });
     }
 
     function openBook(url) {
-      // โค้ดสำหรับเปิดหนังสือ หรือเล่นไฟล์เสียง
-      console.log('openBook called:', url);
+      if (!url) return;
+      window.currentUrl = url;
+      
+      const book = allBooksGlobal.find(b => b.url === url);
+      const isAudio = book && (book.category === '8AudioBooks' || book.category === '7music' || book.category === '7musicVol2');
+      
+      // บันทึกประวัติเปิดล่าสุด
+      const history = getHistory();
+      const bookId = btoa(encodeURIComponent(url));
+      history[bookId] = {
+        p: isAudio ? "ฟังอยู่" : "หน้า 1",
+        t: Date.now()
+      };
+      saveHistory(history);
+      renderContinueReading();
+
+      if (isAudio) {
+        // --- ส่วนการประมวลผลเครื่องเล่น Audiobook / ลิงก์ YouTube ---
+        const ytId = extractYouTubeId(url);
+        if (ytId) {
+          currentAudioId = ytId;
+          document.getElementById('player-title').innerText = book ? book.title : "กำลังเล่น...";
+          document.getElementById('player-ep').innerText = "หนังสือเสียง / คลิปเสียง";
+          document.getElementById('player-img').src = getCoverUrl(book);
+          document.getElementById('audio-player-ui').style.display = 'flex';
+          
+          if (isYTReady && ytPlayer && ytPlayer.loadVideoById) {
+            ytPlayer.loadVideoById(ytId);
+            document.getElementById('master-play-btn').innerText = '⏸';
+          }
+        } else {
+          alert('ไม่พบลิงก์เสียงของ YouTube ที่ถูกต้อง');
+        }
+      } else {
+        // --- ส่วนการประมวลผล PDF Reader Overlay ---
+        document.getElementById('reader-overlay').style.display = 'flex';
+        window.currentPage = 1;
+        
+        pdfjsLib.getDocument(url).promise.then(pdf => {
+          pdfDoc = pdf;
+          renderPdfPage(window.currentPage);
+        }).catch(err => {
+          console.error("Error opening PDF:", err);
+          alert("ไม่สามารถโหลดไฟล์ PDF นี้ได้");
+          closeBook(true);
+        });
+      }
     }
 
+    // --- ฟังก์ชันย่อยสำหรับจัดระบบ PDF ---
+    function renderPdfPage(num) {
+      if (!pdfDoc) return;
+      pdfDoc.getPage(num).then(page => {
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!currentScale) {
+          const container = document.getElementById('pdf-render-container');
+          const unscaledViewport = page.getViewport({ scale: 1 });
+          fitScale = (container.clientWidth - 16) / unscaledViewport.width;
+          currentScale = fitScale;
+        }
+        
+        const viewport = page.getViewport({ scale: currentScale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        const renderContext = { canvasContext: ctx, viewport: viewport };
+        page.render(renderContext);
+        
+        document.getElementById('page-info').innerText = `${num} / ${pdfDoc.numPages}`;
+        
+        // อัปเดตหน้าความคืบหน้าบนชั้น
+        const history = getHistory();
+        const bookId = btoa(encodeURIComponent(window.currentUrl));
+        if (history[bookId]) {
+          history[bookId].p = `หน้า ${num}`;
+          saveHistory(history);
+          renderContinueReading();
+        }
+      });
+    }
+
+    function changePage(direction) {
+      if (!pdfDoc) return;
+      let newPage = window.currentPage + direction;
+      if (newPage >= 1 && newPage <= pdfDoc.numPages) {
+        window.currentPage = newPage;
+        renderPdfPage(newPage);
+      }
+    }
+
+    function zoomPdf(scaleAmount) {
+      if (!pdfDoc) return;
+      currentScale += scaleAmount;
+      if (currentScale < 0.2) currentScale = 0.2;
+      renderPdfPage(window.currentPage);
+    }
+
+    function fitPdfToScreen() {
+      if (!pdfDoc) return;
+      currentScale = null; 
+      renderPdfPage(window.currentPage);
+    }
+
+    // --- ส่วนควบคุมเครื่องเล่นเสียงเบื้องหลัง ---
     function seek(seconds) {
-      // โค้ดสำหรับกรอเสียงเดินหน้า-ถอยหลัง
       if (ytPlayer && ytPlayer.getCurrentTime) {
         ytPlayer.seekTo(ytPlayer.getCurrentTime() + seconds, true);
       }
     }
 
     function toggleYT() {
-      // โค้ดเล่น/หยุดเสียง
-      console.log('toggleYT called');
+      if (!ytPlayer || !ytPlayer.getPlayerState) return;
+      const state = ytPlayer.getPlayerState();
+      if (state === YT.PlayerState.PLAYING) {
+        ytPlayer.pauseVideo();
+        document.getElementById('master-play-btn').innerText = '▶';
+      } else {
+        ytPlayer.playVideo();
+        document.getElementById('master-play-btn').innerText = '⏸';
+      }
     }
 
     function closePlayer() {
-      // โค้ดปิดเครื่องเล่นเสียง
       document.getElementById('audio-player-ui').style.display = 'none';
       if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
     }
 
     function onPlayerStateChange(event) {
-      // จัดการสถานะ YouTube Player
-      console.log('Player state changed:', event.data);
-    }
-
-    function changePage(direction) {
-      // เปลี่ยนหน้า PDF
-      console.log('changePage called:', direction);
-    }
-
-    function zoomPdf(scaleAmount) {
-      // ซูมเข้า-ออก PDF
-      console.log('zoomPdf called:', scaleAmount);
-    }
-
-    function fitPdfToScreen() {
-      // ปรับขนาด PDF ให้พอดีจอ
-      console.log('fitPdfToScreen called');
+      if (event.data === YT.PlayerState.PLAYING) {
+        document.getElementById('master-play-btn').innerText = '⏸';
+      } else if (event.data === YT.PlayerState.PAUSED) {
+        document.getElementById('master-play-btn').innerText = '▶';
+      }
     }
   </script>
 </body>

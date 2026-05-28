@@ -259,6 +259,23 @@
       return `covers/${category}/${coverId}.jpg`;
     }
 
+    function getAudiobookPrimaryUrl(book) {
+      if (!book || !Array.isArray(book.episodes) || book.episodes.length === 0) return '';
+      const first = book.episodes[0] || {};
+      return first.ep_url || first.url || '';
+    }
+
+    function getAudiobookCover(book) {
+      const url = getAudiobookPrimaryUrl(book);
+      const ytId = extractYouTubeId(url);
+      if (!ytId) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+      return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+    }
+
+    function getAudiobookPlayUrl(book) {
+      return getAudiobookPrimaryUrl(book);
+    }
+
     function getHistoryKey() {
       const user = firebase.auth().currentUser;
       return user ? 'pukhistory_' + user.uid : null;
@@ -472,13 +489,14 @@
           };
         } else {
           div.className = 'book-card';
-          const isAudio = (item.category === '8AudioBooks' || item.category === '7music' || item.category === '7musicVol2');
+          const isAudio = (item.category === '8_AudioBooks' || item.category === '8AudioBooks' || item.category === '7music' || item.category === '7musicVol2');
+          const coverUrl = isAudio ? getAudiobookCover(item) : getCoverUrl(item);
           const badgeHtml = isAudio ? `<div class="audio-badge">AUDIO</div>` : ``;
           
           div.innerHTML = `
             <div class="cover-box">
               ${badgeHtml}
-              <img src="${getCoverUrl(item)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
+              <img src="${coverUrl}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
             </div>
             <div class="book-info">${item.title}</div>
           `;
@@ -493,7 +511,7 @@
       window.currentUrl = url;
       
       const book = allBooksGlobal.find(b => b.url === url);
-      const isAudio = book && (book.category === '8AudioBooks' || book.category === '7music' || book.category === '7musicVol2');
+      const isAudio = book && (book.category === '8_AudioBooks' || book.category === '8AudioBooks' || book.category === '7music' || book.category === '7musicVol2');
       
       const history = getHistory();
       const bookId = btoa(encodeURIComponent(url));
@@ -505,12 +523,14 @@
       renderContinueReading();
 
       if (isAudio) {
-        const ytId = extractYouTubeId(url);
+        const playUrl = book ? getAudiobookPlayUrl(book) : '';
+        const ytId = extractYouTubeId(playUrl);
+        
         if (ytId) {
           currentAudioId = ytId;
           document.getElementById('player-title').innerText = book ? book.title : "กำลังเล่น...";
           document.getElementById('player-ep').innerText = "หนังสือเสียง / คลิปเสียง";
-          document.getElementById('player-img').src = getCoverUrl(book);
+          document.getElementById('player-img').src = getAudiobookCover(book);
           document.getElementById('audio-player-ui').style.display = 'flex';
           
           if (isYTReady && ytPlayer && ytPlayer.loadVideoById) {

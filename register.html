@@ -40,7 +40,7 @@
     .status-badge { top: 5px; left: 5px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .audio-badge { top: 5px; right: 5px; background: #ff4d4d; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
     .music-badge { top: 5px; right: 5px; background: #ff4081; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
-    .remove-continue-btn { top: 5px; right: 5px; width: 22px; height: 22px; border: none; border-radius: 50%; background: rgba(0,0,0,0.78); color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .remove-continue-btn { top: 5px; right: 5px; width: 24px; height: 24px; border: 1px solid #fff; border-radius: 50%; background: #ff4d4d; color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
     
     .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
     
@@ -210,17 +210,15 @@
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
-    // ฟังก์ชันดึงรูปปกหนังสือ (ปรับปรุงลำดับความสำคัญให้เช็ค YouTube ID ก่อนเป็นอันดับแรกสุดเพื่อป้องกันบั๊ก 404)
+    // ฟังก์ชันดึงรูปปกหนังสือ (บังคับตรวจสอบ YouTube ID เป็นอันดับแรก ไม่ว่าจะส่งข้อมูลแบบใดมา)
     function getCoverUrl(item) {
       if (!item) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
       
-      // ลำดับที่ 1: ตรวจสอบหา YouTube ID จากลิงก์ก่อน หากมีให้บังคับดึงจากเซิร์ฟเวอร์ YouTube ทันที
       const ytId = extractYouTubeId(item.url);
       if (ytId) {
         return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
       }
 
-      // ลำดับที่ 2: หากไม่มีลิงก์ YouTube ให้ดึงข้อมูลจากโฟลเดอร์ตามปกติ
       const category = (item.category || '').trim();
       const coverId = String(item.cover_id || item.coverid || '').trim();
       
@@ -248,6 +246,7 @@
       localStorage.setItem(key, JSON.stringify(history));
     }
 
+    // ลบรายการเด็ดขาดและวาดการ์ดใหม่
     function removeHistoryItem(bookUrl) {
       const history = getHistory();
       const bookId = btoa(encodeURIComponent(bookUrl));
@@ -267,6 +266,7 @@
       }
     }
 
+    // ปรับปรุงการเปรียบเทียบ URL ให้ดึงจากข้อมูลดิบใน LocalStorage ได้แม่นยำขึ้น
     function renderContinueReading() {
       const history = getHistory();
       const container = document.getElementById('continue-list');
@@ -281,7 +281,9 @@
 
       section.style.display = 'block';
       sorted.forEach(id => {
-        const book = allBooksGlobal.find(b => btoa(encodeURIComponent(b.url)) === id);
+        // ถอดรหัส URL ดั้งเดิมออกมาหาตรงๆ เพื่อความชัวร์ไม่ให้หลุดเคสเว้นวรรค
+        const decodedUrl = decodeURIComponent(atob(id));
+        const book = allBooksGlobal.find(b => b.url.trim() === decodedUrl.trim());
         if (!book) return;
 
         const div = document.createElement('div');
@@ -382,7 +384,6 @@
           allBooksGlobal = filtered;
           allBooksCurrent = filtered;
           
-          // คัดกรองหารายการระดับ Root (แยกกลุ่มโฟลเดอร์)
           let rootItems = [];
           let folderMap = {};
           
@@ -444,6 +445,7 @@
           const isAudio = (item.category === '8AudioBooks' || item.category === '7music' || item.category === '7musicVol2');
           const badgeHtml = isAudio ? `<div class="audio-badge">AUDIO</div>` : ``;
           
+          // เปลี่ยนรูปปกที่นี่ให้ผ่าน getCoverUrl เพื่อดึงภาพจาก YouTube ตรงๆ ป้องกันเออร์เรอร์ 404
           div.innerHTML = `
             <div class="cover-box">
               ${badgeHtml}
@@ -464,7 +466,6 @@
       const book = allBooksGlobal.find(b => b.url === url);
       const isAudio = book && (book.category === '8AudioBooks' || book.category === '7music' || book.category === '7musicVol2');
       
-      // บันทึกประวัติเปิดล่าสุด
       const history = getHistory();
       const bookId = btoa(encodeURIComponent(url));
       history[bookId] = {
@@ -475,7 +476,6 @@
       renderContinueReading();
 
       if (isAudio) {
-        // --- ส่วนการประมวลผลเครื่องเล่น Audiobook / ลิงก์ YouTube ---
         const ytId = extractYouTubeId(url);
         if (ytId) {
           currentAudioId = ytId;
@@ -492,7 +492,6 @@
           alert('ไม่พบลิงก์เสียงของ YouTube ที่ถูกต้อง');
         }
       } else {
-        // --- ส่วนการประมวลผล PDF Reader Overlay ---
         document.getElementById('reader-overlay').style.display = 'flex';
         window.currentPage = 1;
         
@@ -507,7 +506,6 @@
       }
     }
 
-    // --- ฟังก์ชันย่อยสำหรับจัดระบบ PDF ---
     function renderPdfPage(num) {
       if (!pdfDoc) return;
       pdfDoc.getPage(num).then(page => {
@@ -530,7 +528,6 @@
         
         document.getElementById('page-info').innerText = `${num} / ${pdfDoc.numPages}`;
         
-        // อัปเดตหน้าความคืบหน้าบนชั้น
         const history = getHistory();
         const bookId = btoa(encodeURIComponent(window.currentUrl));
         if (history[bookId]) {
@@ -563,7 +560,6 @@
       renderPdfPage(window.currentPage);
     }
 
-    // --- ส่วนควบคุมเครื่องเล่นเสียงเบื้องหลัง ---
     function seek(seconds) {
       if (ytPlayer && ytPlayer.getCurrentTime) {
         ytPlayer.seekTo(ytPlayer.getCurrentTime() + seconds, true);

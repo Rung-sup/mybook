@@ -32,7 +32,13 @@
     .container.list-mode .cover-box { width: 52px; min-width: 52px; height: 68px; padding-bottom: 0; border-right: 1px solid #eee; }
     .container.list-mode .book-info { flex-grow: 1; text-align: left; padding: 0 12px; font-size: 13px; height: auto; justify-content: flex-start; }
     
-    .cover-box { width: 100%; padding-bottom: 145%; position: relative; background: #e0e0e0; }
+    .cover-box {
+  width: 100%;
+  padding-bottom: 145%;
+  position: relative;
+  background: #e0e0e0;
+  overflow: visible;
+}
     .book-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     
     .folder-badge, .status-badge, .audio-badge, .music-badge, .remove-continue-btn { position: absolute; z-index: 10; }
@@ -40,7 +46,23 @@
     .status-badge { top: 5px; left: 5px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     .audio-badge { top: 5px; right: 5px; background: #ff4d4d; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
     .music-badge { top: 5px; right: 5px; background: #ff4081; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
-    .remove-continue-btn { top: 5px; right: 5px; width: 24px; height: 24px; border: 1px solid #fff; border-radius: 50%; background: #ff4d4d; color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+    .remove-continue-btn {
+  top: 6px;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ff2d2d;
+  color: #fff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+  line-height: 1;
+}
     
     .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
     
@@ -228,95 +250,99 @@
 
     // ฟังก์ชันดึงรูปปกหนังสือ (บังคับตรวจสอบ YouTube ID เป็นอันดับแรก ไม่ว่าจะส่งข้อมูลแบบใดมา)
     function getCoverUrl(item) {
-      if (!item) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
-      
-      const ytId = extractYouTubeId(item.url);
-      if (ytId) {
-        return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-      }
+  if (!item) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
 
-      const category = (item.category || '').trim();
-      const coverId = String(item.cover_id || item.coverid || '').trim();
-      
-      if (!category || !coverId) {
-        return 'https://via.placeholder.com/150x220.png?text=No+Cover';
-      }
-      return `covers/${category}/${coverId}.jpg`;
-    }
+  const ytId = extractYouTubeId(item.url || '');
+  if (ytId) {
+    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+  }
 
-    function getHistoryKey() {
-      const user = firebase.auth().currentUser;
-      return user ? 'pukhistory_' + user.uid : null;
-    }
+  const category = (item.category || '').trim();
+  const coverId = String(item.cover_id || item.coverid || '').trim();
 
-    function getHistory() {
-      const key = getHistoryKey();
-      if (!key) return {};
-      try { return JSON.parse(localStorage.getItem(key) || '{}'); }
-      catch { return {}; }
-    }
+  if (!category || !coverId) {
+    return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+  }
+  return `covers/${category}/${coverId}.jpg`;
+}
 
-    function saveHistory(history) {
-      const key = getHistoryKey();
-      if (!key) return;
-      localStorage.setItem(key, JSON.stringify(history));
-    }
+function getHistoryKey() {
+  const user = firebase.auth().currentUser;
+  return user ? 'pukhistory_' + user.uid : null;
+}
 
-    // ลบรายการเด็ดขาดและวาดการ์ดใหม่
-    function removeHistoryItem(bookUrl) {
-      const history = getHistory();
-      const bookId = btoa(encodeURIComponent(bookUrl));
-      if (history[bookId]) {
-        delete history[bookId];
-        saveHistory(history);
-        renderContinueReading();
-      }
-    }
+function getHistory() {
+  const key = getHistoryKey();
+  if (!key) return {};
+  try { return JSON.parse(localStorage.getItem(key) || '{}'); }
+  catch { return {}; }
+}
 
-    function clearAllContinueReading() {
-      if (confirm('คุณต้องการลบรายการที่อ่านค้างไว้ทั้งหมดใช่หรือไม่?')) {
-        const key = getHistoryKey();
-        if (!key) return;
-        localStorage.removeItem(key);
-        renderContinueReading();
-      }
-    }
+function saveHistory(history) {
+  const key = getHistoryKey();
+  if (!key) return;
+  localStorage.setItem(key, JSON.stringify(history));
+}
 
-    // ปรับปรุงการเปรียบเทียบ URL ให้ดึงจากข้อมูลดิบใน LocalStorage ได้แม่นยำขึ้น
-    function renderContinueReading() {
-      const history = getHistory();
-      const container = document.getElementById('continue-list');
-      const section = document.getElementById('continue-reading-section');
-      const sorted = Object.keys(history).sort((a, b) => history[b].t - history[a].t).slice(0, 10);
-      container.innerHTML = '';
+function removeHistoryItem(bookUrl) {
+  const history = getHistory();
+  const bookId = btoa(encodeURIComponent(bookUrl));
+  if (history[bookId]) {
+    delete history[bookId];
+    saveHistory(history);
+    renderContinueReading();
+  }
+}
 
-      if (sorted.length === 0) {
-        section.style.display = 'none';
-        return;
-      }
+function clearAllContinueReading() {
+  if (confirm('คุณต้องการลบรายการที่อ่านค้างไว้ทั้งหมดใช่หรือไม่?')) {
+    const key = getHistoryKey();
+    if (!key) return;
+    localStorage.removeItem(key);
+    renderContinueReading();
+  }
+}
 
-      section.style.display = 'block';
-      sorted.forEach(id => {
-        // ถอดรหัส URL ดั้งเดิมออกมาหาตรงๆ เพื่อความชัวร์ไม่ให้หลุดเคสเว้นวรรค
-        const decodedUrl = decodeURIComponent(atob(id));
-        const book = allBooksGlobal.find(b => b.url.trim() === decodedUrl.trim());
-        if (!book) return;
+function renderContinueReading() {
+  const history = getHistory();
+  const container = document.getElementById('continue-list');
+  const section = document.getElementById('continue-reading-section');
+  const sorted = Object.keys(history).sort((a, b) => history[b].t - history[a].t).slice(0, 10);
 
-        const div = document.createElement('div');
-        div.className = 'book-card continue-card';
-        const safeUrl = book.url.replace(/'/g, "\\'");
-        
-        div.innerHTML = `
-          <div class="cover-box">
-            <div class="status-badge">${history[id].p}</div>
-            <button class="remove-continue-btn" onclick="event.stopPropagation(); removeHistoryItem('${safeUrl}')">✕</button>
-            <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
-          </div>
-          <div class="book-info">${book.title}</div>`;
-        div.onclick = () => openBook(book.url);
-        container.appendChild(div);
-      });
-    }
+  if (!container || !section) return;
+  container.innerHTML = '';
+
+  if (sorted.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+
+  sorted.forEach(id => {
+    const decodedUrl = decodeURIComponent(atob(id));
+    const book = allBooksGlobal.find(b => (b.url || '').trim() === decodedUrl.trim());
+    if (!book) return;
+
+    const div = document.createElement('div');
+    div.className = 'book-card continue-card';
+
+    const safeUrl = JSON.stringify(book.url);
+
+    div.innerHTML = `
+      <div class="cover-box">
+        <div class="status-badge">${history[id].p}</div>
+        <button class="remove-continue-btn" type="button"
+          onclick="event.stopPropagation(); removeHistoryItem(${safeUrl})">✕</button>
+        <img src="${getCoverUrl(book)}" class="book-cover-img"
+          onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
+      </div>
+      <div class="book-info">${book.title}</div>`;
+
+    div.onclick = () => openBook(book.url);
+    container.appendChild(div);
+  });
+}
 
     function closeBook(keepPosition = false) {
       document.getElementById('reader-overlay').style.display = 'none';

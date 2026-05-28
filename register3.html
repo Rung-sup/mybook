@@ -198,26 +198,9 @@
       });
     }
 
-    // ฟังก์ชันช่วยสกัดจับ YouTube ID จาก URL หลากหลายรูปแบบ
-    function extractYouTubeId(url) {
-      if (!url) return null;
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
-    }
-
-    // ฟังก์ชันดึงรูปปกหนังสือ (เพิ่มการรองรับการดึงรูปจากเซิร์ฟเวอร์ YouTube โดยตรงเมื่อเป็นหมวดเสียงหรือเจอวิดีโอ)
     function getCoverUrl(item) {
       const category = (item.category || '').trim();
       const coverId = String(item.cover_id || item.coverid || '').trim();
-      
-      const ytId = extractYouTubeId(item.url);
-      if (category === '8AudioBooks' || category === '7music' || category === '7musicVol2' || ytId) {
-        if (ytId) {
-          return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-        }
-      }
-
       if (!category || !coverId) return 'https://via.placeholder.com/150x220?text=No+Cover';
       return `covers/${category}/${coverId}.jpg`;
     }
@@ -243,20 +226,16 @@
     function removeHistoryItem(bookUrl) {
       const history = getHistory();
       const bookId = btoa(encodeURIComponent(bookUrl));
-      if (history[bookId]) {
-        delete history[bookId];
-        saveHistory(history);
-        renderContinueReading();
-      }
+      delete history[bookId];
+      saveHistory(history);
+      renderContinueReading();
     }
 
     function clearAllContinueReading() {
-      if (confirm('คุณต้องการลบรายการที่อ่านค้างไว้ทั้งหมดใช่หรือไม่?')) {
-        const key = getHistoryKey();
-        if (!key) return;
-        localStorage.removeItem(key);
-        renderContinueReading();
-      }
+      const key = getHistoryKey();
+      if (!key) return;
+      localStorage.removeItem(key);
+      renderContinueReading();
     }
 
     function renderContinueReading() {
@@ -279,17 +258,28 @@
         const div = document.createElement('div');
         div.className = 'book-card continue-card';
         const safeUrl = book.url.replace(/'/g, "\\'");
-        
-        // แก้ไขโครงสร้าง HTML โดยใส่ event.stopPropagation() ป้องกันปุ่มกากบาทกดทะลุไปเปิดหน้าอ่านหนังสือซ้อนกัน
         div.innerHTML = `
           <div class="cover-box">
             <div class="status-badge">${history[id].p}</div>
-            <button class="remove-continue-btn" onclick="event.stopPropagation(); removeHistoryItem('${safeUrl}')">✕</button>
+            <button class="remove-continue-btn" data-book-url="${safeUrl}">✕</button>
             <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
           </div>
           <div class="book-info">${book.title}</div>`;
         div.onclick = () => openBook(book.url);
         container.appendChild(div);
+      });
+
+      bindContinueReadingActions();
+    }
+
+    function bindContinueReadingActions() {
+      const section = document.getElementById('continue-reading-section');
+      if (!section) return;
+      section.querySelectorAll('.remove-continue-btn').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          removeHistoryItem(btn.dataset.bookUrl);
+        };
       });
     }
 

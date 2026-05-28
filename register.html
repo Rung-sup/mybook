@@ -204,11 +204,27 @@
     }
 
     function extractYouTubeId(url) {
-      if (!url) return null;
-      const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-      const match = url.match(regExp);
-      return (match && match[2].length === 11) ? match[2] : null;
-    }
+  if (!url) return null;
+
+  try {
+    const u = new URL(url.trim());
+    const v = u.searchParams.get('v');
+    if (v && v.length >= 6) return v;
+  } catch (e) {}
+
+  const patterns = [
+    /youtu\.be\/([A-Za-z0-9_-]{6,})/,
+    /youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/,
+    /youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/,
+    /[?&]v=([A-Za-z0-9_-]{6,})/
+  ];
+
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m && m[1]) return m[1];
+  }
+  return null;
+}
 
     // ฟังก์ชันดึงรูปปกหนังสือ (บังคับตรวจสอบ YouTube ID เป็นอันดับแรก ไม่ว่าจะส่งข้อมูลแบบใดมา)
     function getCoverUrl(item) {

@@ -210,18 +210,23 @@
       return (match && match[2].length === 11) ? match[2] : null;
     }
 
+    // ฟังก์ชันดึงรูปปกหนังสือ (ปรับปรุงลำดับความสำคัญให้เช็ค YouTube ID ก่อนเป็นอันดับแรกสุดเพื่อป้องกันบั๊ก 404)
     function getCoverUrl(item) {
+      if (!item) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+      
+      // ลำดับที่ 1: ตรวจสอบหา YouTube ID จากลิงก์ก่อน หากมีให้บังคับดึงจากเซิร์ฟเวอร์ YouTube ทันที
+      const ytId = extractYouTubeId(item.url);
+      if (ytId) {
+        return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+      }
+
+      // ลำดับที่ 2: หากไม่มีลิงก์ YouTube ให้ดึงข้อมูลจากโฟลเดอร์ตามปกติ
       const category = (item.category || '').trim();
       const coverId = String(item.cover_id || item.coverid || '').trim();
       
-      const ytId = extractYouTubeId(item.url);
-      if (category === '8AudioBooks' || category === '7music' || category === '7musicVol2' || ytId) {
-        if (ytId) {
-          return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-        }
+      if (!category || !coverId) {
+        return 'https://via.placeholder.com/150x220.png?text=No+Cover';
       }
-
-      if (!category || !coverId) return 'https://via.placeholder.com/150x220?text=No+Cover';
       return `covers/${category}/${coverId}.jpg`;
     }
 
@@ -287,7 +292,7 @@
           <div class="cover-box">
             <div class="status-badge">${history[id].p}</div>
             <button class="remove-continue-btn" onclick="event.stopPropagation(); removeHistoryItem('${safeUrl}')">✕</button>
-            <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
+            <img src="${getCoverUrl(book)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
           </div>
           <div class="book-info">${book.title}</div>`;
         div.onclick = () => openBook(book.url);
@@ -442,7 +447,7 @@
           div.innerHTML = `
             <div class="cover-box">
               ${badgeHtml}
-              <img src="${getCoverUrl(item)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220?text=No+Cover'">
+              <img src="${getCoverUrl(item)}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
             </div>
             <div class="book-info">${item.title}</div>
           `;

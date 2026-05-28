@@ -33,12 +33,13 @@
     .container.list-mode .book-info { flex-grow: 1; text-align: left; padding: 0 12px; font-size: 13px; height: auto; justify-content: flex-start; }
     
     .cover-box {
-  width: 100%;
-  padding-bottom: 145%;
-  position: relative;
-  background: #e0e0e0;
-  overflow: visible;
-}
+      width: 100%;
+      padding-bottom: 145%;
+      position: relative;
+      background: #e0e0e0;
+      overflow: visible;
+    }
+
     .book-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     
     .folder-badge, .status-badge, .audio-badge, .music-badge, .remove-continue-btn { position: absolute; z-index: 10; }
@@ -47,22 +48,24 @@
     .audio-badge { top: 5px; right: 5px; background: #ff4d4d; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
     .music-badge { top: 5px; right: 5px; background: #ff4081; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
     .remove-continue-btn {
-  top: 6px;
-  right: 6px;
-  width: 34px;
-  height: 34px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: #ff2d2d;
-  color: #fff;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.45);
-  line-height: 1;
-}
+      top: 6px;
+      right: 6px;
+      width: 34px;
+      height: 34px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: #ff2d2d;
+      color: #fff;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+      z-index: 9999;
+    }
     
     .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
     
@@ -171,7 +174,6 @@
   </div>
 
   <script>
-    // --- การตั้งค่าและตัวแปรเริ่มต้น ---
     const firebaseConfig = {
       apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
       authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -208,12 +210,10 @@
       '8AudioBooks': ['8AudioBooks']
     };
 
-    // --- ดึงค่าหมวดหมู่จาก URL Parameters ---
     const urlParams = new URLSearchParams(window.location.search);
     currentCategory = urlParams.get('cat') || '';
     currentCategorySet = categoryMap[currentCategory] || [];
 
-    // --- ฟังก์ชันหลักเกี่ยวกับ YouTube Player ---
     function onYouTubeIframeAPIReady() {
       ytPlayer = new YT.Player('yt-player-hidden', {
         height: '0',
@@ -226,123 +226,116 @@
     }
 
     function extractYouTubeId(url) {
-  if (!url) return null;
+      if (!url) return null;
+      try {
+        const u = new URL(url.trim());
+        const v = u.searchParams.get('v');
+        if (v && v.length >= 6) return v;
+      } catch (e) {}
+      const patterns = [
+        /youtu\.be\/([A-Za-z0-9_-]{6,})/,
+        /youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/,
+        /youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/,
+        /[?&]v=([A-Za-z0-9_-]{6,})/
+      ];
+      for (const p of patterns) {
+        const m = url.match(p);
+        if (m && m[1]) return m[1];
+      }
+      return null;
+    }
 
-  try {
-    const u = new URL(url.trim());
-    const v = u.searchParams.get('v');
-    if (v && v.length >= 6) return v;
-  } catch (e) {}
-
-  const patterns = [
-    /youtu\.be\/([A-Za-z0-9_-]{6,})/,
-    /youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/,
-    /youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/,
-    /[?&]v=([A-Za-z0-9_-]{6,})/
-  ];
-
-  for (const p of patterns) {
-    const m = url.match(p);
-    if (m && m[1]) return m[1];
-  }
-  return null;
-}
-
-    // ฟังก์ชันดึงรูปปกหนังสือ (บังคับตรวจสอบ YouTube ID เป็นอันดับแรก ไม่ว่าจะส่งข้อมูลแบบใดมา)
     function getCoverUrl(item) {
-  if (!item) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+      if (!item) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+      const ytId = extractYouTubeId(item.url || '');
+      if (ytId) {
+        return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+      }
+      const category = (item.category || '').trim();
+      const coverId = String(item.cover_id || item.coverid || '').trim();
+      if (!category || !coverId) {
+        return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+      }
+      return `covers/${category}/${coverId}.jpg`;
+    }
 
-  const ytId = extractYouTubeId(item.url || '');
-  if (ytId) {
-    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-  }
+    function getHistoryKey() {
+      const user = firebase.auth().currentUser;
+      return user ? 'pukhistory_' + user.uid : null;
+    }
 
-  const category = (item.category || '').trim();
-  const coverId = String(item.cover_id || item.coverid || '').trim();
+    function getHistory() {
+      const key = getHistoryKey();
+      if (!key) return {};
+      try { return JSON.parse(localStorage.getItem(key) || '{}'); }
+      catch { return {}; }
+    }
 
-  if (!category || !coverId) {
-    return 'https://via.placeholder.com/150x220.png?text=No+Cover';
-  }
-  return `covers/${category}/${coverId}.jpg`;
-}
+    function saveHistory(history) {
+      const key = getHistoryKey();
+      if (!key) return;
+      localStorage.setItem(key, JSON.stringify(history));
+    }
 
-function getHistoryKey() {
-  const user = firebase.auth().currentUser;
-  return user ? 'pukhistory_' + user.uid : null;
-}
+    function removeHistoryItem(bookUrl) {
+      const history = getHistory();
+      const bookId = btoa(encodeURIComponent(bookUrl));
+      if (history[bookId]) {
+        delete history[bookId];
+        saveHistory(history);
+        renderContinueReading();
+      }
+    }
 
-function getHistory() {
-  const key = getHistoryKey();
-  if (!key) return {};
-  try { return JSON.parse(localStorage.getItem(key) || '{}'); }
-  catch { return {}; }
-}
+    function clearAllContinueReading() {
+      if (confirm('คุณต้องการลบรายการที่อ่านค้างไว้ทั้งหมดใช่หรือไม่?')) {
+        const key = getHistoryKey();
+        if (!key) return;
+        localStorage.removeItem(key);
+        renderContinueReading();
+      }
+    }
 
-function saveHistory(history) {
-  const key = getHistoryKey();
-  if (!key) return;
-  localStorage.setItem(key, JSON.stringify(history));
-}
+    function renderContinueReading() {
+      const history = getHistory();
+      const container = document.getElementById('continue-list');
+      const section = document.getElementById('continue-reading-section');
+      const sorted = Object.keys(history).sort((a, b) => history[b].t - history[a].t).slice(0, 10);
 
-function removeHistoryItem(bookUrl) {
-  const history = getHistory();
-  const bookId = btoa(encodeURIComponent(bookUrl));
-  if (history[bookId]) {
-    delete history[bookId];
-    saveHistory(history);
-    renderContinueReading();
-  }
-}
+      if (!container || !section) return;
+      container.innerHTML = '';
 
-function clearAllContinueReading() {
-  if (confirm('คุณต้องการลบรายการที่อ่านค้างไว้ทั้งหมดใช่หรือไม่?')) {
-    const key = getHistoryKey();
-    if (!key) return;
-    localStorage.removeItem(key);
-    renderContinueReading();
-  }
-}
+      if (sorted.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
 
-function renderContinueReading() {
-  const history = getHistory();
-  const container = document.getElementById('continue-list');
-  const section = document.getElementById('continue-reading-section');
-  const sorted = Object.keys(history).sort((a, b) => history[b].t - history[a].t).slice(0, 10);
+      section.style.display = 'block';
 
-  if (!container || !section) return;
-  container.innerHTML = '';
+      sorted.forEach(id => {
+        const decodedUrl = decodeURIComponent(atob(id));
+        const book = allBooksGlobal.find(b => (b.url || '').trim() === decodedUrl.trim());
+        if (!book) return;
 
-  if (sorted.length === 0) {
-    section.style.display = 'none';
-    return;
-  }
+        const div = document.createElement('div');
+        div.className = 'book-card continue-card';
 
-  section.style.display = 'block';
+        const safeUrl = JSON.stringify(book.url);
 
-  sorted.forEach(id => {
-    const decodedUrl = decodeURIComponent(atob(id));
-    const book = allBooksGlobal.find(b => (b.url || '').trim() === decodedUrl.trim());
-    if (!book) return;
+        div.innerHTML = `
+          <div class="cover-box">
+            <div class="status-badge">${history[id].p}</div>
+            <button class="remove-continue-btn" type="button"
+              onclick="event.stopPropagation(); removeHistoryItem(${safeUrl})">✕</button>
+            <img src="${getCoverUrl(book)}" class="book-cover-img"
+              onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
+          </div>
+          <div class="book-info">${book.title}</div>`;
 
-    const div = document.createElement('div');
-    div.className = 'book-card continue-card';
-
-    const safeUrl = JSON.stringify(book.url);
-
-    div.innerHTML = `
-      <div class="cover-box">
-        <div class="status-badge">${history[id].p}</div>
-        <button class="remove-continue-btn" type="button"
-          onclick="event.stopPropagation(); removeHistoryItem(${safeUrl})">✕</button>
-        <img src="${getCoverUrl(book)}" class="book-cover-img"
-          onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
-      </div>
-      <div class="book-info">${book.title}</div>`;
-
-    div.onclick = () => openBook(book.url);
-    container.appendChild(div);
-  });
-}
+        div.onclick = () => openBook(book.url);
+        container.appendChild(div);
+      });
+    }
 
     function closeBook(keepPosition = false) {
       document.getElementById('reader-overlay').style.display = 'none';
@@ -404,11 +397,6 @@ function renderContinueReading() {
       if (user) loadData();
       else window.location.href = 'index.html';
     });
-
-
-    // =====================================================================
-    // --- ระบบทำงานเชื่อมโยงฐานข้อมูลตัวจริง (Production Code Logic) ---
-    // =====================================================================
 
     function loadData() {
       const targetDb = (currentCategory === '8AudioBooks') ? 'audiobook_db.json' : 'database.json';
@@ -487,7 +475,6 @@ function renderContinueReading() {
           const isAudio = (item.category === '8AudioBooks' || item.category === '7music' || item.category === '7musicVol2');
           const badgeHtml = isAudio ? `<div class="audio-badge">AUDIO</div>` : ``;
           
-          // เปลี่ยนรูปปกที่นี่ให้ผ่าน getCoverUrl เพื่อดึงภาพจาก YouTube ตรงๆ ป้องกันเออร์เรอร์ 404
           div.innerHTML = `
             <div class="cover-box">
               ${badgeHtml}

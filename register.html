@@ -1,0 +1,645 @@
+@ -1,644 +0,0 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, user-scalable=yes">
+  <title>Runnara Audiobook Ready</title>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <style>
+    * { box-sizing: border-box; font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; background-color: #f4f1ea; color: #333; padding-bottom: 120px; overflow-x: hidden; }
+    
+    .header { padding: 10px 15px; background: #fff; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .btn-back { background: #333; color: #d4af37; border: 1px solid #d4af37; padding: 6px 15px; border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight: 500; }
+    .search-input { width: 100%; padding: 8px 15px; border-radius: 20px; border: 1px solid #ddd; outline: none; font-size: 13px; }
+    
+    .view-controls { display: flex; gap: 5px; margin-left: 5px; }
+    .btn-view { background: #eee; border: 1px solid #ddd; padding: 5px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    .btn-view.active { background: #d4af37; color: #000; border-color: #d4af37; }
+    
+    .container { padding: 15px; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+    .container.list-mode { display: flex; flex-direction: column; gap: 8px; }
+    
+    .book-card { background: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; position: relative; border: 1px solid #eee; transition: 0.2s; }
+    .book-card:active { transform: scale(0.98); }
+    .folder-card { border: 2px solid #d4af37; }
+    
+    .container.list-mode .book-card { display: flex; align-items: center; min-height: 68px; border-radius: 8px; }
+    .container.list-mode .cover-box { width: 52px; min-width: 52px; height: 68px; padding-bottom: 0; border-right: 1px solid #eee; }
+    .container.list-mode .book-info { flex-grow: 1; text-align: left; padding: 0 12px; font-size: 13px; height: auto; justify-content: flex-start; }
+    
+    .cover-box {
+      width: 100%;
+      padding-bottom: 145%;
+      position: relative;
+      background: #e0e0e0;
+      overflow: visible;
+    }
+
+    .book-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    
+    .folder-badge, .status-badge, .audio-badge, .music-badge, .remove-continue-btn { position: absolute; z-index: 10; }
+    .folder-badge { bottom: 5px; right: 5px; background: rgba(0,0,0,0.8); color: #fff; padding: 3px 7px; border-radius: 5px; font-size: 10px; font-weight: bold; }
+    .status-badge { top: 5px; left: 5px; background: #d4af37; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .audio-badge { top: 5px; right: 5px; background: #ff4d4d; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+    .music-badge { top: 5px; right: 5px; background: #ff4081; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: bold; }
+    .remove-continue-btn {
+      top: 6px;
+      right: 6px;
+      width: 34px;
+      height: 34px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      background: #ff2d2d;
+      color: #fff;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      line-height: 1;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.45);
+      z-index: 9999;
+    }
+    
+    .book-info { padding: 6px; font-size: 11px; text-align: center; height: 40px; display: flex; align-items: center; justify-content: center; overflow: hidden; font-weight: 500; }
+    
+    .glass-player { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 420px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 20px; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 9999; border: 1px solid rgba(255,255,255,0.3); display: none; align-items: center; gap: 12px; }
+    .player-cover { width: 60px; height: 60px; border-radius: 12px; object-fit: cover; }
+    .player-info-text { flex-grow: 1; overflow: hidden; }
+    .player-info-text h4 { margin: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-info-text p { margin: 0; font-size: 11px; color: #666; }
+    .player-btns { display: flex; gap: 10px; align-items: center; }
+    .btn-circle { width: 35px; height: 35px; border-radius: 50%; border: none; background: #333; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+    
+    #episode-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 10000; align-items: flex-end; }
+    .modal-content { background: #fff; width: 100%; max-height: 80vh; border-radius: 20px 20px 0 0; padding: 20px; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .episode-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .episode-item:active { background: #f9f9f9; }
+    
+    #reader-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; }
+    .reader-toolbar { padding: 10px; background: #222; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .reader-toolbar-left, .reader-toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .reader-toolbar button { background: #333; color: #fff; border: 1px solid #555; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
+    .reader-toolbar button.primary { background: #ff4d4d; border-color: #ff4d4d; }
+    
+    #pdf-render-container { flex-grow: 1; overflow: auto; background: #1a1a1a; position: relative; padding: 8px; display: flex; justify-content: center; align-items: flex-start; }
+    #pdf-canvas { display: block; margin: 0 auto; max-width: none; background: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+    .nav-zone { position: absolute; top: 0; bottom: 0; width: 25%; z-index: 5010; display: flex; align-items: center; justify-content: center; cursor: pointer; color: rgba(212,175,55,0.1); font-size: 40px; }
+    .nav-zone:hover { background: rgba(255,255,255,0.02); color: rgba(212,175,55,0.5); }
+    .nav-left { left: 0; }
+    .nav-right { right: 0; }
+    
+    .continue-card { width: 88px !important; min-width: 88px !important; }
+    .continue-card .book-info { font-size: 9px; height: 30px; }
+    .btn-clear-continue { border: none; background: #d9534f; color: #fff; padding: 6px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; }
+    
+    @media (max-width: 767px) {
+      #pdf-render-container { padding: 4px; }
+      .reader-toolbar { flex-wrap: wrap; }
+      .reader-toolbar button { padding: 7px 10px; font-size: 12px; }
+      .nav-zone { width: 18%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button onclick="goBack()" class="btn-back">❮ กลับ</button>
+    <div style="flex-grow: 1;">
+      <input type="text" id="global-search" class="search-input" placeholder="ค้นหาหนังสือ..." oninput="handleSearch()">
+    </div>
+    <div class="view-controls">
+      <button id="grid-btn" onclick="toggleView('grid')" class="btn-view active">🔲</button>
+      <button id="list-btn" onclick="toggleView('list')" class="btn-view">📋</button>
+    </div>
+  </div>
+
+  <div id="continue-reading-section" style="display:none; padding:15px; background:#e9e4d9; border-bottom:2px solid #d4af37;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin:0 0 10px 0;">
+      <h3 style="margin:0; font-size:12px; color:#8b6d00;">📚 อ่านค้างไว้ล่าสุด</h3>
+      <button class="btn-clear-continue" onclick="clearAllContinueReading()">ลบทั้งหมด</button>
+    </div>
+    <div id="continue-list" style="display:flex; overflow-x:auto; gap:10px; padding-bottom:5px;"></div>
+  </div>
+
+  <div id="book-list" class="container"></div>
+
+  <div id="episode-modal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h3 id="modal-title" style="margin-top:0;">เลือกตอน</h3>
+      <div id="episode-list"></div>
+      <button onclick="document.getElementById('episode-modal').style.display='none'" style="width:100%; padding:15px; margin-top:10px; border:none; border-radius:10px; background:#eee;">ปิด</button>
+    </div>
+  </div>
+
+  <div id="audio-player-ui" class="glass-player">
+    <img id="player-img" src="" class="player-cover">
+    <div class="player-info-text">
+      <h4 id="player-title">กำลังเล่น...</h4>
+      <p id="player-ep">ตอนที่ 1</p>
+    </div>
+    <div class="player-btns">
+      <button class="btn-circle" onclick="seek(-10)">-10</button>
+      <button id="master-play-btn" class="btn-circle" style="background:#d4af37; color:#000;" onclick="toggleYT()">▶</button>
+      <button class="btn-circle" onclick="seek(30)">+30</button>
+      <button class="btn-circle" style="background:#eee; color:#333;" onclick="closePlayer()">ปิด</button>
+    </div>
+  </div>
+
+  <div id="yt-player-hidden" style="position:fixed; top:-9999px;"></div>
+
+  <div id="reader-overlay">
+    <div class="reader-toolbar">
+      <div class="reader-toolbar-left">
+        <button class="primary" onclick="closeBook(true)">ปิด</button>
+        <span id="page-info" style="color:#d4af37; font-size:14px;">1 / 1</span>
+      </div>
+      <div class="reader-toolbar-right">
+        <button onclick="zoomPdf(-0.15)">A-</button>
+        <button onclick="fitPdfToScreen()">พอดีจอ</button>
+        <button onclick="zoomPdf(0.15)">A+</button>
+      </div>
+    </div>
+    <div id="pdf-render-container">
+      <div class="nav-zone nav-left" onclick="changePage(-1)">‹</div>
+      <canvas id="pdf-canvas"></canvas>
+      <div class="nav-zone nav-right" onclick="changePage(1)">›</div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+      authDomain: "myreaderapp-89e75.firebaseapp.com",
+      projectId: "myreaderapp-89e75",
+      storageBucket: "myreaderapp-89e75.firebasestorage.app",
+      messagingSenderId: "1016151043482",
+      appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+    let allBooksGlobal = [];
+    let allBooksCurrent = [];
+    let currentCategory = '';
+    let currentCategorySet = [];
+    let currentRootList = [];
+    let folderStack = [];
+    let pdfDoc = null;
+    let ytPlayer = null;
+    let currentAudioId = null;
+    let isYTReady = false;
+    let currentScale = null;
+    let fitScale = 1;
+
+    const categoryMap = {
+      '1PetchPraUma': ['1PetchPraUma'],
+      '2ThaiNovel': ['2ThaiNovel', '2ThaiNovelVol2'],
+      '3EnglishTranslated': ['3EnglishTranslated', '3EnglishTranslatedVol2'],
+      '4ChineseNovel': ['4ChineseNovel', '4ChineseNovelVol2'],
+      '5HowToReligion': ['5HowToReligion'],
+      '6HowToReligionScience': ['6HowToReligionScience'],
+      '7music': ['7music', '7musicVol2'],
+      '8AudioBooks': ['8AudioBooks']
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    currentCategory = urlParams.get('cat') || '';
+    currentCategorySet = categoryMap[currentCategory] || [];
+
+    function onYouTubeIframeAPIReady() {
+      ytPlayer = new YT.Player('yt-player-hidden', {
+        height: '0',
+        width: '0',
+        events: {
+          onReady: () => isYTReady = true,
+          onStateChange: onPlayerStateChange
+        }
+      });
+    }
+
+    function extractYouTubeId(url) {
+      if (!url) return null;
+      try {
+        const u = new URL(url.trim());
+        const v = u.searchParams.get('v');
+        if (v && v.length >= 6) return v;
+      } catch (e) {}
+      const patterns = [
+        /youtu\.be\/([A-Za-z0-9_-]{6,})/,
+        /youtube\.com\/embed\/([A-Za-z0-9_-]{6,})/,
+        /youtube\.com\/shorts\/([A-Za-z0-9_-]{6,})/,
+        /[?&]v=([A-Za-z0-9_-]{6,})/
+      ];
+      for (const p of patterns) {
+        const m = url.match(p);
+        if (m && m[1]) return m[1];
+      }
+      return null;
+    }
+
+    function getCoverUrl(item) {
+      if (!item) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+      const ytId = extractYouTubeId(item.url || '');
+      if (ytId) {
+        return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+      }
+      const category = (item.category || '').trim();
+      const coverId = String(item.cover_id || item.coverid || '').trim();
+      if (!category || !coverId) {
+        return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+      }
+      return `covers/${category}/${coverId}.jpg`;
+    }
+
+    function getAudiobookPrimaryUrl(book) {
+      if (!book || !Array.isArray(book.episodes) || book.episodes.length === 0) return '';
+      const first = book.episodes[0] || {};
+      return first.ep_url || first.url || '';
+    }
+
+    function getAudiobookCover(book) {
+      const url = getAudiobookPrimaryUrl(book);
+      const ytId = extractYouTubeId(url);
+      if (!ytId) return 'https://via.placeholder.com/150x220.png?text=No+Cover';
+      return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+    }
+
+    function getAudiobookPlayUrl(book) {
+      return getAudiobookPrimaryUrl(book);
+    }
+
+    function getHistoryKey() {
+      const user = firebase.auth().currentUser;
+      return user ? 'pukhistory_' + user.uid : null;
+    }
+
+    function getHistory() {
+      const key = getHistoryKey();
+      if (!key) return {};
+      try { return JSON.parse(localStorage.getItem(key) || '{}'); }
+      catch { return {}; }
+    }
+
+    function saveHistory(history) {
+      const key = getHistoryKey();
+      if (!key) return;
+      localStorage.setItem(key, JSON.stringify(history));
+    }
+
+    function removeHistoryItem(bookUrl) {
+      const history = getHistory();
+      const bookId = btoa(encodeURIComponent(bookUrl));
+      if (history[bookId]) {
+        delete history[bookId];
+        saveHistory(history);
+        renderContinueReading();
+      }
+    }
+
+    function clearAllContinueReading() {
+      if (confirm('คุณต้องการลบรายการที่อ่านค้างไว้ทั้งหมดใช่หรือไม่?')) {
+        const key = getHistoryKey();
+        if (!key) return;
+        localStorage.removeItem(key);
+        renderContinueReading();
+      }
+    }
+
+    function renderContinueReading() {
+      const history = getHistory();
+      const container = document.getElementById('continue-list');
+      const section = document.getElementById('continue-reading-section');
+      const sorted = Object.keys(history).sort((a, b) => history[b].t - history[a].t).slice(0, 10);
+
+      if (!container || !section) return;
+      container.innerHTML = '';
+
+      if (sorted.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+
+      section.style.display = 'block';
+
+      sorted.forEach(id => {
+        const decodedUrl = decodeURIComponent(atob(id));
+        const book = allBooksGlobal.find(b => (b.url || '').trim() === decodedUrl.trim());
+        if (!book) return;
+
+        const div = document.createElement('div');
+        div.className = 'book-card continue-card';
+
+        const safeUrl = JSON.stringify(book.url);
+
+        div.innerHTML = `
+          <div class="cover-box">
+            <div class="status-badge">${history[id].p}</div>
+            <button class="remove-continue-btn" type="button"
+              onclick="event.stopPropagation(); removeHistoryItem(${safeUrl})">✕</button>
+            <img src="${getCoverUrl(book)}" class="book-cover-img"
+              onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
+          </div>
+          <div class="book-info">${book.title}</div>`;
+
+        div.onclick = () => openBook(book.url);
+        container.appendChild(div);
+      });
+    }
+
+    function closeBook(keepPosition = false) {
+      document.getElementById('reader-overlay').style.display = 'none';
+      pdfDoc = null;
+      currentScale = null;
+      if (!keepPosition) loadData();
+    }
+
+    function goBack() {
+      if (document.getElementById('reader-overlay').style.display === 'flex') {
+        closeBook(true);
+        return;
+      }
+
+      if (document.getElementById('episode-modal').style.display === 'flex') {
+        document.getElementById('episode-modal').style.display = 'none';
+        return;
+      }
+
+      if (folderStack.length > 0) {
+        const prev = folderStack.pop();
+        renderList(prev, false);
+        window.scrollTo(0, 0);
+        return;
+      }
+
+      window.location.href = 'categories.html';
+    }
+
+    function closeModal(e) {
+      if (e.target.id === 'episode-modal') e.target.style.display = 'none';
+    }
+
+    function handleSearch() {
+      const q = document.getElementById('global-search').value.toLowerCase();
+      renderList((allBooksCurrent || []).filter(item => (item.title || '').toLowerCase().includes(q)), false);
+    }
+
+    function toggleView(mode) {
+      const container = document.getElementById('book-list');
+      if (mode === 'list') {
+        container.classList.add('list-mode');
+        document.getElementById('list-btn').classList.add('active');
+        document.getElementById('grid-btn').classList.remove('active');
+      } else {
+        container.classList.remove('list-mode');
+        document.getElementById('grid-btn').classList.add('active');
+        document.getElementById('list-btn').classList.remove('active');
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (document.getElementById('reader-overlay').style.display === 'flex' && pdfDoc && window.currentPage && window.currentUrl) {
+        fitPdfToScreen();
+      }
+    });
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) loadData();
+      else window.location.href = 'index.html';
+    });
+
+    function loadData() {
+      const targetDb = (currentCategory === '8AudioBooks') ? 'audiobook_db.json' : 'database.json';
+      
+      fetch(targetDb)
+        .then(res => res.json())
+        .then(data => {
+          let filtered = [];
+          if (Array.isArray(data)) {
+            filtered = data.filter(b => currentCategorySet.includes(b.category));
+          } else if (data && typeof data === 'object') {
+            filtered = Object.values(data).filter(b => currentCategorySet.includes(b.category));
+          }
+          
+          allBooksGlobal = filtered;
+          allBooksCurrent = filtered;
+          
+          let rootItems = [];
+          let folderMap = {};
+          
+          filtered.forEach(item => {
+            if (item.folder) {
+              if (!folderMap[item.folder]) {
+                folderMap[item.folder] = [];
+              }
+              folderMap[item.folder].push(item);
+            } else {
+              rootItems.push(item);
+            }
+          });
+          
+          Object.keys(folderMap).forEach(fName => {
+            rootItems.push({
+              isFolder: true,
+              title: fName,
+              items: folderMap[fName]
+            });
+          });
+          
+          currentRootList = rootItems;
+          renderList(rootItems, false);
+          renderContinueReading();
+        })
+        .catch(err => console.error("Error loading book data:", err));
+    }
+
+    function renderList(listData, isAppend) {
+      const container = document.getElementById('book-list');
+      if (!isAppend) container.innerHTML = '';
+      
+      if (!listData || listData.length === 0) {
+        container.innerHTML = '<div style="text-align:center;width:100%;padding:40px;color:#999;">ไม่พบรายการที่ค้นหา</div>';
+        return;
+      }
+      
+      listData.forEach(item => {
+        const div = document.createElement('div');
+        
+        if (item.isFolder) {
+          div.className = 'book-card folder-card';
+          div.innerHTML = `
+            <div class="cover-box" style="background:#e5c158; display:flex; align-items:center; justify-content:center;">
+              <span style="font-size:40px;">📁</span>
+              <div class="folder-badge">${item.items.length} รายการ</div>
+            </div>
+            <div class="book-info">${item.title}</div>
+          `;
+          div.onclick = () => {
+            folderStack.push(currentRootList);
+            allBooksCurrent = item.items;
+            renderList(item.items, false);
+            window.scrollTo(0, 0);
+          };
+        } else {
+          div.className = 'book-card';
+          const isAudio = (item.category === '8_AudioBooks' || item.category === '8AudioBooks' || item.category === '7music' || item.category === '7musicVol2');
+          const coverUrl = isAudio ? getAudiobookCover(item) : getCoverUrl(item);
+          const badgeHtml = isAudio ? `<div class="audio-badge">AUDIO</div>` : ``;
+          
+          div.innerHTML = `
+            <div class="cover-box">
+              ${badgeHtml}
+              <img src="${coverUrl}" class="book-cover-img" onerror="this.onerror=null;this.src='https://via.placeholder.com/150x220.png?text=No+Cover'">
+            </div>
+            <div class="book-info">${item.title}</div>
+          `;
+          div.onclick = () => openBook(item.url);
+        }
+        container.appendChild(div);
+      });
+    }
+
+    function openBook(url) {
+      if (!url) return;
+      window.currentUrl = url;
+      
+      const book = allBooksGlobal.find(b => b.url === url);
+      const isAudio = book && (book.category === '8_AudioBooks' || book.category === '8AudioBooks' || book.category === '7music' || book.category === '7musicVol2');
+      
+      const history = getHistory();
+      const bookId = btoa(encodeURIComponent(url));
+      history[bookId] = {
+        p: isAudio ? "ฟังอยู่" : "หน้า 1",
+        t: Date.now()
+      };
+      saveHistory(history);
+      renderContinueReading();
+
+      if (isAudio) {
+        const playUrl = book ? getAudiobookPlayUrl(book) : '';
+        const ytId = extractYouTubeId(playUrl);
+        
+        if (ytId) {
+          currentAudioId = ytId;
+          document.getElementById('player-title').innerText = book ? book.title : "กำลังเล่น...";
+          document.getElementById('player-ep').innerText = "หนังสือเสียง / คลิปเสียง";
+          document.getElementById('player-img').src = getAudiobookCover(book);
+          document.getElementById('audio-player-ui').style.display = 'flex';
+          
+          if (isYTReady && ytPlayer && ytPlayer.loadVideoById) {
+            ytPlayer.loadVideoById(ytId);
+            document.getElementById('master-play-btn').innerText = '⏸';
+          }
+        } else {
+          alert('ไม่พบลิงก์เสียงของ YouTube ที่ถูกต้อง');
+        }
+      } else {
+        document.getElementById('reader-overlay').style.display = 'flex';
+        window.currentPage = 1;
+        
+        pdfjsLib.getDocument(url).promise.then(pdf => {
+          pdfDoc = pdf;
+          renderPdfPage(window.currentPage);
+        }).catch(err => {
+          console.error("Error opening PDF:", err);
+          alert("ไม่สามารถโหลดไฟล์ PDF นี้ได้");
+          closeBook(true);
+        });
+      }
+    }
+
+    function renderPdfPage(num) {
+      if (!pdfDoc) return;
+      pdfDoc.getPage(num).then(page => {
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        if (!currentScale) {
+          const container = document.getElementById('pdf-render-container');
+          const unscaledViewport = page.getViewport({ scale: 1 });
+          fitScale = (container.clientWidth - 16) / unscaledViewport.width;
+          currentScale = fitScale;
+        }
+        
+        const viewport = page.getViewport({ scale: currentScale });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        const renderContext = { canvasContext: ctx, viewport: viewport };
+        page.render(renderContext);
+        
+        document.getElementById('page-info').innerText = `${num} / ${pdfDoc.numPages}`;
+        
+        const history = getHistory();
+        const bookId = btoa(encodeURIComponent(window.currentUrl));
+        if (history[bookId]) {
+          history[bookId].p = `หน้า ${num}`;
+          saveHistory(history);
+          renderContinueReading();
+        }
+      });
+    }
+
+    function changePage(direction) {
+      if (!pdfDoc) return;
+      let newPage = window.currentPage + direction;
+      if (newPage >= 1 && newPage <= pdfDoc.numPages) {
+        window.currentPage = newPage;
+        renderPdfPage(newPage);
+      }
+    }
+
+    function zoomPdf(scaleAmount) {
+      if (!pdfDoc) return;
+      currentScale += scaleAmount;
+      if (currentScale < 0.2) currentScale = 0.2;
+      renderPdfPage(window.currentPage);
+    }
+
+    function fitPdfToScreen() {
+      if (!pdfDoc) return;
+      currentScale = null; 
+      renderPdfPage(window.currentPage);
+    }
+
+    function seek(seconds) {
+      if (ytPlayer && ytPlayer.getCurrentTime) {
+        ytPlayer.seekTo(ytPlayer.getCurrentTime() + seconds, true);
+      }
+    }
+
+    function toggleYT() {
+      if (!ytPlayer || !ytPlayer.getPlayerState) return;
+      const state = ytPlayer.getPlayerState();
+      if (state === YT.PlayerState.PLAYING) {
+        ytPlayer.pauseVideo();
+        document.getElementById('master-play-btn').innerText = '▶';
+      } else {
+        ytPlayer.playVideo();
+        document.getElementById('master-play-btn').innerText = '⏸';
+      }
+    }
+
+    function closePlayer() {
+      document.getElementById('audio-player-ui').style.display = 'none';
+      if (ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.PLAYING) {
+        document.getElementById('master-play-btn').innerText = '⏸';
+      } else if (event.data === YT.PlayerState.PAUSED) {
+        document.getElementById('master-play-btn').innerText = '▶';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -25,7 +25,14 @@
         
         .content-container { padding: 15px; max-width: 600px; margin: auto; }
 
-        /* ฟอร์มโพสต์ */
+        .terms-banner {
+            background: #fff3cd; border-left: 4px solid #ffc107; color: #856404;
+            padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 13px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .terms-banner ul { margin: 8px 0 0 0; padding-left: 20px; }
+        .terms-banner li { margin-bottom: 5px; }
+
         .post-form-box {
             background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
@@ -39,7 +46,6 @@
             width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer;
         }
 
-        /* การ์ดสินค้า */
         .post-card {
             background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px;
             border-left: 4px solid #ff4757; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -47,11 +53,28 @@
         .post-title { font-weight: 600; font-size: 16px; margin: 0 0 5px 0; }
         .post-price { color: #2ed573; font-weight: bold; font-size: 18px; margin: 0 0 10px 0; }
         .post-desc { font-size: 13px; color: #555; margin-bottom: 10px; white-space: pre-wrap; }
+        
         .post-contact {
-            background: #f1f2f6; padding: 8px; border-radius: 6px; font-size: 13px;
-            display: inline-block; text-decoration: none; color: #333;
+            background: #00B900; padding: 8px 12px; border-radius: 6px; font-size: 13px;
+            display: inline-block; text-decoration: none; color: white; font-weight: 500;
         }
-        .post-meta { font-size: 11px; color: #999; text-align: right; margin-top: 10px; }
+        
+        .post-meta { font-size: 11px; color: #999; text-align: right; margin-top: 10px; border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 10px;}
+        
+        /* 🟢 สไตล์สำหรับช่องแชท */
+        .chat-section { margin-top: 10px; }
+        .chat-messages {
+            background: #fafafa; border: 1px solid #eee; border-radius: 8px;
+            height: 180px; overflow-y: auto; padding: 10px; margin-bottom: 10px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .chat-input-box { display: flex; gap: 8px; }
+        .chat-input-box input {
+            flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 13px;
+        }
+        .chat-input-box button {
+            background: #1877f2; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -62,24 +85,25 @@
 </div>
 
 <div class="content-container">
-    <div class="post-form-box">
-        <h3 style="margin-top:0; font-size: 16px;">📝 ลงประกาศขาย / หาช่าง</h3>
-        <div class="input-group">
-            <input type="text" id="itemName" placeholder="หัวข้อ (เช่น ขายสว่านมือสอง)">
-        </div>
-        <div class="input-group">
-            <input type="number" id="itemPrice" placeholder="ราคา (บาท)">
-        </div>
-        <div class="input-group">
-            <textarea id="itemDesc" rows="3" placeholder="รายละเอียดสินค้า หรือ ขอบเขตงาน..."></textarea>
-        </div>
-        <div class="input-group">
-            <input type="text" id="itemContact" placeholder="เบอร์โทร หรือ LINE ID สำหรับติดต่อ">
-        </div>
-        <button class="btn-submit" onclick="addPost()">โพสต์ประกาศ</button>
+    
+    <div class="terms-banner">
+        <strong>⚠️ ข้อตกลงและคำแนะนำการใช้งาน</strong>
+        <ul>
+            <li>พื้นที่นี้เป็นเพียงสื่อกลางในการประกาศซื้อขาย แลกเปลี่ยน หรือหาช่างเท่านั้น</li>
+            <li>เพื่อความปลอดภัย โปรดตรวจสอบประวัติผู้ขายก่อนโอนเงินทุกครั้ง</li>
+            <li>สามารถพูดคุยสอบถาม หรือขอข้อมูลเพิ่มเติมผ่านช่องแชทใต้โพสต์ได้เลยครับ</li>
+            <li>เนื่องจากระบบยังไม่รองรับการแสดงรูปภาพ <b>หากสนใจสินค้า กรุณาแอด LINE หรือโทรติดต่อผู้ขายเพื่อขอรูปภาพประกอบการตัดสินใจครับ</b></li>
+        </ul>
     </div>
 
-    <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+    <div class="post-form-box">
+        <h3 style="margin-top:0; font-size: 16px;">📝 ลงประกาศขาย / หาช่าง</h3>
+        <div class="input-group"><input type="text" id="itemName" placeholder="หัวข้อ (เช่น ขายเครื่องมือช่างมือสอง)"></div>
+        <div class="input-group"><input type="number" id="itemPrice" placeholder="ราคา (บาท)"></div>
+        <div class="input-group"><textarea id="itemDesc" rows="3" placeholder="รายละเอียดสินค้า หรือ ขอบเขตงานที่ต้องการ..."></textarea></div>
+        <div class="input-group"><input type="text" id="itemContact" placeholder="เบอร์โทรศัพท์ หรือ LINE ID"></div>
+        <button class="btn-submit" onclick="addPost()">โพสต์ประกาศ</button>
+    </div>
 
     <div id="feed-container">
         <div style="text-align: center; color: #999;">กำลังโหลดประกาศ...</div>
@@ -87,7 +111,6 @@
 </div>
 
 <script>
-    // 1. ตั้งค่า Firebase (ใช้ค่าเดิมจากแอปของคุณ)
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -97,26 +120,21 @@
         appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
     };
 
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     
     const auth = firebase.auth();
-    const db = firebase.firestore(); // เปิดใช้งาน Firestore
-
+    const db = firebase.firestore();
     let currentUser = null;
 
-    // ตรวจสอบการล็อกอิน
     auth.onAuthStateChanged((user) => {
         if (user) {
             currentUser = user;
-            loadPosts(); // เมื่อล็อกอินแล้ว ให้โหลดข้อมูลสินค้ามาแสดง
+            loadPosts(); 
         } else {
-            window.location.href = 'index.html'; // ถ้าไม่ได้ล็อกอิน เด้งกลับหน้าแรก
+            window.location.href = 'index.html'; 
         }
     });
 
-    // 2. ฟังก์ชันสำหรับบันทึกข้อมูลโพสต์ลงฐานข้อมูล
     function addPost() {
         const title = document.getElementById('itemName').value;
         const price = document.getElementById('itemPrice').value;
@@ -128,40 +146,86 @@
             return;
         }
 
-        // เพิ่มข้อมูลลงใน collection ชื่อ 'marketplace_posts'
         db.collection("marketplace_posts").add({
-            title: title,
-            price: price,
-            description: desc,
-            contact: contact,
-            userId: currentUser.uid,
-            userName: currentUser.displayName || "สมาชิก",
-            timestamp: firebase.firestore.FieldValue.serverTimestamp() // เก็บเวลาปัจจุบัน
-        })
-        .then(() => {
+            title: title, price: price, description: desc, contact: contact,
+            userId: currentUser.uid, userName: currentUser.displayName || "สมาชิก",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
             alert("โพสต์ประกาศสำเร็จ!");
-            // ล้างฟอร์ม
             document.getElementById('itemName').value = '';
             document.getElementById('itemPrice').value = '';
             document.getElementById('itemDesc').value = '';
             document.getElementById('itemContact').value = '';
-        })
-        .catch((error) => {
-            console.error("Error adding document: ", error);
-            alert("เกิดข้อผิดพลาดในการโพสต์");
         });
     }
 
-    // 3. ฟังก์ชันดึงข้อมูลมาแสดงผลแบบ Real-time
+    // ฟังก์ชันส่งข้อความแชท
+    function sendChat(postId) {
+        const inputField = document.getElementById(`chat-input-${postId}`);
+        const text = inputField.value.trim();
+        
+        if (!text) return;
+        
+        db.collection("marketplace_posts").doc(postId).collection("comments").add({
+            text: text,
+            userId: currentUser.uid,
+            userName: currentUser.displayName || "สมาชิก",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            inputField.value = ''; // ล้างช่องพิมพ์เมื่อส่งเสร็จ
+        });
+    }
+
+    // ฟังก์ชันโหลดข้อความแชทแบบ Real-time
+    function loadChats(postId) {
+        const chatContainer = document.getElementById(`chat-msgs-${postId}`);
+        
+        db.collection("marketplace_posts").doc(postId).collection("comments")
+          .orderBy("timestamp", "asc")
+          .onSnapshot((snapshot) => {
+              chatContainer.innerHTML = "";
+              
+              if (snapshot.empty) {
+                  chatContainer.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center; padding-top:50px;">ยังไม่มีข้อความ เริ่มพูดคุยสอบถามได้เลยครับ!</div>';
+                  return;
+              }
+              
+              snapshot.forEach((doc) => {
+                  const data = doc.data();
+                  let timeStr = "";
+                  if (data.timestamp) {
+                      const date = data.timestamp.toDate();
+                      timeStr = date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
+                  }
+                  
+                  const isMe = data.userId === currentUser.uid;
+                  const align = isMe ? "flex-end" : "flex-start";
+                  const bgColor = isMe ? "#dcf8c6" : "#e4e6eb";
+                  
+                  const div = document.createElement('div');
+                  div.style = `display: flex; flex-direction: column; align-items: ${align}; width: 100%;`;
+                  div.innerHTML = `
+                      <span style="font-size: 10px; color: #888; margin-bottom: 2px;">${data.userName}</span>
+                      <div style="background: ${bgColor}; padding: 8px 12px; border-radius: 12px; font-size: 13px; max-width: 85%; color: #333; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                          ${data.text} <span style="font-size: 9px; color: #777; margin-left: 5px;">${timeStr}</span>
+                      </div>
+                  `;
+                  chatContainer.appendChild(div);
+              });
+              
+              // เลื่อนจอให้ลงมาล่าสุดอัตโนมัติ
+              chatContainer.scrollTop = chatContainer.scrollHeight;
+          });
+    }
+
+    // ฟังก์ชันโหลดโพสต์สินค้า
     function loadPosts() {
         const container = document.getElementById('feed-container');
 
-        // สั่งให้ดึงข้อมูลจาก 'marketplace_posts' เรียงตามเวลาล่าสุด
-        // onSnapshot จะทำให้ถ้ามีคนโพสต์ใหม่ หน้าเว็บจะอัปเดตอัตโนมัติโดยไม่ต้องกดรีเฟรช
         db.collection("marketplace_posts")
           .orderBy("timestamp", "desc")
           .onSnapshot((querySnapshot) => {
-            container.innerHTML = ""; // ล้างหน้าจอเก่า
+            container.innerHTML = ""; 
 
             if (querySnapshot.empty) {
                 container.innerHTML = "<div style='text-align:center; color:#999;'>ยังไม่มีประกาศในขณะนี้</div>";
@@ -170,15 +234,14 @@
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
+                const postId = doc.id; // รหัสอ้างอิงของแต่ละโพสต์
                 
-                // แปลงเวลาให้เป็นข้อความ
                 let timeString = "เพิ่งโพสต์";
                 if(data.timestamp) {
                     const date = data.timestamp.toDate();
-                    timeString = date.toLocaleDateString('th-TH') + " " + date.toLocaleTimeString('th-TH');
+                    timeString = date.toLocaleDateString('th-TH') + " " + date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
                 }
 
-                // สร้างการ์ดสินค้า
                 const card = document.createElement('div');
                 card.className = 'post-card';
                 card.innerHTML = `
@@ -187,8 +250,21 @@
                     <p class="post-desc">${data.description}</p>
                     <a href="tel:${data.contact.replace(/\D/g,'')}" class="post-contact">📞 ติดต่อ: ${data.contact}</a>
                     <div class="post-meta">โพสต์โดย: ${data.userName} | ${timeString}</div>
+
+                    <div class="chat-section">
+                        <div style="font-size: 13px; font-weight: 600; color: #555;">💬 สอบถามผู้ขาย / ขอดูรูปเพิ่มเติม</div>
+                        <div class="chat-messages" id="chat-msgs-${postId}">
+                            </div>
+                        <div class="chat-input-box">
+                            <input type="text" id="chat-input-${postId}" placeholder="พิมพ์ข้อความที่นี่...">
+                            <button onclick="sendChat('${postId}')">ส่ง</button>
+                        </div>
+                    </div>
                 `;
                 container.appendChild(card);
+                
+                // สั่งให้ดึงข้อความแชทของโพสต์นี้มาแสดงทันที
+                loadChats(postId);
             });
         });
     }

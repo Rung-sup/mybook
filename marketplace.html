@@ -35,15 +35,26 @@
 
         .post-form-box {
             background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); transition: 0.3s;
         }
+        
+        /* สไตล์ตอนกำลังแก้ไขโพสต์ */
+        .post-form-box.editing {
+            border: 2px solid #f39c12; background: #fffdf8;
+        }
+
         .input-group { margin-bottom: 10px; }
         .input-group input, .input-group textarea {
             width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
         }
         .btn-submit {
             background: #ff4757; color: white; border: none; padding: 10px 15px;
+            width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+        .btn-cancel {
+            background: #95a5a6; color: white; border: none; padding: 10px 15px;
             width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer;
+            margin-top: 10px; display: none;
         }
 
         .post-card {
@@ -61,7 +72,12 @@
         
         .post-meta { font-size: 11px; color: #999; text-align: right; margin-top: 10px; border-bottom: 1px dashed #eee; padding-bottom: 10px; margin-bottom: 10px;}
         
-        /* 🟢 สไตล์สำหรับช่องแชท */
+        .owner-actions {
+            display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;
+        }
+        .btn-edit { background: #f39c12; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .btn-delete { background: #e74c3c; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+
         .chat-section { margin-top: 10px; }
         .chat-messages {
             background: #fafafa; border: 1px solid #eee; border-radius: 8px;
@@ -69,12 +85,8 @@
             display: flex; flex-direction: column; gap: 8px;
         }
         .chat-input-box { display: flex; gap: 8px; }
-        .chat-input-box input {
-            flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 13px;
-        }
-        .chat-input-box button {
-            background: #1877f2; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold;
-        }
+        .chat-input-box input { flex-grow: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; outline: none; font-size: 13px; }
+        .chat-input-box button { background: #1877f2; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -96,13 +108,15 @@
         </ul>
     </div>
 
-    <div class="post-form-box">
-        <h3 style="margin-top:0; font-size: 16px;">📝 ลงประกาศขาย / หาช่าง</h3>
+    <div class="post-form-box" id="postFormBox">
+        <h3 id="formTitle" style="margin-top:0; font-size: 16px;">📝 ลงประกาศขาย / หาช่าง</h3>
         <div class="input-group"><input type="text" id="itemName" placeholder="หัวข้อ (เช่น ขายเครื่องมือช่างมือสอง)"></div>
         <div class="input-group"><input type="number" id="itemPrice" placeholder="ราคา (บาท)"></div>
         <div class="input-group"><textarea id="itemDesc" rows="3" placeholder="รายละเอียดสินค้า หรือ ขอบเขตงานที่ต้องการ..."></textarea></div>
         <div class="input-group"><input type="text" id="itemContact" placeholder="เบอร์โทรศัพท์ หรือ LINE ID"></div>
-        <button class="btn-submit" onclick="addPost()">โพสต์ประกาศ</button>
+        
+        <button class="btn-submit" id="submitBtn" onclick="savePost()">โพสต์ประกาศ</button>
+        <button class="btn-cancel" id="cancelBtn" onclick="cancelEdit()">ยกเลิกการแก้ไข</button>
     </div>
 
     <div id="feed-container">
@@ -125,6 +139,10 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     let currentUser = null;
+    
+    // ตัวแปรสำหรับเก็บข้อมูลโพสต์ชั่วคราวเพื่อให้แก้ไขง่ายขึ้น
+    let postDataMap = {}; 
+    let editingPostId = null; // เช็คว่าตอนนี้กำลังแก้ไขโพสต์ไหนอยู่
 
     auth.onAuthStateChanged((user) => {
         if (user) {
@@ -135,7 +153,8 @@
         }
     });
 
-    function addPost() {
+    // 🟢 รวมฟังก์ชัน สร้างโพสต์ใหม่ และ แก้ไขโพสต์ ไว้ด้วยกัน
+    function savePost() {
         const title = document.getElementById('itemName').value;
         const price = document.getElementById('itemPrice').value;
         const desc = document.getElementById('itemDesc').value;
@@ -146,45 +165,106 @@
             return;
         }
 
-        db.collection("marketplace_posts").add({
-            title: title, price: price, description: desc, contact: contact,
-            userId: currentUser.uid, userName: currentUser.displayName || "สมาชิก",
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-            alert("โพสต์ประกาศสำเร็จ!");
-            document.getElementById('itemName').value = '';
-            document.getElementById('itemPrice').value = '';
-            document.getElementById('itemDesc').value = '';
-            document.getElementById('itemContact').value = '';
-        });
+        if (editingPostId) {
+            // โหมดแก้ไข
+            db.collection("marketplace_posts").doc(editingPostId).update({
+                title: title, 
+                price: price, 
+                description: desc, 
+                contact: contact
+            }).then(() => {
+                alert("บันทึกการแก้ไขสำเร็จ!");
+                cancelEdit(); // กลับสู่โหมดปกติ
+            });
+        } else {
+            // โหมดโพสต์ใหม่
+            db.collection("marketplace_posts").add({
+                title: title, price: price, description: desc, contact: contact,
+                userId: currentUser.uid, userName: currentUser.displayName || "สมาชิก",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert("โพสต์ประกาศสำเร็จ!");
+                clearForm();
+            });
+        }
     }
 
-    // ฟังก์ชันส่งข้อความแชท
+    // 🟢 เตรียมข้อมูลใส่ฟอร์มเพื่อแก้ไข
+    function prepareEdit(postId) {
+        const data = postDataMap[postId];
+        
+        document.getElementById('itemName').value = data.title;
+        document.getElementById('itemPrice').value = data.price;
+        document.getElementById('itemDesc').value = data.description;
+        document.getElementById('itemContact').value = data.contact;
+
+        editingPostId = postId;
+        
+        // เปลี่ยนหน้าตาฟอร์มให้รู้ว่ากำลังแก้ไข
+        document.getElementById('formTitle').innerText = "✏️ แก้ไขประกาศ";
+        document.getElementById('postFormBox').classList.add('editing');
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "💾 บันทึกการแก้ไข";
+        submitBtn.style.background = "#f39c12";
+        
+        document.getElementById('cancelBtn').style.display = "block";
+
+        // เลื่อนจอขึ้นไปด้านบนสุดที่ฟอร์ม
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 🟢 ยกเลิกการแก้ไข
+    function cancelEdit() {
+        editingPostId = null;
+        clearForm();
+        
+        document.getElementById('formTitle').innerText = "📝 ลงประกาศขาย / หาช่าง";
+        document.getElementById('postFormBox').classList.remove('editing');
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "โพสต์ประกาศ";
+        submitBtn.style.background = "#ff4757";
+        
+        document.getElementById('cancelBtn').style.display = "none";
+    }
+
+    function clearForm() {
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemPrice').value = '';
+        document.getElementById('itemDesc').value = '';
+        document.getElementById('itemContact').value = '';
+    }
+
+    // 🟢 ฟังก์ชันลบโพสต์
+    function deletePost(postId) {
+        if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบประกาศนี้? (ข้อมูลแชทจะหายไปด้วย)")) {
+            db.collection("marketplace_posts").doc(postId).delete().then(() => {
+                alert("ลบประกาศเรียบร้อยแล้ว");
+            }).catch((error) => {
+                alert("เกิดข้อผิดพลาดในการลบ");
+                console.error(error);
+            });
+        }
+    }
+
     function sendChat(postId) {
         const inputField = document.getElementById(`chat-input-${postId}`);
         const text = inputField.value.trim();
-        
         if (!text) return;
         
         db.collection("marketplace_posts").doc(postId).collection("comments").add({
-            text: text,
-            userId: currentUser.uid,
-            userName: currentUser.displayName || "สมาชิก",
+            text: text, userId: currentUser.uid, userName: currentUser.displayName || "สมาชิก",
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
-            inputField.value = ''; // ล้างช่องพิมพ์เมื่อส่งเสร็จ
+            inputField.value = ''; 
         });
     }
 
-    // ฟังก์ชันโหลดข้อความแชทแบบ Real-time
     function loadChats(postId) {
         const chatContainer = document.getElementById(`chat-msgs-${postId}`);
-        
         db.collection("marketplace_posts").doc(postId).collection("comments")
           .orderBy("timestamp", "asc")
           .onSnapshot((snapshot) => {
               chatContainer.innerHTML = "";
-              
               if (snapshot.empty) {
                   chatContainer.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center; padding-top:50px;">ยังไม่มีข้อความ เริ่มพูดคุยสอบถามได้เลยครับ!</div>';
                   return;
@@ -212,13 +292,10 @@
                   `;
                   chatContainer.appendChild(div);
               });
-              
-              // เลื่อนจอให้ลงมาล่าสุดอัตโนมัติ
               chatContainer.scrollTop = chatContainer.scrollHeight;
           });
     }
 
-    // ฟังก์ชันโหลดโพสต์สินค้า
     function loadPosts() {
         const container = document.getElementById('feed-container');
 
@@ -226,6 +303,7 @@
           .orderBy("timestamp", "desc")
           .onSnapshot((querySnapshot) => {
             container.innerHTML = ""; 
+            postDataMap = {}; // ล้างข้อมูลเก่าก่อนโหลดใหม่
 
             if (querySnapshot.empty) {
                 container.innerHTML = "<div style='text-align:center; color:#999;'>ยังไม่มีประกาศในขณะนี้</div>";
@@ -234,12 +312,26 @@
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                const postId = doc.id; // รหัสอ้างอิงของแต่ละโพสต์
+                const postId = doc.id; 
+                
+                // เก็บข้อมูลโพสต์ไว้ใน Object เผื่อถูกเรียกใช้ตอนกดแก้ไข
+                postDataMap[postId] = data; 
                 
                 let timeString = "เพิ่งโพสต์";
                 if(data.timestamp) {
                     const date = data.timestamp.toDate();
                     timeString = date.toLocaleDateString('th-TH') + " " + date.toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
+                }
+
+                // 🟢 เช็คว่าถ้าเป็นเจ้าของโพสต์ ให้โชว์ปุ่มแก้ไขและลบ
+                let ownerActionsHtml = "";
+                if (data.userId === currentUser.uid) {
+                    ownerActionsHtml = `
+                        <div class="owner-actions">
+                            <button class="btn-edit" onclick="prepareEdit('${postId}')">✏️ แก้ไข</button>
+                            <button class="btn-delete" onclick="deletePost('${postId}')">🗑️ ลบ</button>
+                        </div>
+                    `;
                 }
 
                 const card = document.createElement('div');
@@ -249,12 +341,14 @@
                     <p class="post-price">฿ ${Number(data.price).toLocaleString()}</p>
                     <p class="post-desc">${data.description}</p>
                     <a href="tel:${data.contact.replace(/\D/g,'')}" class="post-contact">📞 ติดต่อ: ${data.contact}</a>
+                    
+                    ${ownerActionsHtml}
+
                     <div class="post-meta">โพสต์โดย: ${data.userName} | ${timeString}</div>
 
                     <div class="chat-section">
                         <div style="font-size: 13px; font-weight: 600; color: #555;">💬 สอบถามผู้ขาย / ขอดูรูปเพิ่มเติม</div>
-                        <div class="chat-messages" id="chat-msgs-${postId}">
-                            </div>
+                        <div class="chat-messages" id="chat-msgs-${postId}"></div>
                         <div class="chat-input-box">
                             <input type="text" id="chat-input-${postId}" placeholder="พิมพ์ข้อความที่นี่...">
                             <button onclick="sendChat('${postId}')">ส่ง</button>
@@ -262,8 +356,6 @@
                     </div>
                 `;
                 container.appendChild(card);
-                
-                // สั่งให้ดึงข้อความแชทของโพสต์นี้มาแสดงทันที
                 loadChats(postId);
             });
         });

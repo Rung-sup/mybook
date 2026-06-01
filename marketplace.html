@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ตลาดนัด ซื้อขายแลกเปลี่ยน</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <style>
+        * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
+        body { margin: 0; background-color: #f4f1ea; padding-bottom: 50px; }
+        
+        .header { 
+            padding: 10px 15px; background: #fff; position: sticky; top: 0; z-index: 100; 
+            display: flex; align-items: center; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .btn-back { 
+            background: #333; color: #d4af37; border: 1px solid #d4af37; 
+            padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 14px;
+        }
+        
+        .content-container { padding: 15px; max-width: 600px; margin: auto; }
+
+        /* ฟอร์มโพสต์ */
+        .post-form-box {
+            background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .input-group { margin-bottom: 10px; }
+        .input-group input, .input-group textarea {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px;
+        }
+        .btn-submit {
+            background: #ff4757; color: white; border: none; padding: 10px 15px;
+            width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer;
+        }
+
+        /* การ์ดสินค้า */
+        .post-card {
+            background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px;
+            border-left: 4px solid #ff4757; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .post-title { font-weight: 600; font-size: 16px; margin: 0 0 5px 0; }
+        .post-price { color: #2ed573; font-weight: bold; font-size: 18px; margin: 0 0 10px 0; }
+        .post-desc { font-size: 13px; color: #555; margin-bottom: 10px; white-space: pre-wrap; }
+        .post-contact {
+            background: #f1f2f6; padding: 8px; border-radius: 6px; font-size: 13px;
+            display: inline-block; text-decoration: none; color: #333;
+        }
+        .post-meta { font-size: 11px; color: #999; text-align: right; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <button onclick="location.href='categories.html'" class="btn-back">❮ กลับหน้าหลัก</button>
+    <div style="flex-grow: 1; text-align: center; font-weight: 600; color: #ff4757;">🛒 ตลาดนัดซื้อขาย</div>
+</div>
+
+<div class="content-container">
+    <div class="post-form-box">
+        <h3 style="margin-top:0; font-size: 16px;">📝 ลงประกาศขาย / หาช่าง</h3>
+        <div class="input-group">
+            <input type="text" id="itemName" placeholder="หัวข้อ (เช่น ขายสว่านมือสอง)">
+        </div>
+        <div class="input-group">
+            <input type="number" id="itemPrice" placeholder="ราคา (บาท)">
+        </div>
+        <div class="input-group">
+            <textarea id="itemDesc" rows="3" placeholder="รายละเอียดสินค้า หรือ ขอบเขตงาน..."></textarea>
+        </div>
+        <div class="input-group">
+            <input type="text" id="itemContact" placeholder="เบอร์โทร หรือ LINE ID สำหรับติดต่อ">
+        </div>
+        <button class="btn-submit" onclick="addPost()">โพสต์ประกาศ</button>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid #ddd; margin: 20px 0;">
+
+    <div id="feed-container">
+        <div style="text-align: center; color: #999;">กำลังโหลดประกาศ...</div>
+    </div>
+</div>
+
+<script>
+    // 1. ตั้งค่า Firebase (ใช้ค่าเดิมจากแอปของคุณ)
+    const firebaseConfig = {
+        apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
+        authDomain: "myreaderapp-89e75.firebaseapp.com",
+        projectId: "myreaderapp-89e75",
+        storageBucket: "myreaderapp-89e75.firebasestorage.app",
+        messagingSenderId: "1016151043482",
+        appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
+    };
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    
+    const auth = firebase.auth();
+    const db = firebase.firestore(); // เปิดใช้งาน Firestore
+
+    let currentUser = null;
+
+    // ตรวจสอบการล็อกอิน
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            currentUser = user;
+            loadPosts(); // เมื่อล็อกอินแล้ว ให้โหลดข้อมูลสินค้ามาแสดง
+        } else {
+            window.location.href = 'index.html'; // ถ้าไม่ได้ล็อกอิน เด้งกลับหน้าแรก
+        }
+    });
+
+    // 2. ฟังก์ชันสำหรับบันทึกข้อมูลโพสต์ลงฐานข้อมูล
+    function addPost() {
+        const title = document.getElementById('itemName').value;
+        const price = document.getElementById('itemPrice').value;
+        const desc = document.getElementById('itemDesc').value;
+        const contact = document.getElementById('itemContact').value;
+
+        if(!title || !price || !contact) {
+            alert("กรุณากรอกหัวข้อ ราคา และช่องทางติดต่อให้ครบถ้วนครับ");
+            return;
+        }
+
+        // เพิ่มข้อมูลลงใน collection ชื่อ 'marketplace_posts'
+        db.collection("marketplace_posts").add({
+            title: title,
+            price: price,
+            description: desc,
+            contact: contact,
+            userId: currentUser.uid,
+            userName: currentUser.displayName || "สมาชิก",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp() // เก็บเวลาปัจจุบัน
+        })
+        .then(() => {
+            alert("โพสต์ประกาศสำเร็จ!");
+            // ล้างฟอร์ม
+            document.getElementById('itemName').value = '';
+            document.getElementById('itemPrice').value = '';
+            document.getElementById('itemDesc').value = '';
+            document.getElementById('itemContact').value = '';
+        })
+        .catch((error) => {
+            console.error("Error adding document: ", error);
+            alert("เกิดข้อผิดพลาดในการโพสต์");
+        });
+    }
+
+    // 3. ฟังก์ชันดึงข้อมูลมาแสดงผลแบบ Real-time
+    function loadPosts() {
+        const container = document.getElementById('feed-container');
+
+        // สั่งให้ดึงข้อมูลจาก 'marketplace_posts' เรียงตามเวลาล่าสุด
+        // onSnapshot จะทำให้ถ้ามีคนโพสต์ใหม่ หน้าเว็บจะอัปเดตอัตโนมัติโดยไม่ต้องกดรีเฟรช
+        db.collection("marketplace_posts")
+          .orderBy("timestamp", "desc")
+          .onSnapshot((querySnapshot) => {
+            container.innerHTML = ""; // ล้างหน้าจอเก่า
+
+            if (querySnapshot.empty) {
+                container.innerHTML = "<div style='text-align:center; color:#999;'>ยังไม่มีประกาศในขณะนี้</div>";
+                return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                
+                // แปลงเวลาให้เป็นข้อความ
+                let timeString = "เพิ่งโพสต์";
+                if(data.timestamp) {
+                    const date = data.timestamp.toDate();
+                    timeString = date.toLocaleDateString('th-TH') + " " + date.toLocaleTimeString('th-TH');
+                }
+
+                // สร้างการ์ดสินค้า
+                const card = document.createElement('div');
+                card.className = 'post-card';
+                card.innerHTML = `
+                    <h3 class="post-title">${data.title}</h3>
+                    <p class="post-price">฿ ${Number(data.price).toLocaleString()}</p>
+                    <p class="post-desc">${data.description}</p>
+                    <a href="tel:${data.contact.replace(/\D/g,'')}" class="post-contact">📞 ติดต่อ: ${data.contact}</a>
+                    <div class="post-meta">โพสต์โดย: ${data.userName} | ${timeString}</div>
+                `;
+                container.appendChild(card);
+            });
+        });
+    }
+</script>
+
+</body>
+</html>

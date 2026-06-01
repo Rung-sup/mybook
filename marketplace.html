@@ -196,45 +196,72 @@
     function loadNotifications() {
     const badge = document.getElementById('notiBadge');
     const body = document.getElementById('notiBody');
-    let readGlobals = JSON.parse(localStorage.getItem(`read_globals_${currentUser.uid}`) || "[]");
 
-    // ใช้การแยก Query เพื่อเลี่ยงปัญหา Index ผสม
-    const query1 = db.collection("notifications").where("recipientId", "==", currentUser.uid);
-    const query2 = db.collection("notifications").where("recipientId", "==", "all");
+    // ใช้การฟังค่าแบบ Real-time (onSnapshot) สำหรับ User ของเราคนเดียว
+    db.collection("notifications")
+      .where("recipientId", "==", currentUser.uid)
+      .orderBy("timestamp", "desc")
+      .onSnapshot((snapshot) => {
+          body.innerHTML = "";
+          let unreadCount = 0;
+          let notiList = [];
 
-    // ใช้ onSnapshot ร่วมกับทั้ง 2 Query
-    const updateNoti = () => {
-        Promise.all([
-            new Promise(res => query1.onSnapshot(snap => res(snap))),
-            new Promise(res => query2.onSnapshot(snap => res(snap)))
-        ]).then((snapshots) => {
-            let notiList = [];
-            snapshots.forEach(snapshot => {
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    let isUnread = data.recipientId === 'all' ? !readGlobals.includes(doc.id) : !data.read;
-                    notiList.push({ id: doc.id, isUnread: isUnread, ...data });
-                });
-            });
+          snapshot.forEach(doc => {
+              const data = doc.data();
+              notiList.push({ id: doc.id, ...data });
+              if (data.read === false) unreadCount++;
+          });
 
-            notiList.sort((a, b) => (b.timestamp?.toDate() || 0) - (a.timestamp?.toDate() || 0));
+          // อัปเดตตัวเลขกระดิ่ง
+          badge.innerText = unreadCount;
+          badge.style.display = unreadCount > 0 ? "block" : "none";
 
-            let unreadCount = notiList.filter(n => n.isUnread).length;
-            badge.innerText = unreadCount;
-            badge.style.display = unreadCount > 0 ? "block" : "none";
+          if (notiList.length === 0) {
+              body.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">ไม่มีการแจ้งเตือน</div>';
+              return;
+          }
 
-            body.innerHTML = notiList.length === 0 ? '<div style="padding:20px; text-align:center; color:#999; font-size:12px;">ไม่มีการแจ้งเตือน</div>' : "";
-            
-            notiList.forEach(noti => {
-                const div = document.createElement('div');
-                div.className = `noti-item ${noti.isUnread ? 'unread' : ''}`;
-                div.innerHTML = `<strong>${noti.senderName}</strong> <span>${noti.text}</span>`;
-                div.onclick = () => { /* Logic เดิมของคุณ */ };
-                body.appendChild(div);
-            });
-        });
-    };
-    updateNoti();
+          notiList.forEach(noti => {
+              // 🟢 เพิ่มการแสดงวันที่และเวลา
+              let timeStr = noti.timestamp ? noti.timestamp.toDate().toLocaleString('th-TH') : "เมื่อสักครู่";
+              
+              const div = document.createElement('div');
+              // 🟢 เปลี่ยนสถานะสีพื้นหลังเมื่ออ่านแล้ว (ถ้า noti.read เป็น true จะไม่ใส่คลาส unread)
+              div.className = `noti-item ${noti.read === false ? 'unread' : ''}`;
+              div.innerHTML = `
+                  <div style="font-weight:bold">${noti.senderName}</div>
+                  <div style="font-size:12px;">${noti.text}</div>
+                  <div style="font-size:10px; color:#888; margin-top:4px;">${timeStr}</div>
+              `;
+
+              div.onclick = () => {
+                  // 🟢 กดแล้วให้เปลี่ยนสถานะใน Database ทันที
+                  if (noti.read === false) {
+                      db.collection("notifications").doc(noti.id).update({ read: true });
+                  }
+                  
+                  // เลื่อนหน้าจอ
+                  const postEl = document.getElementById(`post-${noti.postId}`);
+                  if (postEl) {
+                      postEl.scrollIntoView({ behavior: 'smooth' });
+                  }
+                  document.getElementById('notiDropdown').style.display = 'none';
+              };
+              body.appendChild(div);
+          });
+      });
+}
+
+// 🟢 ฟังก์ชัน "อ่านแล้วทั้งหมด"
+function markAllRead() {
+    db.collection("notifications")
+      .where("recipientId", "==", currentUser.uid)
+      .where("read", "==", false)
+      .get().then(snapshot => {
+          let batch = db.batch();
+          snapshot.forEach(doc => batch.update(doc.ref, { read: true }));
+          batch.commit();
+      });
 }
     function markAllRead() {
         // อ่านแล้วทั้งหมดสำหรับแจ้งเตือนส่วนตัว

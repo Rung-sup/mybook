@@ -5,191 +5,85 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>หมวดหมู่ - ห้องสมุดส่วนตัว</title>
 
-    <!-- ส่วนสำคัญ: คำสั่งสำหรับ Safari บน iPhone/iPad เพื่อโชว์ไอคอนแทนตัว "ห" -->
     <link rel="apple-touch-icon" href="app-icon.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="app-icon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="app-icon.png">
-    <link rel="apple-touch-icon" sizes="167x167" href="app-icon.png">
     <meta name="apple-mobile-web-app-title" content="ห้องสมุดส่วนตัว">
     <meta name="apple-mobile-web-app-capable" content="yes">
 
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
     
-    <!-- [จุดที่เพิ่ม] โหลด Firebase SDK (v8) เพื่อใช้ฟังก์ชันตรวจสอบสถานะและล็อกเอาต์ -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
         * { box-sizing: border-box; font-family: 'Prompt', sans-serif; }
         body {
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
-            padding-bottom: 100px;
+            margin: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px 100px;
         }
 
-        /* แก้ไขส่วน Header เพื่อโชว์รูป app-icon.png */
-        .header {
-            text-align: center;
-            color: white;
-            margin-bottom: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .app-logo-container {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 15px;
-            border-radius: 25px;
-            overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            background: white; /* กันพลาดถ้าหารูปไม่เจอ */
-        }
-        .app-logo-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .header { text-align: center; color: white; margin-bottom: 40px; display: flex; flex-direction: column; align-items: center; position: relative; width: 100%; }
+        
+        /* สไตล์กระดิ่งแจ้งเตือน */
+        .noti-wrapper { position: absolute; top: 0; right: 0; }
+        .btn-bell { background: rgba(255,255,255,0.2); border: none; border-radius: 50%; padding: 10px; font-size: 20px; cursor: pointer; color: white; }
+        .noti-badge { position: absolute; top: 0; right: 0; background: #ff4757; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; display: none; }
+        .noti-dropdown { position: absolute; top: 50px; right: 0; background: white; border-radius: 12px; width: 280px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); text-align: left; }
+        .noti-item { padding: 12px; border-bottom: 1px solid #eee; color: #333; font-size: 12px; cursor: pointer; }
+        .noti-item.unread { background: #f0f7ff; }
 
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 20px;
-            width: 100%;
-            max-width: 900px;
-        }
+        .app-logo-container { width: 120px; height: 120px; margin-bottom: 15px; border-radius: 25px; overflow: hidden; box-shadow: 0 8px 20px rgba(0,0,0,0.3); background: white; }
+        .app-logo-container img { width: 100%; height: 100%; object-fit: cover; }
 
-        .category-card {
-            background: white;
-            border-radius: 20px;
-            padding: 25px 10px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #333;
-            min-height: 160px;
-        }
-
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px; width: 100%; max-width: 900px; }
+        .category-card { background: white; border-radius: 20px; padding: 25px 10px; text-align: center; cursor: pointer; transition: all 0.25s ease; box-shadow: 0 10px 20px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: #333; min-height: 160px; }
         .category-card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
         .category-card .icon { font-size: 40px; margin-bottom: 12px; }
-        .category-card img.card-logo { width: 60px; height: 60px; margin-bottom: 12px; object-fit: contain; }
         .category-card .name { font-weight: 600; font-size: 15px; color: #4a148c; line-height: 1.3; }
         
-        /* สไตล์ขอบล่างแยกตามหมวดหมู่ */
-        .book-card  { border-bottom: 5px solid #7c4dff; }
-        .howto-card { border-bottom: 5px solid #00b894; }
-        .waiting-card { border-bottom: 5px solid #ff9800; }
-        .music-card { border-bottom: 5px solid #ff4081; }
-        .audio-card { border-bottom: 5px solid #d4af37; }
-        .construction-card { border-bottom: 5px solid #1877f2; }
-
-        /* ปุ่มสนับสนุนลอยตัวขวา */
-        .btn-donate-fixed {
-            position: fixed; bottom: 20px; right: 20px;
-            background: #d4af37; color: #000; border: none;
-            padding: 12px 18px; border-radius: 50px;
-            font-weight: 600; font-size: 14px; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex; align-items: center; gap: 8px; z-index: 1000;
-        }
-
-        /* [จุดที่เพิ่ม] สไตล์ปุ่มออกจากระบบ ลอยตัวซ้าย */
-        .btn-logout-fixed {
-            position: fixed; bottom: 20px; left: 20px;
-            background: #e53e3e; color: white; border: none;
-            padding: 12px 18px; border-radius: 50px;
-            font-weight: 600; font-size: 14px; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            display: flex; align-items: center; gap: 8px; z-index: 1000;
-            transition: 0.2s;
-        }
-        .btn-logout-fixed:hover { background: #c53030; }
-
-        /* Modal สำหรับ QR Code */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(5px);
-        }
-        .modal-box {
-            background: white; width: 90%; max-width: 360px;
-            padding: 25px; border-radius: 20px; text-align: center;
-        }
-        .qr-img { width: 100%; border-radius: 15px; margin: 15px 0; border: 1px solid #eee; }
+        .btn-logout-fixed { position: fixed; bottom: 20px; left: 20px; background: #e53e3e; color: white; border: none; padding: 12px 18px; border-radius: 50px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000; }
+        .btn-donate-fixed { position: fixed; bottom: 20px; right: 20px; background: #d4af37; color: #000; border: none; padding: 12px 18px; border-radius: 50px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000; }
     </style>
 </head>
 <body>
-    <div class="noti-wrapper">
-    <button class="btn-bell" onclick="toggleNotiDropdown()">🔔<span class="noti-badge" id="notiBadge">0</span></button>
-    <div class="noti-dropdown" id="notiDropdown">
-        <div class="noti-header">🔔 การแจ้งเตือน</div>
-        <div id="notiBody"></div>
-    </div>
-</div>
+
     <div class="header">
+        <div class="noti-wrapper">
+            <button class="btn-bell" onclick="toggleNotiDropdown()">🔔<span class="noti-badge" id="notiBadge">0</span></button>
+            <div class="noti-dropdown" id="notiDropdown">
+                <div style="padding:10px; font-weight:bold; border-bottom:1px solid #eee;">🔔 การแจ้งเตือน</div>
+                <div id="notiBody"><div style="padding:20px; text-align:center; color:#999;">ไม่มีการแจ้งเตือน</div></div>
+            </div>
+        </div>
         <div class="app-logo-container">
-            <!-- แสดงรูปจากไฟล์ app-icon.png -->
             <img src="app-icon.png" alt="App Logo" onerror="this.parentElement.innerHTML='<h1 style=\'font-size:60px; margin:20px 0;\'>📚</h1>'">
         </div>
         <h1 style="margin: 0; font-size: 24px;">ห้องสมุดส่วนตัว</h1>
     </div>
 
     <div class="grid-container">
-        <a href="library.html?cat=1_PetchPraUma" class="category-card book-card"><div class="icon">🐘</div><div class="name">เพชรพระอุมา</div></a>
-        <a href="library.html?cat=2_Thai_Novel" class="category-card book-card"><div class="icon">📖</div><div class="name">นิยายไทย</div></a>
-        <a href="library.html?cat=3_English_Translated" class="category-card book-card"><div class="icon">🌍</div><div class="name">นิยายแปล</div></a>
-        <a href="library.html?cat=4_Chinese_Novel" class="category-card book-card"><div class="icon">🏮</div><div class="name">นิยายจีน</div></a>
-        <a href="library.html?cat=5_HowTo_Religion" class="category-card howto-card"><div class="icon">🧠</div><div class="name">How-to / ธรรมะ</div></a>
-        <a href="library.html?cat=6_HowTo_Religion_Science" class="category-card waiting-card"><div class="icon">🗂️</div><div class="name">หมวดรอแยก</div></a>
-        <a href="music_room.html" class="category-card music-card"><div class="icon">🎵</div><div class="name">ห้องฟังเพลง</div></a>
-        <a href="library.html?cat=8_AudioBooks" class="category-card audio-card"><div class="icon">🎧</div><div class="name">หนังสือเสียง</div></a>
+        <a href="library.html?cat=1_PetchPraUma" class="category-card"><div class="icon">🐘</div><div class="name">เพชรพระอุมา</div></a>
+        <a href="library.html?cat=2_Thai_Novel" class="category-card"><div class="icon">📖</div><div class="name">นิยายไทย</div></a>
+        <a href="library.html?cat=3_English_Translated" class="category-card"><div class="icon">🌍</div><div class="name">นิยายแปล</div></a>
+        <a href="library.html?cat=4_Chinese_Novel" class="category-card"><div class="icon">🏮</div><div class="name">นิยายจีน</div></a>
+        <a href="library.html?cat=5_HowTo_Religion" class="category-card"><div class="icon">🧠</div><div class="name">How-to / ธรรมะ</div></a>
+        <a href="music_room.html" class="category-card"><div class="icon">🎵</div><div class="name">ห้องฟังเพลง</div></table></a>
+        <a href="library.html?cat=8_AudioBooks" class="category-card"><div class="icon">🎧</div><div class="name">หนังสือเสียง</div></a>
         
-        <a href="construction_page.html" class="category-card construction-card">
-            <img src="k2-logo.jpg" alt="K2 Logo" class="card-logo" onerror="this.src='https://via.placeholder.com/60?text=K2'">
-            <div class="name" style="color:#1877f2; font-size: 13px;">K2 Home สร้างบ้านดีต้องมีเรา<br>ผลงานและเกร็ดความรู้</div>
+        <a href="construction_page.html" class="category-card">
+            <img src="k2-logo.jpg" alt="K2 Logo" style="width:50px; margin-bottom:10px;" onerror="this.src='https://via.placeholder.com/50'">
+            <div class="name" style="color:#1877f2; font-size: 13px;">K2 Home สร้างบ้านดีต้องมีเรา</div>
         </a>
 
         <a href="marketplace.html" class="category-card" style="border-bottom: 5px solid #ff4757;">
-            <div class="icon" style="font-size: 40px; margin-bottom: 12px;">🛒</div>
-            <div class="name" style="color:#ff4757;">ตลาดนัด<br>ซื้อขาย-แลกเปลี่ยน</div>
+            <div class="icon">🛒</div><div class="name" style="color:#ff4757;">ตลาดนัด<br>ซื้อขาย-แลกเปลี่ยน</div>
         </a>
     </div>
 
-    <!-- [จุดที่เพิ่ม] ปุ่มออกจากระบบ ลอยตัวอยู่ที่มุมล่างซ้าย -->
-    <button class="btn-logout-fixed" onclick="handleSignOut()">
-        🚪 ออกจากระบบ
-    </button>
-
-    <!-- ปุ่มสนับสนุน -->
-    <button class="btn-donate-fixed" onclick="document.getElementById('donation-modal').style.display='flex'">
-        ☕ เลี้ยงกาแฟผู้พัฒนา
-    </button>
-
-    <div id="donation-modal" class="modal-overlay" onclick="this.style.display='none'">
-        <div class="modal-box" onclick="event.stopPropagation()">
-            <h3 style="margin:0; color:#4a148c;">🙏 ขอบคุณที่สนับสนุน</h3>
-            <p style="font-size: 13px; color: #666; margin: 10px 0;">เพื่อเป็นกำลังใจในการพัฒนาแอปต่อไปครับ</p>
-            <img src="donate-qr.jpg" class="qr-img"> 
-            <p style="font-weight: 600; color: #d4af37;">พร้อมเพย์: [0625675506]</p>
-            <button onclick="document.getElementById('donation-modal').style.display='none'" style="width:100%; padding:10px; border-radius:10px; border:none; background:#eee; cursor:pointer;">ไว้คราวหน้าครับ</button>
-        </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <button class="btn-logout-fixed" onclick="handleSignOut()">🚪 ออกจากระบบ</button>
+    <button class="btn-donate-fixed" onclick="alert('ขอบคุณที่สนับสนุนครับ!')">☕ เลี้ยงกาแฟ</button>
 
 <script>
-    // 2. ประกาศตัวแปร auth ให้เป็น Global ตั้งแต่ต้น
     const firebaseConfig = {
         apiKey: "AIzaSyBZUngq475pYOrX74lH9odnrYQI7mKw2vo",
         authDomain: "myreaderapp-89e75.firebaseapp.com",
@@ -199,38 +93,47 @@
         appId: "1:1016151043482:web:1d7e4fc51d3cab3e2c5e23"
     };
 
-    // ต้อง initialize ก่อนเสมอ
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
-    
-    // สร้างตัวแปร auth ให้พร้อมใช้งานทันทีที่โหลดหน้าเว็บ
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    // 3. ฟังก์ชันออกจากระบบ (จะมองเห็นตัวแปร auth เพราะประกาศไว้ข้างบนแล้ว)
-    function handleSignOut() {
-    // เปลี่ยนจากชื่อบุคคล เป็นข้อความที่เป็นกลางครับ
-    if (confirm("คุณต้องการออกจากระบบใช่หรือไม่ครับ?")) {
-        localStorage.removeItem('terms_accepted');
-        auth.signOut()
-            .then(() => {
-                window.location.href = 'index.html';
-            })
-            .catch((error) => {
-                alert("เกิดข้อผิดพลาด: " + error.message);
-            });
+    function toggleNotiDropdown() {
+        const drop = document.getElementById('notiDropdown');
+        drop.style.display = drop.style.display === 'block' ? 'none' : 'block';
     }
-}
 
-    // 4. ส่วนป้องกันการแอบเข้า (วางไว้บรรทัดสุดท้ายของ script นี้)
     auth.onAuthStateChanged((user) => {
         if (!user) {
             window.location.href = 'index.html';
-        } else if (localStorage.getItem('terms_accepted') !== 'true') {
-            window.location.href = 'terms.html';
+        } else {
+            // ระบบโหลดแจ้งเตือน
+            db.collection("notifications").where("recipientId", "==", user.uid).where("read", "==", false)
+              .onSnapshot(snap => {
+                  const badge = document.getElementById('notiBadge');
+                  badge.innerText = snap.size;
+                  badge.style.display = snap.size > 0 ? "block" : "none";
+                  
+                  const body = document.getElementById('notiBody');
+                  body.innerHTML = "";
+                  if (snap.empty) body.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">ไม่มีการแจ้งเตือน</div>';
+                  
+                  snap.forEach(doc => {
+                      const div = document.createElement('div');
+                      div.className = "noti-item unread";
+                      div.innerText = doc.data().text;
+                      div.onclick = () => window.location.href = 'marketplace.html';
+                      body.appendChild(div);
+                  });
+              });
         }
     });
-</script>
 
+    function handleSignOut() {
+        if (confirm("ออกจากระบบ?")) {
+            localStorage.removeItem('terms_accepted');
+            auth.signOut().then(() => window.location.href = 'index.html');
+        }
+    }
+</script>
 </body>
 </html>

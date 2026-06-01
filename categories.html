@@ -121,7 +121,20 @@
                       const div = document.createElement('div');
                       div.className = "noti-item unread";
                       div.innerText = doc.data().text;
-                      div.onclick = () => window.location.href = 'marketplace.html';
+                      // ในส่วนของ div.onclick ภายใน categories.html
+div.onclick = () => {
+    // 1. อัปเดตลงฐานข้อมูลก่อน (Firestore จะส่ง Signal กลับมาให้ onSnapshot ทำงานใหม่)
+    db.collection("notifications").doc(doc.id).update({ read: true })
+      .then(() => {
+          // 2. เมื่ออัปเดตสำเร็จ ให้ซ่อน dropdown ทันที
+          document.getElementById('notiDropdown').style.display = 'none';
+          // 3. นำทางไปหน้าตลาดนัด
+          window.location.href = 'marketplace.html';
+      })
+      .catch((err) => {
+          console.error("อัปเดตสถานะไม่สำเร็จ: ", err);
+      });
+};
                       body.appendChild(div);
                   });
               });

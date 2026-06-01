@@ -194,81 +194,76 @@
     }
 
     function loadNotifications() {
-        // ดึงทั้งการแจ้งเตือนส่วนตัว และ แบบ "all" ที่ส่งหาทุกคนจากแอดมิน
-        db.collection("notifications")
-          .where("recipientId", "in", [currentUser.uid, "all"])
-          .onSnapshot((snapshot) => {
-              const badge = document.getElementById('notiBadge');
-              const body = document.getElementById('notiBody');
-              let unreadCount = 0;
-              let notiList = [];
-              
-              // โหลดรหัสแจ้งเตือนส่วนกลางที่เคยอ่านแล้วจากอุปกรณ์
-              let readGlobals = JSON.parse(localStorage.getItem(`read_globals_${currentUser.uid}`) || "[]");
+    const badge = document.getElementById('notiBadge');
+    const body = document.getElementById('notiBody');
+    let readGlobals = JSON.parse(localStorage.getItem(`read_globals_${currentUser.uid}`) || "[]");
 
-              snapshot.forEach(doc => {
-                  const data = doc.data();
-                  let isUnread = data.recipientId === 'all' ? !readGlobals.includes(doc.id) : !data.read;
-                  
-                  notiList.push({ id: doc.id, isUnread: isUnread, ...data });
-                  if (isUnread) unreadCount++;
-              });
+    // 🟢 ดึงข้อมูล 2 รอบแล้วมารวมกันในแรม (ช่วยให้ไม่ต้องกังวลเรื่อง Index ผสม)
+    // รอบที่ 1: ดึงของตัวเอง
+    const myNotis = db.collection("notifications").where("recipientId", "==", currentUser.uid).get();
+    // รอบที่ 2: ดึงของส่วนกลาง (all)
+    const allNotis = db.collection("notifications").where("recipientId", "==", "all").get();
 
-              // จัดเรียงตามเวลา ล่าสุดขึ้นก่อน (จัดการบนแรมเพื่อไม่ให้ขึ้น Index Error ใน Firebase)
-              notiList.sort((a, b) => {
-                  const tA = a.timestamp ? a.timestamp.toDate() : 0;
-                  const tB = b.timestamp ? b.timestamp.toDate() : 0;
-                  return tB - tA;
-              });
+    Promise.all([myNotis, allNotis]).then((results) => {
+        let notiList = [];
+        results.forEach(snapshot => {
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                let isUnread = data.recipientId === 'all' ? !readGlobals.includes(doc.id) : !data.read;
+                notiList.push({ id: doc.id, isUnread: isUnread, ...data });
+            });
+        });
 
-              badge.innerText = unreadCount;
-              badge.style.display = unreadCount > 0 ? "block" : "none";
+        // จัดเรียง
+        notiList.sort((a, b) => {
+            const tA = a.timestamp ? a.timestamp.toDate() : 0;
+            const tB = b.timestamp ? b.timestamp.toDate() : 0;
+            return tB - tA;
+        });
 
-              body.innerHTML = "";
-              if (notiList.length === 0) {
-                  body.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:12px;">ไม่มีการแจ้งเตือน</div>';
-                  return;
-              }
+        // แสดงผล
+        let unreadCount = notiList.filter(n => n.isUnread).length;
+        badge.innerText = unreadCount;
+        badge.style.display = unreadCount > 0 ? "block" : "none";
 
-              notiList.forEach(noti => {
-                  let timeStr = "เมื่อสักครู่";
-                  if (noti.timestamp) {
-                      timeStr = noti.timestamp.toDate().toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'});
-                  }
+        body.innerHTML = "";
+        if (notiList.length === 0) {
+            body.innerHTML = '<div style="padding:20px; text-align:center; color:#999; font-size:12px;">ไม่มีการแจ้งเตือน</div>';
+            return;
+        }
 
-                  const div = document.createElement('div');
-                  div.className = `noti-item ${noti.isUnread ? 'unread' : ''}`;
-                  div.innerHTML = `
-                      <strong style="color: ${noti.recipientId === 'all' ? '#ff4757' : '#333'}">${noti.senderName}</strong>
-                      <span>${noti.text}</span>
-                      <span class="noti-time">${timeStr}</span>
-                  `;
+        notiList.forEach(noti => {
+            let timeStr = noti.timestamp ? noti.timestamp.toDate().toLocaleTimeString('th-TH', {hour: '2-digit', minute:'2-digit'}) : "เมื่อสักครู่";
+            const div = document.createElement('div');
+            div.className = `noti-item ${noti.isUnread ? 'unread' : ''}`;
+            div.innerHTML = `
+                <strong style="color: ${noti.recipientId === 'all' ? '#ff4757' : '#333'}">${noti.senderName}</strong>
+                <span>${noti.text}</span>
+                <span class="noti-time">${timeStr}</span>
+            `;
 
-                  div.onclick = () => {
-                      // เคลียร์สถานะอ่านแล้ว
-                      if (noti.recipientId === 'all') {
-                          if (!readGlobals.includes(noti.id)) {
-                              readGlobals.push(noti.id);
-                              localStorage.setItem(`read_globals_${currentUser.uid}`, JSON.stringify(readGlobals));
-                          }
-                          location.href = 'categories.html'; // ถ้าเป็นการอัปเดตแอป ให้เด้งไปหน้าหมวดหมู่หลัก
-                      } else {
-                          db.collection("notifications").doc(noti.id).update({ read: true });
-                          document.getElementById('notiDropdown').style.display = 'none';
-                          
-                          // เลื่อนหน้าจอไปหาโพสต์สินค้าตัวนั้นแบบนุ่มนวล
-                          const postEl = document.getElementById(`post-${noti.postId}`);
-                          if (postEl) {
-                              postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                              postEl.style.background = "#ebf3ff";
-                              setTimeout(() => { postEl.style.background = "white"; }, 1500);
-                          }
-                      }
-                  };
-                  body.appendChild(div);
-              });
-          });
-    }
+            div.onclick = () => {
+                if (noti.recipientId === 'all') {
+                    if (!readGlobals.includes(noti.id)) {
+                        readGlobals.push(noti.id);
+                        localStorage.setItem(`read_globals_${currentUser.uid}`, JSON.stringify(readGlobals));
+                    }
+                    location.href = 'categories.html';
+                } else {
+                    db.collection("notifications").doc(noti.id).update({ read: true });
+                    document.getElementById('notiDropdown').style.display = 'none';
+                    const postEl = document.getElementById(`post-${noti.postId}`);
+                    if (postEl) {
+                        postEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        postEl.style.background = "#ebf3ff";
+                        setTimeout(() => { postEl.style.background = "white"; }, 1500);
+                    }
+                }
+            };
+            body.appendChild(div);
+        });
+    });
+}
 
     function markAllRead() {
         // อ่านแล้วทั้งหมดสำหรับแจ้งเตือนส่วนตัว

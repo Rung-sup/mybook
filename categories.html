@@ -129,13 +129,19 @@
     </style>
 </head>
 <body>
-
+    <div class="noti-wrapper">
+    <button class="btn-bell" onclick="toggleNotiDropdown()">🔔<span class="noti-badge" id="notiBadge">0</span></button>
+    <div class="noti-dropdown" id="notiDropdown">
+        <div class="noti-header">🔔 การแจ้งเตือน</div>
+        <div id="notiBody"></div>
+    </div>
+</div>
     <div class="header">
         <div class="app-logo-container">
             <!-- แสดงรูปจากไฟล์ app-icon.png -->
             <img src="app-icon.png" alt="App Logo" onerror="this.parentElement.innerHTML='<h1 style=\'font-size:60px; margin:20px 0;\'>📚</h1>'">
         </div>
-        <h1 style="margin: 0; font-size: 24px;">หอสมุดส่วนตัว</h1>
+        <h1 style="margin: 0; font-size: 24px;">ห้องสมุดส่วนตัว</h1>
     </div>
 
     <div class="grid-container">

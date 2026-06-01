@@ -72,6 +72,16 @@
     const auth = firebase.auth();
     const provider = new firebase.auth.GoogleAuthProvider();
 
+    // ฟังก์ชันส่งแจ้งเตือนเข้า Discord
+    function sendDiscordNotification(message) {
+        const webhookURL = "https://discordapp.com/api/webhooks/1510966886597394486/yI0xBD1YnZo-Hd9ITzzrSty91ILnbhymY4PyrmdCh-jaPuFIKn_lhUuNt7S5PBo6Smr8";
+        fetch(webhookURL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "content": "🔔 " + message })
+        }).catch(err => console.error("Notification Error:", err));
+    }
+
     // 3. ระบบจัดการเส้นทาง
     function checkTermsAndRedirect() {
         const hasAccepted = localStorage.getItem('terms_accepted');
@@ -82,7 +92,7 @@
         }
     }
 
-    // 4. ฟังสถานะการล็อกอิน (เรียกเพียงครั้งเดียว)
+    // 4. ฟังสถานะการล็อกอิน
     auth.onAuthStateChanged((user) => {
         if (user) {
             checkTermsAndRedirect();
@@ -92,6 +102,12 @@
     // 5. ฟังก์ชัน Login
     function handleGoogleLogin() {
         auth.signInWithPopup(provider)
+            .then((result) => {
+                // ถ้าเป็นการล็อกอินครั้งแรก (สมัครสมาชิกใหม่) ให้ส่งแจ้งเตือน
+                if (result.additionalUserInfo.isNewUser) {
+                    sendDiscordNotification("มีผู้ใช้ใหม่สมัครสมาชิกเข้ามาครับ: " + result.user.email);
+                }
+            })
             .catch((error) => {
                 alert("เกิดข้อผิดพลาด: " + error.message);
             });

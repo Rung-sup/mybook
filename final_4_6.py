@@ -91,7 +91,7 @@ def run_git(command, cwd):
             encoding='utf-8',
             errors='ignore',
             cwd=cwd,
-            timeout=180
+            timeout=600  # 🚀 ขยายเวลาเป็น 10 นาที ป้องกันปัญหาสายหลุดกลางคันขณะดันไฟล์เพลงขนาดใหญ่
         )
         return result.returncode, result.stdout.strip(), result.stderr.strip()
     except Exception as e:
@@ -176,10 +176,10 @@ def ensure_pdf_cover(pdf_path, cover_out, context_label='PDF'):
 
 
 # ==========================================
-# 📊 STEP 1: สร้าง DB + ปกรายไฟล์ + ปกโฟลเดอร์ (เพิ่มฟังก์ชันยุบรวมหมวดหมู่ _Vol)
+# 📊 STEP 1: แสกนคลังหลักสร้างคีย์ DB + ซ่อมแซมปกประจำชุด
 # ==========================================
 def step1_build_databases():
-    log("📊 [1/2] อัปเดตฐานข้อมูลและสร้าง/ซ่อมรูปปก...")
+    log("📊 [1/2] อัปเดตฐานข้อมูลและสร้าง/ซ่อมรูปปก (Direct-Scan)...")
     all_books, all_music = [], []
 
     if not os.path.exists(LIBRARY_ROOT):
@@ -194,7 +194,7 @@ def step1_build_databases():
         if not os.path.isdir(cat_path) or cat_folder in ['.git', 'covers', '.github']:
             continue
 
-        # 🧹 ฟังก์ชันยุบรวมห้องย่อยเข้าหมวดหลักสำหรับแอป เช่น 4_Chinese_Novel_Vol4 -> 4_Chinese_Novel
+        # 🧹 ดักจับและยุบรวมชื่อห้องย่อยเข้าหมวดหลักสำหรับตัวแอปแสดงผล เช่น 4_Chinese_Novel_Vol11 -> 4_Chinese_Novel
         display_category = re.sub(r'_Vol\d+$', '', cat_folder, flags=re.IGNORECASE)
 
         folder_info = {}
@@ -228,11 +228,11 @@ def step1_build_databases():
                 item_data = {
                     'title': normalize_text(os.path.splitext(f)[0]),
                     'url': build_file_url(cat_folder, full_p, cat_path),
-                    'category': display_category,   # ส่งชื่อหมวดหมู่ที่ยุบรวมแล้วไปให้หน้าเว็บ/แอป
+                    'category': display_category,   # ส่งโครงสร้างจัดกรุปรวมกลุ่มเข้าตัวแอปหลัก
                     'folder': folder_disp,
                     'cover_id': c_id,
                     'file_hash': get_file_hash(full_p),
-                    '_raw_cat': cat_folder           # คีย์ชั่วคราวสำหรับผูกแมปหน้าปกโฟลเดอร์ให้แม่นยำ
+                    '_raw_cat': cat_folder           # คีย์เก็บจำสถานะตำแหน่งดิสก์จริงชั่วคราวกันปัญหาปกหาย
                 }
 
                 if cat_folder.startswith('7_') or f.lower().endswith('.mp3'):
@@ -254,7 +254,6 @@ def step1_build_databases():
                     failed_count += 1
 
                 for book in all_books:
-                    # 🛠️ ตรวจสอบด้วย _raw_cat (ชื่อโฟลเดอร์จริงบนดิสก์) เพื่อให้หนังสือในห้องย่อยผูกปกโฟลเดอร์ได้ถูกต้อง
                     if book.get('_raw_cat') == cat_folder and book['folder'] == folder_name:
                         book['folder_cover_id'] = f"folder_{folder_cover_id}"
                         book['folder_book_count'] = info['count']
@@ -262,7 +261,7 @@ def step1_build_databases():
             except Exception as e:
                 log(f"⚠️ เกิดข้อผิดพลาดกับปกโฟลเดอร์ {folder_name}: {e}")
 
-    # ล้างคีย์ชั่วคราวออกก่อนบันทึกไฟล์เพื่อความสะอาดของ JSON
+    # ทำความสะอาดโครงสร้างดิคชันนารีก่อนเซฟไฟล์ข้อมูลลง JSON สู่สารบบแอป
     for book in all_books:
         book.pop('_raw_cat', None)
     for music in all_music:
@@ -275,7 +274,7 @@ def step1_build_databases():
 
 
 # ==========================================
-# ☁️ STEP 2: BATCH SYNC TO GITHUB (Safe Stream Mode)
+# ☁️ STEP 2: ทยอยส่งข้อมูลอย่างเสถียร (50 Files / 5 Sec + LFS Stream)
 # ==========================================
 def step2_git_sync_batched(repo_path):
     if not is_git_repo(repo_path):
@@ -301,8 +300,8 @@ def step2_git_sync_batched(repo_path):
     repo_name = os.path.basename(repo_path)
     log(f"📦 {repo_name}: ตรวจพบไฟล์เปลี่ยนแปลง {len(changed_files)} ไฟล์ กำลังทยอยส่ง...")
     
-    # ⚙️ ปรับความเร็ว: ทยอยส่งรอบละไม่เกิน 50 ไฟล์
-    batch_size = 50 
+    # ⚙️ ปรับปริมาณการทำงานรอบการทำงานให้เหมาะสม (ไม่เกิน 50 รายการ)
+    batch_size = 50
 
     for i in range(0, len(changed_files), batch_size):
         batch = changed_files[i:i + batch_size]
@@ -310,7 +309,7 @@ def step2_git_sync_batched(repo_path):
         run_git(f'git add {quoted_files}', repo_path)
         run_git(f'git commit -m "Auto-sync batch {i // batch_size + 1}"', repo_path)
         
-        # 🛡️ บังคับให้ Git LFS ยิงเอาเนื้อหาไฟล์จริง (Media Chunk) ของ Commit ปัจจุบันขึ้นไปทันที (ป้องกันปัญหากลืน Pointer ค้างใน GHD)
+        # 🛡️ บังคับให้ระบบ LFS ระบายก้อนข้อมูลสื่อแท้จริงของ Commit รอบปัจจุบันขึ้นไปทันที (ป้องกันปัญหากักตัวค้างใน GHD)
         if has_media_files:
             run_git('git lfs push origin main', repo_path)
             
@@ -321,8 +320,8 @@ def step2_git_sync_batched(repo_path):
             log(f" ❌ Batch นี้ส่งไม่สำเร็จ: {err}")
             
         if i + batch_size < len(changed_files):
-            log(" 💤 พักระบบ 5 วินาที เพื่อความปลอดภัยและความเสถียร...")
-            time.sleep(5) # ⚙️ ปรับเวลา: หน่วงเวลา 5 วินาทีระหว่างรอบการ Push
+            log(" 💤 พักจังหวะระบบเครือข่าย 5 วินาที เพื่อเซฟแบนด์วิดท์และความปลอดภัย...")
+            time.sleep(5)  # ⚙️ เว้นจังหวะพักคอยรอบการอัปโหลดรอบละ 5 วินาที
 
 
 def sync_all_repositories():
@@ -341,7 +340,7 @@ if __name__ == '__main__':
         os.system('chcp 65001 > nul')
 
     reset_log()
-    log('▶️ เริ่มระบบจัดการคลังหนังสือรันนารา (Direct-Scan + 50-Files/5-Sec LFS Edition)')
+    log('▶️ เริ่มระบบจัดการคลังหนังสือรันนารา (Direct-Scan + 50-Files/5-Sec LFS Supercharger)')
     log(f'ℹ️ REPAIR_MISSING_COVERS = {REPAIR_MISSING_COVERS}')
     log(f'ℹ️ FORCE_REBUILD_COVERS = {FORCE_REBUILD_COVERS}')
 
